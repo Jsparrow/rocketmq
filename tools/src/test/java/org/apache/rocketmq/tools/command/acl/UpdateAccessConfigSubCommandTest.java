@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateAccessConfigSubCommandTest {
 
@@ -46,22 +47,22 @@ public class UpdateAccessConfigSubCommandTest {
             "-m true"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('b').trim()).isEqualTo("127.0.0.1:10911");
-        assertThat(commandLine.getOptionValue('a').trim()).isEqualTo("RocketMQ");
-        assertThat(commandLine.getOptionValue('s').trim()).isEqualTo("12345678");
-        assertThat(commandLine.getOptionValue('w').trim()).isEqualTo("192.168.0.*");
-        assertThat(commandLine.getOptionValue('i').trim()).isEqualTo("DENY");
-        assertThat(commandLine.getOptionValue('u').trim()).isEqualTo("SUB");
-        assertThat(commandLine.getOptionValue('t').trim()).isEqualTo("topicA=DENY;topicB=PUB|SUB");
-        assertThat(commandLine.getOptionValue('g').trim()).isEqualTo("groupA=DENY;groupB=SUB");
-        assertThat(commandLine.getOptionValue('m').trim()).isEqualTo("true");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('b'))).isEqualTo("127.0.0.1:10911");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('a'))).isEqualTo("RocketMQ");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('s'))).isEqualTo("12345678");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('w'))).isEqualTo("192.168.0.*");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('i'))).isEqualTo("DENY");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('u'))).isEqualTo("SUB");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('t'))).isEqualTo("topicA=DENY;topicB=PUB|SUB");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('g'))).isEqualTo("groupA=DENY;groupB=SUB");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('m'))).isEqualTo("true");
 
         PlainAccessConfig accessConfig = new PlainAccessConfig();
 
         // topicPerms list value
         if (commandLine.hasOption('t')) {
-            String[] topicPerms = commandLine.getOptionValue('t').trim().split(";");
-            List<String> topicPermList = new ArrayList<String>();
+            String[] topicPerms = StringUtils.trim(commandLine.getOptionValue('t')).split(";");
+            List<String> topicPermList = new ArrayList<>();
             if (topicPerms != null) {
                 for (String topicPerm : topicPerms) {
                     topicPermList.add(topicPerm);
@@ -72,8 +73,8 @@ public class UpdateAccessConfigSubCommandTest {
 
         // groupPerms list value
         if (commandLine.hasOption('g')) {
-            String[] groupPerms = commandLine.getOptionValue('g').trim().split(";");
-            List<String> groupPermList = new ArrayList<String>();
+            String[] groupPerms = StringUtils.trim(commandLine.getOptionValue('g')).split(";");
+            List<String> groupPermList = new ArrayList<>();
             if (groupPerms != null) {
                 for (String groupPerm : groupPerms) {
                     groupPermList.add(groupPerm);

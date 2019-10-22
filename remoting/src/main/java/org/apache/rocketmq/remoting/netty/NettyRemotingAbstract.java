@@ -58,56 +58,54 @@ public abstract class NettyRemotingAbstract {
      */
     private static final InternalLogger log = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
-    /**
+    static {
+        NettyLogger.initNettyLogger();
+    }
+
+	/**
      * Semaphore to limit maximum number of on-going one-way requests, which protects system memory footprint.
      */
     protected final Semaphore semaphoreOneway;
 
-    /**
+	/**
      * Semaphore to limit maximum number of on-going asynchronous requests, which protects system memory footprint.
      */
     protected final Semaphore semaphoreAsync;
 
-    /**
+	/**
      * This map caches all on-going requests.
      */
     protected final ConcurrentMap<Integer /* opaque */, ResponseFuture> responseTable =
         new ConcurrentHashMap<Integer, ResponseFuture>(256);
 
-    /**
+	/**
      * This container holds all processors per request code, aka, for each incoming request, we may look up the
      * responding processor in this map to handle the request.
      */
     protected final HashMap<Integer/* request code */, Pair<NettyRequestProcessor, ExecutorService>> processorTable =
         new HashMap<Integer, Pair<NettyRequestProcessor, ExecutorService>>(64);
 
-    /**
+	/**
      * Executor to feed netty events to user defined {@link ChannelEventListener}.
      */
     protected final NettyEventExecutor nettyEventExecutor = new NettyEventExecutor();
 
-    /**
+	/**
      * The default request processor to use in case there is no exact match in {@link #processorTable} per request code.
      */
     protected Pair<NettyRequestProcessor, ExecutorService> defaultRequestProcessor;
 
-    /**
+	/**
      * SSL context via which to create {@link SslHandler}.
      */
     protected volatile SslContext sslContext;
 
-    /**
+	/**
      * custom rpc hooks
      */
     protected List<RPCHook> rpcHooks = new ArrayList<RPCHook>();
 
-
-
-    static {
-        NettyLogger.initNettyLogger();
-    }
-
-    /**
+	/**
      * Constructor, specifying capacity of one-way and asynchronous semaphores.
      *
      * @param permitsOneway Number of permits for one-way requests.
@@ -118,14 +116,14 @@ public abstract class NettyRemotingAbstract {
         this.semaphoreAsync = new Semaphore(permitsAsync, true);
     }
 
-    /**
+	/**
      * Custom channel event listener.
      *
      * @return custom channel event listener if defined; null otherwise.
      */
     public abstract ChannelEventListener getChannelEventListener();
 
-    /**
+	/**
      * Put a netty event to the executor.
      *
      * @param event Netty event instance.
@@ -134,7 +132,7 @@ public abstract class NettyRemotingAbstract {
         this.nettyEventExecutor.putNettyEvent(event);
     }
 
-    /**
+	/**
      * Entry of incoming command processing.
      *
      * <p>
@@ -166,7 +164,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    protected void doBeforeRpcHooks(String addr, RemotingCommand request) {
+	protected void doBeforeRpcHooks(String addr, RemotingCommand request) {
         if (rpcHooks.size() > 0) {
             for (RPCHook rpcHook: rpcHooks) {
                 rpcHook.doBeforeRequest(addr, request);
@@ -174,7 +172,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    protected void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response) {
+	protected void doAfterRpcHooks(String addr, RemotingCommand request, RemotingCommand response) {
         if (rpcHooks.size() > 0) {
             for (RPCHook rpcHook: rpcHooks) {
                 rpcHook.doAfterResponse(addr, request, response);
@@ -182,8 +180,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-
-    /**
+	/**
      * Process incoming request command issued by remote peer.
      *
      * @param ctx channel handler context.
@@ -245,10 +242,8 @@ public abstract class NettyRemotingAbstract {
                 pair.getObject2().submit(requestTask);
             } catch (RejectedExecutionException e) {
                 if ((System.currentTimeMillis() % 10000) == 0) {
-                    log.warn(RemotingHelper.parseChannelRemoteAddr(ctx.channel())
-                        + ", too many requests and system thread pool busy, RejectedExecutionException "
-                        + pair.getObject2().toString()
-                        + " request code: " + cmd.getCode());
+                    log.warn(new StringBuilder().append(RemotingHelper.parseChannelRemoteAddr(ctx.channel())).append(", too many requests and system thread pool busy, RejectedExecutionException ").append(pair.getObject2().toString()).append(" request code: ").append(cmd.getCode())
+							.toString());
                 }
 
                 if (!cmd.isOnewayRPC()) {
@@ -259,7 +254,7 @@ public abstract class NettyRemotingAbstract {
                 }
             }
         } else {
-            String error = " request type " + cmd.getCode() + " not supported";
+            String error = new StringBuilder().append(" request type ").append(cmd.getCode()).append(" not supported").toString();
             final RemotingCommand response =
                 RemotingCommand.createResponseCommand(RemotingSysResponseCode.REQUEST_CODE_NOT_SUPPORTED, error);
             response.setOpaque(opaque);
@@ -268,7 +263,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    /**
+	/**
      * Process response from remote peer to the previous issued requests.
      *
      * @param ctx channel handler context.
@@ -294,7 +289,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    /**
+	/**
      * Execute callback in callback executor. If callback executor is null, run directly in current thread
      */
     private void executeInvokeCallback(final ResponseFuture responseFuture) {
@@ -333,9 +328,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-
-
-    /**
+	/**
      * Custom RPC hook.
      * Just be compatible with the previous version, use getRPCHooks instead.
      */
@@ -347,7 +340,7 @@ public abstract class NettyRemotingAbstract {
         return null;
     }
 
-    /**
+	/**
      * Custom RPC hooks.
      *
      * @return RPC hooks if specified; null otherwise.
@@ -356,8 +349,7 @@ public abstract class NettyRemotingAbstract {
         return rpcHooks;
     }
 
-
-    /**
+	/**
      * This method specifies thread pool to use while invoking callback methods.
      *
      * @return Dedicated thread pool instance if specified; or null if the callback is supposed to be executed in the
@@ -365,7 +357,7 @@ public abstract class NettyRemotingAbstract {
      */
     public abstract ExecutorService getCallbackExecutor();
 
-    /**
+	/**
      * <p>
      * This method is periodically invoked to scan and expire deprecated request.
      * </p>
@@ -394,7 +386,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
+	public RemotingCommand invokeSyncImpl(final Channel channel, final RemotingCommand request,
         final long timeoutMillis)
         throws InterruptedException, RemotingSendRequestException, RemotingTimeoutException {
         final int opaque = request.getOpaque();
@@ -416,7 +408,7 @@ public abstract class NettyRemotingAbstract {
                     responseTable.remove(opaque);
                     responseFuture.setCause(f.cause());
                     responseFuture.putResponse(null);
-                    log.warn("send a request command to channel <" + addr + "> failed.");
+                    log.warn(new StringBuilder().append("send a request command to channel <").append(addr).append("> failed.").toString());
                 }
             });
 
@@ -436,7 +428,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    public void invokeAsyncImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis,
+	public void invokeAsyncImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis,
         final InvokeCallback invokeCallback)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         long beginStartTime = System.currentTimeMillis();
@@ -466,7 +458,7 @@ public abstract class NettyRemotingAbstract {
                 });
             } catch (Exception e) {
                 responseFuture.release();
-                log.warn("send a request command to channel <" + RemotingHelper.parseChannelRemoteAddr(channel) + "> Exception", e);
+                log.warn(new StringBuilder().append("send a request command to channel <").append(RemotingHelper.parseChannelRemoteAddr(channel)).append("> Exception").toString(), e);
                 throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
             }
         } else {
@@ -485,22 +477,23 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    private void requestFail(final int opaque) {
+	private void requestFail(final int opaque) {
         ResponseFuture responseFuture = responseTable.remove(opaque);
-        if (responseFuture != null) {
-            responseFuture.setSendRequestOK(false);
-            responseFuture.putResponse(null);
-            try {
-                executeInvokeCallback(responseFuture);
-            } catch (Throwable e) {
-                log.warn("execute callback in requestFail, and callback throw", e);
-            } finally {
-                responseFuture.release();
-            }
-        }
+        if (responseFuture == null) {
+			return;
+		}
+		responseFuture.setSendRequestOK(false);
+		responseFuture.putResponse(null);
+		try {
+		    executeInvokeCallback(responseFuture);
+		} catch (Throwable e) {
+		    log.warn("execute callback in requestFail, and callback throw", e);
+		} finally {
+		    responseFuture.release();
+		}
     }
 
-    /**
+	/**
      * mark the request of the specified channel as fail and to invoke fail callback immediately
      * @param channel the channel which is close already
      */
@@ -517,7 +510,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
+	public void invokeOnewayImpl(final Channel channel, final RemotingCommand request, final long timeoutMillis)
         throws InterruptedException, RemotingTooMuchRequestException, RemotingTimeoutException, RemotingSendRequestException {
         request.markOnewayRPC();
         boolean acquired = this.semaphoreOneway.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS);
@@ -529,13 +522,13 @@ public abstract class NettyRemotingAbstract {
                     public void operationComplete(ChannelFuture f) throws Exception {
                         once.release();
                         if (!f.isSuccess()) {
-                            log.warn("send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                            log.warn(new StringBuilder().append("send a request command to channel <").append(channel.remoteAddress()).append("> failed.").toString());
                         }
                     }
                 });
             } catch (Exception e) {
                 once.release();
-                log.warn("write send a request command to channel <" + channel.remoteAddress() + "> failed.");
+                log.warn(new StringBuilder().append("write send a request command to channel <").append(channel.remoteAddress()).append("> failed.").toString());
                 throw new RemotingSendRequestException(RemotingHelper.parseChannelRemoteAddr(channel), e);
             }
         } else {
@@ -554,7 +547,7 @@ public abstract class NettyRemotingAbstract {
         }
     }
 
-    class NettyEventExecutor extends ServiceThread {
+	class NettyEventExecutor extends ServiceThread {
         private final LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<NettyEvent>();
         private final int maxSize = 10000;
 

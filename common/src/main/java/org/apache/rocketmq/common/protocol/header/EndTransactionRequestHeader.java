@@ -118,14 +118,8 @@ public class EndTransactionRequestHeader implements CommandCustomHeader {
 
     @Override
     public String toString() {
-        return "EndTransactionRequestHeader{" +
-            "producerGroup='" + producerGroup + '\'' +
-            ", tranStateTableOffset=" + tranStateTableOffset +
-            ", commitLogOffset=" + commitLogOffset +
-            ", commitOrRollback=" + commitOrRollback +
-            ", fromTransactionCheck=" + fromTransactionCheck +
-            ", msgId='" + msgId + '\'' +
-            ", transactionId='" + transactionId + '\'' +
-            '}';
+        return new StringBuilder().append("EndTransactionRequestHeader{").append("producerGroup='").append(producerGroup).append('\'').append(", tranStateTableOffset=").append(tranStateTableOffset).append(", commitLogOffset=")
+				.append(commitLogOffset).append(", commitOrRollback=").append(commitOrRollback).append(", fromTransactionCheck=").append(fromTransactionCheck).append(", msgId='").append(msgId)
+				.append('\'').append(", transactionId='").append(transactionId).append('\'').append('}').toString();
     }
 }

@@ -35,7 +35,6 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
     protected boolean isDebug = false;
 
     public AbstractMQProducer(String topic) {
-        super();
         producerGroupName = RandomUtil.getStringByUUID();
         producerInstanceName = RandomUtil.getStringByUUID();
         this.topic = topic;
@@ -73,7 +72,8 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
         this.producerGroupName = producerGroupName;
     }
 
-    public void setDebug() {
+    @Override
+	public void setDebug() {
         isDebug = true;
     }
 
@@ -81,7 +81,8 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
         this.isDebug = isDebug;
     }
 
-    public void setRun() {
+    @Override
+	public void setRun() {
         isDebug = false;
     }
 
@@ -97,7 +98,7 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
         Object objMsg = null;
         if (this instanceof RMQNormalProducer) {
             org.apache.rocketmq.common.message.Message msg = new org.apache.rocketmq.common.message.Message(
-                topic, (RandomUtil.getStringByUUID() + "." + new Date()).getBytes());
+                topic, (new StringBuilder().append(RandomUtil.getStringByUUID()).append(".").append(new Date()).toString()).getBytes());
             objMsg = msg;
             if (tag != null) {
                 msg.setTags(tag);
@@ -144,8 +145,6 @@ public abstract class AbstractMQProducer extends MQCollector implements MQProduc
     }
 
     public void send(List<Object> msgs) {
-        for (Object msg : msgs) {
-            this.send(msg, null);
-        }
+        msgs.forEach(msg -> this.send(msg, null));
     }
 }

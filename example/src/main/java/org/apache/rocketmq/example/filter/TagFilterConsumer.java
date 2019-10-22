@@ -24,27 +24,26 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TagFilterConsumer {
 
-    public static void main(String[] args) throws InterruptedException, MQClientException, IOException {
+    private static final Logger logger = LoggerFactory.getLogger(TagFilterConsumer.class);
+
+	public static void main(String[] args) throws InterruptedException, MQClientException, IOException {
 
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name");
 
         consumer.subscribe("TagFilterTest", "TagA || TagC");
 
-        consumer.registerMessageListener(new MessageListenerConcurrently() {
-
-            @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                ConsumeConcurrentlyContext context) {
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-            }
-        });
+        consumer.registerMessageListener((List<MessageExt> msgs, ConsumeConcurrentlyContext context) -> {
+		logger.info("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+		return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+         });
 
         consumer.start();
 
-        System.out.printf("Consumer Started.%n");
+        logger.info("Consumer Started.%n");
     }
 }

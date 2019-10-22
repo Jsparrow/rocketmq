@@ -129,8 +129,8 @@ public class DefaultMQAdminExtTest {
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDatas.add(brokerData);
         topicRouteData.setBrokerDatas(brokerDatas);
-        topicRouteData.setQueueDatas(new ArrayList<QueueData>());
-        topicRouteData.setFilterServerTable(new HashMap<String, List<String>>());
+        topicRouteData.setQueueDatas(new ArrayList<>());
+        topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         HashMap<String, String> result = new HashMap<>();
@@ -143,7 +143,7 @@ public class DefaultMQAdminExtTest {
         brokerAddrTable.put("default-broker", brokerData);
         brokerAddrTable.put("broker-test", new BrokerData());
         clusterInfo.setBrokerAddrTable(brokerAddrTable);
-        clusterInfo.setClusterAddrTable(new HashMap<String, Set<String>>());
+        clusterInfo.setClusterAddrTable(new HashMap<>());
         when(mQClientAPIImpl.getBrokerClusterInfo(anyLong())).thenReturn(clusterInfo);
         when(mQClientAPIImpl.cleanExpiredConsumeQueue(anyString(), anyLong())).thenReturn(true);
 
@@ -195,7 +195,7 @@ public class DefaultMQAdminExtTest {
         HashSet<Connection> connections = new HashSet<>();
         connections.add(new Connection());
         consumerConnection.setConnectionSet(connections);
-        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<String, SubscriptionData>());
+        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<>());
         consumerConnection.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
         when(mQClientAPIImpl.getConsumerConnectionList(anyString(), anyString(), anyLong())).thenReturn(consumerConnection);
 
@@ -203,7 +203,7 @@ public class DefaultMQAdminExtTest {
         Connection connection = new Connection();
         connection.setClientAddr("127.0.0.1:9898");
         connection.setClientId("PID_12345");
-        HashSet<Connection> connectionSet = new HashSet<Connection>();
+        HashSet<Connection> connectionSet = new HashSet<>();
         connectionSet.add(connection);
         producerConnection.setConnectionSet(connectionSet);
         when(mQClientAPIImpl.getProducerConnectionList(anyString(), anyString(), anyLong())).thenReturn(producerConnection);
@@ -211,7 +211,7 @@ public class DefaultMQAdminExtTest {
         when(mQClientAPIImpl.wipeWritePermOfBroker(anyString(), anyString(), anyLong())).thenReturn(6);
 
         TopicStatsTable topicStatsTable = new TopicStatsTable();
-        topicStatsTable.setOffsetTable(new HashMap<MessageQueue, TopicOffset>());
+        topicStatsTable.setOffsetTable(new HashMap<>());
 
         Map<String, Map<MessageQueue, Long>> consumerStatus = new HashMap<>();
         when(mQClientAPIImpl.invokeBrokerToGetConsumerStatus(anyString(), anyString(), anyString(), anyString(), anyLong())).thenReturn(consumerStatus);
@@ -221,16 +221,17 @@ public class DefaultMQAdminExtTest {
 
         ConsumerRunningInfo consumerRunningInfo = new ConsumerRunningInfo();
         consumerRunningInfo.setJstack("test");
-        consumerRunningInfo.setMqTable(new TreeMap<MessageQueue, ProcessQueueInfo>());
-        consumerRunningInfo.setStatusTable(new TreeMap<String, ConsumeStatus>());
-        consumerRunningInfo.setSubscriptionSet(new TreeSet<SubscriptionData>());
+        consumerRunningInfo.setMqTable(new TreeMap<>());
+        consumerRunningInfo.setStatusTable(new TreeMap<>());
+        consumerRunningInfo.setSubscriptionSet(new TreeSet<>());
         when(mQClientAPIImpl.getConsumerRunningInfo(anyString(), anyString(), anyString(), anyBoolean(), anyLong())).thenReturn(consumerRunningInfo);
     }
 
     @AfterClass
     public static void terminate() throws Exception {
-        if (defaultMQAdminExtImpl != null)
-            defaultMQAdminExt.shutdown();
+        if (defaultMQAdminExtImpl != null) {
+			defaultMQAdminExt.shutdown();
+		}
     }
 
     @Test

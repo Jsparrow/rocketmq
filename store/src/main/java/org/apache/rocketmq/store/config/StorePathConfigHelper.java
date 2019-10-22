@@ -21,39 +21,42 @@ import java.io.File;
 public class StorePathConfigHelper {
 
     public static String getStorePathConsumeQueue(final String rootDir) {
-        return rootDir + File.separator + "consumequeue";
+        return new StringBuilder().append(rootDir).append(File.separator).append("consumequeue").toString();
     }
 
     public static String getStorePathConsumeQueueExt(final String rootDir) {
-        return rootDir + File.separator + "consumequeue_ext";
+        return new StringBuilder().append(rootDir).append(File.separator).append("consumequeue_ext").toString();
     }
 
     public static String getStorePathIndex(final String rootDir) {
-        return rootDir + File.separator + "index";
+        return new StringBuilder().append(rootDir).append(File.separator).append("index").toString();
     }
 
     public static String getStoreCheckpoint(final String rootDir) {
-        return rootDir + File.separator + "checkpoint";
+        return new StringBuilder().append(rootDir).append(File.separator).append("checkpoint").toString();
     }
 
     public static String getAbortFile(final String rootDir) {
-        return rootDir + File.separator + "abort";
+        return new StringBuilder().append(rootDir).append(File.separator).append("abort").toString();
     }
 
     public static String getLockFile(final String rootDir) {
-        return rootDir + File.separator + "lock";
+        return new StringBuilder().append(rootDir).append(File.separator).append("lock").toString();
     }
 
     public static String getDelayOffsetStorePath(final String rootDir) {
-        return rootDir + File.separator + "config" + File.separator + "delayOffset.json";
+        return new StringBuilder().append(rootDir).append(File.separator).append("config").append(File.separator).append("delayOffset.json")
+				.toString();
     }
 
     public static String getTranStateTableStorePath(final String rootDir) {
-        return rootDir + File.separator + "transaction" + File.separator + "statetable";
+        return new StringBuilder().append(rootDir).append(File.separator).append("transaction").append(File.separator).append("statetable")
+				.toString();
     }
 
     public static String getTranRedoLogStorePath(final String rootDir) {
-        return rootDir + File.separator + "transaction" + File.separator + "redolog";
+        return new StringBuilder().append(rootDir).append(File.separator).append("transaction").append(File.separator).append("redolog")
+				.toString();
     }
 
 }

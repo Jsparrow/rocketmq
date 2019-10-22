@@ -24,10 +24,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class CleanUnusedTopicCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(CleanUnusedTopicCommand.class);
+
+	@Override
     public String commandName() {
         return "cleanUnusedTopic";
     }
@@ -59,16 +64,17 @@ public class CleanUnusedTopicCommand implements SubCommand {
             boolean result = false;
             defaultMQAdminExt.start();
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
                 result = defaultMQAdminExt.cleanUnusedTopicByAddr(addr);
 
             } else {
                 String cluster = commandLine.getOptionValue('c');
-                if (null != cluster)
-                    cluster = cluster.trim();
+                if (null != cluster) {
+					cluster = StringUtils.trim(cluster);
+				}
                 result = defaultMQAdminExt.cleanUnusedTopicByAddr(cluster);
             }
-            System.out.printf(result ? "success" : "false");
+            logger.info(result ? "success" : "false");
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

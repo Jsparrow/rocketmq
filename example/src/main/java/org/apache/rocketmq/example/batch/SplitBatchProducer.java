@@ -73,7 +73,7 @@ class ListSplitter implements Iterator<List<Message>> {
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 tmpSize += entry.getKey().length() + entry.getValue().length();
             }
-            tmpSize = tmpSize + 20; //for log overhead
+            tmpSize += 20; //for log overhead
             if (tmpSize > sizeLimit) {
                 //it is unexpected that single message exceeds the sizeLimit
                 //here just let it go, otherwise it will block the splitting process

@@ -35,29 +35,27 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractTransactionalMessageCheckListener {
     private static final InternalLogger LOGGER = InternalLoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
-    private BrokerController brokerController;
+	//queue nums of topic TRANS_CHECK_MAX_TIME_TOPIC
+    protected static final int TCMT_QUEUE_NUMS = 1;
 
-    //queue nums of topic TRANS_CHECK_MAX_TIME_TOPIC
-    protected final static int TCMT_QUEUE_NUMS = 1;
-    protected final Random random = new Random(System.currentTimeMillis());
+	private static ExecutorService executorService = new ThreadPoolExecutor(2, 5, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2000), (Runnable r) -> {
+	    Thread thread = new Thread(r);
+	    thread.setName("Transaction-msg-check-thread");
+	    return thread;
+	});
 
-    private static ExecutorService executorService = new ThreadPoolExecutor(2, 5, 100, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(2000), new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setName("Transaction-msg-check-thread");
-            return thread;
-        }
-    });
+	private BrokerController brokerController;
 
-    public AbstractTransactionalMessageCheckListener() {
+	protected final Random random = new Random(System.currentTimeMillis());
+
+	public AbstractTransactionalMessageCheckListener() {
     }
 
-    public AbstractTransactionalMessageCheckListener(BrokerController brokerController) {
+	public AbstractTransactionalMessageCheckListener(BrokerController brokerController) {
         this.brokerController = brokerController;
     }
 
-    public void sendCheckMessage(MessageExt msgExt) throws Exception {
+	public void sendCheckMessage(MessageExt msgExt) throws Exception {
         CheckTransactionStateRequestHeader checkTransactionStateRequestHeader = new CheckTransactionStateRequestHeader();
         checkTransactionStateRequestHeader.setCommitLogOffset(msgExt.getCommitLogOffset());
         checkTransactionStateRequestHeader.setOffsetMsgId(msgExt.getMsgId());
@@ -76,28 +74,25 @@ public abstract class AbstractTransactionalMessageCheckListener {
         }
     }
 
-    public void resolveHalfMsg(final MessageExt msgExt) {
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    sendCheckMessage(msgExt);
-                } catch (Exception e) {
-                    LOGGER.error("Send check message error!", e);
-                }
-            }
-        });
+	public void resolveHalfMsg(final MessageExt msgExt) {
+        executorService.execute(() -> {
+		    try {
+		        sendCheckMessage(msgExt);
+		    } catch (Exception e) {
+		        LOGGER.error("Send check message error!", e);
+		    }
+		});
     }
 
-    public BrokerController getBrokerController() {
+	public BrokerController getBrokerController() {
         return brokerController;
     }
 
-    public void shutDown() {
+	public void shutDown() {
         executorService.shutdown();
     }
 
-    /**
+	/**
      * Inject brokerController for this listener
      *
      * @param brokerController
@@ -106,7 +101,7 @@ public abstract class AbstractTransactionalMessageCheckListener {
         this.brokerController = brokerController;
     }
 
-    /**
+	/**
      * In order to avoid check back unlimited, we will discard the message that have been checked more than a certain
      * number of times.
      *

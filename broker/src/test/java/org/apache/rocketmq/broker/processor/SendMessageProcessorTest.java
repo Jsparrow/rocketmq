@@ -63,10 +63,13 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SendMessageProcessorTest {
-    private SendMessageProcessor sendMessageProcessor;
+    private static final Logger logger = LoggerFactory.getLogger(SendMessageProcessorTest.class);
+	private SendMessageProcessor sendMessageProcessor;
     @Mock
     private ChannelHandlerContext handlerContext;
     @Spy
@@ -121,7 +124,7 @@ public class SendMessageProcessorTest {
         sendMessageHookList.add(sendMessageHook);
         sendMessageProcessor.registerSendMessageHook(sendMessageHookList);
         assertPutResult(ResponseCode.SUCCESS);
-        System.out.println(sendMessageContext[0]);
+        logger.info(String.valueOf(sendMessageContext[0]));
         assertThat(sendMessageContext[0]).isNotNull();
         assertThat(sendMessageContext[0].getTopic()).isEqualTo(topic);
         assertThat(sendMessageContext[0].getProducerGroup()).isEqualTo(group);
@@ -192,13 +195,10 @@ public class SendMessageProcessorTest {
         when(brokerController.getTransactionalMessageService().prepareMessage(any(MessageExtBrokerInner.class))).thenReturn(new PutMessageResult(PutMessageStatus.PUT_OK, new AppendMessageResult(AppendMessageStatus.PUT_OK)));
         RemotingCommand request = createSendTransactionMsgCommand(RequestCode.SEND_MESSAGE);
         final RemotingCommand[] response = new RemotingCommand[1];
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                response[0] = invocation.getArgument(0);
-                return null;
-            }
-        }).when(handlerContext).writeAndFlush(any(Object.class));
+        doAnswer((InvocationOnMock invocation) -> {
+		    response[0] = invocation.getArgument(0);
+		    return null;
+		}).when(handlerContext).writeAndFlush(any(Object.class));
         RemotingCommand responseToReturn = sendMessageProcessor.processRequest(handlerContext, request);
         if (responseToReturn != null) {
             assertThat(response[0]).isNull();
@@ -260,13 +260,10 @@ public class SendMessageProcessorTest {
     private void assertPutResult(int responseCode) throws RemotingCommandException {
         final RemotingCommand request = createSendMsgCommand(RequestCode.SEND_MESSAGE);
         final RemotingCommand[] response = new RemotingCommand[1];
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                response[0] = invocation.getArgument(0);
-                return null;
-            }
-        }).when(handlerContext).writeAndFlush(any(Object.class));
+        doAnswer((InvocationOnMock invocation) -> {
+		    response[0] = invocation.getArgument(0);
+		    return null;
+		}).when(handlerContext).writeAndFlush(any(Object.class));
         RemotingCommand responseToReturn = sendMessageProcessor.processRequest(handlerContext, request);
         if (responseToReturn != null) {
             assertThat(response[0]).isNull();

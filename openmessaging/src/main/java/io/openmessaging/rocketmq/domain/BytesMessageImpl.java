@@ -34,7 +34,7 @@ public class BytesMessageImpl implements BytesMessage {
     }
 
     @Override
-    public <T> T getBody(Class<T> type) throws OMSMessageFormatException {
+    public <T> T getBody(Class<T> type) {
         if (type == byte[].class) {
             return (T)body;
         }

@@ -27,6 +27,7 @@ import org.apache.rocketmq.common.protocol.route.BrokerData;
 import org.apache.rocketmq.common.subscription.SubscriptionGroupConfig;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public class MQAdmin {
     private static Logger log = Logger.getLogger(MQAdmin.class);
@@ -88,7 +89,7 @@ public class MQAdmin {
             for (String addr : masterSet) {
                 try {
                     mqAdminExt.createAndUpdateSubscriptionGroupConfig(addr, config);
-                    log.info(String.format("create subscription group %s to %s success.\n", consumerId,
+                    log.info(String.format("create subscription group %s to %s success.%n", consumerId,
                         addr));
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -126,8 +127,9 @@ public class MQAdmin {
             for (String brokerName : brokers.keySet()) {
                 HashMap<Long, String> brokerIps = brokers.get(brokerName).getBrokerAddrs();
                 for (long brokerId : brokerIps.keySet()) {
-                    if (brokerIps.get(brokerId).contains(ip))
-                        return true;
+                    if (StringUtils.contains(brokerIps.get(brokerId), ip)) {
+						return true;
+					}
                 }
             }
         }

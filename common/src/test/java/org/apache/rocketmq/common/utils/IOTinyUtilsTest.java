@@ -32,7 +32,7 @@ import java.util.List;
 
 public class IOTinyUtilsTest {
 
-    private String testRootDir = System.getProperty("user.home") + File.separator + "iotinyutilstest";
+    private String testRootDir = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("iotinyutilstest").toString();
 
     @Before
     public void init() {
@@ -82,7 +82,7 @@ public class IOTinyUtilsTest {
 
     @Test
     public void testReadLines() throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 10; i++) {
             sb.append("testReadLines").append("\n");
         }
@@ -95,7 +95,7 @@ public class IOTinyUtilsTest {
 
     @Test
     public void testToBufferedReader() throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 10; i++) {
             sb.append("testToBufferedReader").append("\n");
         }
@@ -151,7 +151,7 @@ public class IOTinyUtilsTest {
     @Test
     public void testCopyFile() throws Exception {
         File source = new File(testRootDir, "soruce");
-        String target = testRootDir + File.separator + "dest";
+        String target = new StringBuilder().append(testRootDir).append(File.separator).append("dest").toString();
 
         IOTinyUtils.writeStringToFile(source, "testCopyFile", RemotingHelper.DEFAULT_CHARSET);
 

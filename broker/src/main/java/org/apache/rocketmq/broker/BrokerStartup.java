@@ -47,9 +47,11 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.rocketmq.remoting.netty.TlsSystemConfig.TLS_ENABLE;
+import org.slf4j.Logger;
 
 public class BrokerStartup {
-    public static Properties properties = null;
+    private static final Logger logger = LoggerFactory.getLogger(BrokerStartup.class);
+	public static Properties properties = null;
     public static CommandLine commandLine = null;
     public static String configFile = null;
     public static InternalLogger log;
@@ -63,15 +65,15 @@ public class BrokerStartup {
 
             controller.start();
 
-            String tip = "The broker[" + controller.getBrokerConfig().getBrokerName() + ", "
-                + controller.getBrokerAddr() + "] boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
+            String tip = new StringBuilder().append("The broker[").append(controller.getBrokerConfig().getBrokerName()).append(", ").append(controller.getBrokerAddr()).append("] boot success. serializeType=").append(RemotingCommand.getSerializeTypeConfigInThisServer())
+					.toString();
 
             if (null != controller.getBrokerConfig().getNamesrvAddr()) {
                 tip += " and name server is " + controller.getBrokerConfig().getNamesrvAddr();
             }
 
             log.info(tip);
-            System.out.printf("%s%n", tip);
+            logger.info("%s%n", tip);
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -143,7 +145,7 @@ public class BrokerStartup {
             MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), brokerConfig);
 
             if (null == brokerConfig.getRocketmqHome()) {
-                System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation", MixAll.ROCKETMQ_HOME_ENV);
+                logger.info("Please set the %s variable in your environment to match the location of the RocketMQ installation", MixAll.ROCKETMQ_HOME_ENV);
                 System.exit(-2);
             }
 
@@ -155,9 +157,9 @@ public class BrokerStartup {
                         RemotingUtil.string2SocketAddress(addr);
                     }
                 } catch (Exception e) {
-                    System.out.printf(
-                        "The Name Server Address[%s] illegal, please set it as follows, \"127.0.0.1:9876;192.168.0.1:9876\"%n",
-                        namesrvAddr);
+                    logger.error(e.getMessage(), e);
+					logger.info(
+                        "The Name Server Address[%s] illegal, please set it as follows, \"127.0.0.1:9876;192.168.0.1:9876\"%n", namesrvAddr);
                     System.exit(-3);
                 }
             }
@@ -169,7 +171,7 @@ public class BrokerStartup {
                     break;
                 case SLAVE:
                     if (brokerConfig.getBrokerId() <= 0) {
-                        System.out.printf("Slave's brokerId must be > 0");
+                        logger.info("Slave's brokerId must be > 0");
                         System.exit(-3);
                     }
 

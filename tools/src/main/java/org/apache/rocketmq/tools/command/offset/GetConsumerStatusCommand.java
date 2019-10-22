@@ -27,9 +27,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class GetConsumerStatusCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(GetConsumerStatusCommand.class);
+
+	@Override
     public String commandName() {
         return "getConsumerStatus";
     }
@@ -61,37 +66,25 @@ public class GetConsumerStatusCommand implements SubCommand {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
-            String group = commandLine.getOptionValue("g").trim();
-            String topic = commandLine.getOptionValue("t").trim();
+            String group = StringUtils.trim(commandLine.getOptionValue("g"));
+            String topic = StringUtils.trim(commandLine.getOptionValue("t"));
             String originClientId = "";
             if (commandLine.hasOption("i")) {
-                originClientId = commandLine.getOptionValue("i").trim();
+                originClientId = StringUtils.trim(commandLine.getOptionValue("i"));
             }
             defaultMQAdminExt.start();
 
             Map<String, Map<MessageQueue, Long>> consumerStatusTable =
                 defaultMQAdminExt.getConsumeStatus(topic, group, originClientId);
-            System.out.printf("get consumer status from client. group=%s, topic=%s, originClientId=%s%n",
-                group, topic, originClientId);
+            logger.info("get consumer status from client. group=%s, topic=%s, originClientId=%s%n", group, topic, originClientId);
 
-            System.out.printf("%-50s  %-15s  %-15s  %-20s%n",
-                "#clientId",
-                "#brokerName",
-                "#queueId",
-                "#offset");
+            logger.info("%-50s  %-15s  %-15s  %-20s%n", "#clientId", "#brokerName", "#queueId", "#offset");
 
-            for (Map.Entry<String, Map<MessageQueue, Long>> entry : consumerStatusTable.entrySet()) {
+            consumerStatusTable.entrySet().forEach(entry -> {
                 String clientId = entry.getKey();
                 Map<MessageQueue, Long> mqTable = entry.getValue();
-                for (Map.Entry<MessageQueue, Long> entry1 : mqTable.entrySet()) {
-                    MessageQueue mq = entry1.getKey();
-                    System.out.printf("%-50s  %-15s  %-15d  %-20d%n",
-                        UtilAll.frontStringAtLeast(clientId, 50),
-                        mq.getBrokerName(),
-                        mq.getQueueId(),
-                        mqTable.get(mq));
-                }
-            }
+                mqTable.entrySet().stream().map(Map.Entry::getKey).forEach(mq -> logger.info("%-50s  %-15s  %-15d  %-20d%n", UtilAll.frontStringAtLeast(clientId, 50), mq.getBrokerName(), mq.getQueueId(), mqTable.get(mq)));
+            });
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

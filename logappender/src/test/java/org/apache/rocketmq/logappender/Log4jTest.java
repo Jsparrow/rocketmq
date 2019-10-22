@@ -33,7 +33,7 @@ public abstract class Log4jTest extends AbstractTestCase {
         clear();
         Logger logger = Logger.getLogger("testLogger");
         for (int i = 0; i < 10; i++) {
-            logger.info("log4j " + this.getType() + " simple test message " + i);
+            logger.info(new StringBuilder().append("log4j ").append(this.getType()).append(" simple test message ").append(i).toString());
         }
         int received = consumeMessages(10, "log4j", 10);
         Assert.assertTrue(received > 5);

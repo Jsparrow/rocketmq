@@ -28,9 +28,12 @@ import org.apache.rocketmq.common.UtilAll;
 import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MappedFileQueue {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(MappedFileQueue.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static final InternalLogger LOG_ERROR = InternalLoggerFactory.getLogger(LoggerName.STORE_ERROR_LOGGER_NAME);
 
     private static final int DELETE_FILES_BATCH_MAX = 10;
@@ -39,7 +42,7 @@ public class MappedFileQueue {
 
     private final int mappedFileSize;
 
-    private final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<MappedFile>();
+    private final CopyOnWriteArrayList<MappedFile> mappedFiles = new CopyOnWriteArrayList<>();
 
     private final AllocateMappedFileService allocateMappedFileService;
 
@@ -57,31 +60,29 @@ public class MappedFileQueue {
 
     public void checkSelf() {
 
-        if (!this.mappedFiles.isEmpty()) {
-            Iterator<MappedFile> iterator = mappedFiles.iterator();
-            MappedFile pre = null;
-            while (iterator.hasNext()) {
-                MappedFile cur = iterator.next();
-
-                if (pre != null) {
-                    if (cur.getFileFromOffset() - pre.getFileFromOffset() != this.mappedFileSize) {
-                        LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
-                            pre.getFileName(), cur.getFileName());
-                    }
-                }
-                pre = cur;
-            }
-        }
+        if (this.mappedFiles.isEmpty()) {
+			return;
+		}
+		MappedFile pre = null;
+		mappedFiles.forEach(cur -> {
+		    boolean condition = pre != null && cur.getFileFromOffset() - pre.getFileFromOffset() != this.mappedFileSize;
+			if (condition) {
+			    LOG_ERROR.error("[BUG]The mappedFile queue's data is damaged, the adjacent mappedFile's offset don't match. pre file {}, cur file {}",
+			        pre.getFileName(), cur.getFileName());
+			}
+		    pre = cur;
+		});
     }
 
     public MappedFile getMappedFileByTime(final long timestamp) {
         Object[] mfs = this.copyMappedFiles(0);
 
-        if (null == mfs)
-            return null;
+        if (null == mfs) {
+			return null;
+		}
 
-        for (int i = 0; i < mfs.length; i++) {
-            MappedFile mappedFile = (MappedFile) mfs[i];
+        for (Object mf : mfs) {
+            MappedFile mappedFile = (MappedFile) mf;
             if (mappedFile.getLastModifiedTimestamp() >= timestamp) {
                 return mappedFile;
             }
@@ -102,9 +103,9 @@ public class MappedFileQueue {
     }
 
     public void truncateDirtyFiles(long offset) {
-        List<MappedFile> willRemoveFiles = new ArrayList<MappedFile>();
+        List<MappedFile> willRemoveFiles = new ArrayList<>();
 
-        for (MappedFile file : this.mappedFiles) {
+        this.mappedFiles.forEach(file -> {
             long fileTailOffset = file.getFileFromOffset() + this.mappedFileSize;
             if (fileTailOffset > offset) {
                 if (offset >= file.getFileFromOffset()) {
@@ -116,32 +117,31 @@ public class MappedFileQueue {
                     willRemoveFiles.add(file);
                 }
             }
-        }
+        });
 
         this.deleteExpiredFile(willRemoveFiles);
     }
 
     void deleteExpiredFile(List<MappedFile> files) {
 
-        if (!files.isEmpty()) {
-
-            Iterator<MappedFile> iterator = files.iterator();
-            while (iterator.hasNext()) {
-                MappedFile cur = iterator.next();
-                if (!this.mappedFiles.contains(cur)) {
-                    iterator.remove();
-                    log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
-                }
-            }
-
-            try {
-                if (!this.mappedFiles.removeAll(files)) {
-                    log.error("deleteExpiredFile remove failed.");
-                }
-            } catch (Exception e) {
-                log.error("deleteExpiredFile has exception.", e);
-            }
-        }
+        if (files.isEmpty()) {
+			return;
+		}
+		Iterator<MappedFile> iterator = files.iterator();
+		while (iterator.hasNext()) {
+		    MappedFile cur = iterator.next();
+		    if (!this.mappedFiles.contains(cur)) {
+		        iterator.remove();
+		        log.info("This mappedFile {} is not contained by mappedFiles, so skip it.", cur.getFileName());
+		    }
+		}
+		try {
+		    if (!this.mappedFiles.removeAll(files)) {
+		        log.error("deleteExpiredFile remove failed.");
+		    }
+		} catch (Exception e) {
+		    log.error("deleteExpiredFile has exception.", e);
+		}
     }
 
     public boolean load() {
@@ -153,8 +153,7 @@ public class MappedFileQueue {
             for (File file : files) {
 
                 if (file.length() != this.mappedFileSize) {
-                    log.warn(file + "\t" + file.length()
-                        + " length not matched message store config value, please check it manually");
+                    log.warn(new StringBuilder().append(file).append("\t").append(file.length()).append(" length not matched message store config value, please check it manually").toString());
                     return false;
                 }
 
@@ -165,9 +164,9 @@ public class MappedFileQueue {
                     mappedFile.setFlushedPosition(this.mappedFileSize);
                     mappedFile.setCommittedPosition(this.mappedFileSize);
                     this.mappedFiles.add(mappedFile);
-                    log.info("load " + file.getPath() + " OK");
+                    log.info(new StringBuilder().append("load ").append(file.getPath()).append(" OK").toString());
                 } catch (IOException e) {
-                    log.error("load file " + file + " error", e);
+                    log.error(new StringBuilder().append("load file ").append(file).append(" error").toString(), e);
                     return false;
                 }
             }
@@ -177,8 +176,9 @@ public class MappedFileQueue {
     }
 
     public long howMuchFallBehind() {
-        if (this.mappedFiles.isEmpty())
-            return 0;
+        if (this.mappedFiles.isEmpty()) {
+			return 0;
+		}
 
         long committed = this.flushedWhere;
         if (committed != 0) {
@@ -203,34 +203,29 @@ public class MappedFileQueue {
             createOffset = mappedFileLast.getFileFromOffset() + this.mappedFileSize;
         }
 
-        if (createOffset != -1 && needCreate) {
-            String nextFilePath = this.storePath + File.separator + UtilAll.offset2FileName(createOffset);
-            String nextNextFilePath = this.storePath + File.separator
-                + UtilAll.offset2FileName(createOffset + this.mappedFileSize);
-            MappedFile mappedFile = null;
-
-            if (this.allocateMappedFileService != null) {
-                mappedFile = this.allocateMappedFileService.putRequestAndReturnMappedFile(nextFilePath,
-                    nextNextFilePath, this.mappedFileSize);
-            } else {
-                try {
-                    mappedFile = new MappedFile(nextFilePath, this.mappedFileSize);
-                } catch (IOException e) {
-                    log.error("create mappedFile exception", e);
-                }
-            }
-
-            if (mappedFile != null) {
-                if (this.mappedFiles.isEmpty()) {
-                    mappedFile.setFirstCreateInQueue(true);
-                }
-                this.mappedFiles.add(mappedFile);
-            }
-
-            return mappedFile;
-        }
-
-        return mappedFileLast;
+        if (!(createOffset != -1 && needCreate)) {
+			return mappedFileLast;
+		}
+		String nextFilePath = new StringBuilder().append(this.storePath).append(File.separator).append(UtilAll.offset2FileName(createOffset)).toString();
+		String nextNextFilePath = new StringBuilder().append(this.storePath).append(File.separator).append(UtilAll.offset2FileName(createOffset + this.mappedFileSize)).toString();
+		MappedFile mappedFile = null;
+		if (this.allocateMappedFileService != null) {
+		    mappedFile = this.allocateMappedFileService.putRequestAndReturnMappedFile(nextFilePath,
+		        nextNextFilePath, this.mappedFileSize);
+		} else {
+		    try {
+		        mappedFile = new MappedFile(nextFilePath, this.mappedFileSize);
+		    } catch (IOException e) {
+		        log.error("create mappedFile exception", e);
+		    }
+		}
+		if (mappedFile != null) {
+		    if (this.mappedFiles.isEmpty()) {
+		        mappedFile.setFirstCreateInQueue(true);
+		    }
+		    this.mappedFiles.add(mappedFile);
+		}
+		return mappedFile;
     }
 
     public MappedFile getLastMappedFile(final long startOffset) {
@@ -245,6 +240,7 @@ public class MappedFileQueue {
                 mappedFileLast = this.mappedFiles.get(this.mappedFiles.size() - 1);
                 break;
             } catch (IndexOutOfBoundsException e) {
+				logger.error(e.getMessage(), e);
                 //continue;
             } catch (Exception e) {
                 log.error("getLastMappedFile has exception.", e);
@@ -264,8 +260,9 @@ public class MappedFileQueue {
             long diff = lastOffset - offset;
 
             final int maxDiff = this.mappedFileSize * 2;
-            if (diff > maxDiff)
-                return false;
+            if (diff > maxDiff) {
+				return false;
+			}
         }
 
         ListIterator<MappedFile> iterator = this.mappedFiles.listIterator();
@@ -291,6 +288,7 @@ public class MappedFileQueue {
             try {
                 return this.mappedFiles.get(0).getFileFromOffset();
             } catch (IndexOutOfBoundsException e) {
+				logger.error(e.getMessage(), e);
                 //continue;
             } catch (Exception e) {
                 log.error("getMinOffset has exception.", e);
@@ -325,12 +323,12 @@ public class MappedFileQueue {
 
     public void deleteLastMappedFile() {
         MappedFile lastMappedFile = getLastMappedFile();
-        if (lastMappedFile != null) {
-            lastMappedFile.destroy(1000);
-            this.mappedFiles.remove(lastMappedFile);
-            log.info("on recover, destroy a logic mapped file " + lastMappedFile.getFileName());
-
-        }
+        if (lastMappedFile == null) {
+			return;
+		}
+		lastMappedFile.destroy(1000);
+		this.mappedFiles.remove(lastMappedFile);
+		log.info("on recover, destroy a logic mapped file " + lastMappedFile.getFileName());
     }
 
     public int deleteExpiredFileByTime(final long expiredTime,
@@ -339,12 +337,13 @@ public class MappedFileQueue {
         final boolean cleanImmediately) {
         Object[] mfs = this.copyMappedFiles(0);
 
-        if (null == mfs)
-            return 0;
+        if (null == mfs) {
+			return 0;
+		}
 
         int mfsLength = mfs.length - 1;
         int deleteCount = 0;
-        List<MappedFile> files = new ArrayList<MappedFile>();
+        List<MappedFile> files = new ArrayList<>();
         if (null != mfs) {
             for (int i = 0; i < mfsLength; i++) {
                 MappedFile mappedFile = (MappedFile) mfs[i];
@@ -362,6 +361,7 @@ public class MappedFileQueue {
                             try {
                                 Thread.sleep(deleteFilesInterval);
                             } catch (InterruptedException e) {
+								logger.error(e.getMessage(), e);
                             }
                         }
                     } else {
@@ -382,7 +382,7 @@ public class MappedFileQueue {
     public int deleteExpiredFileByOffset(long offset, int unitSize) {
         Object[] mfs = this.copyMappedFiles(0);
 
-        List<MappedFile> files = new ArrayList<MappedFile>();
+        List<MappedFile> files = new ArrayList<>();
         int deleteCount = 0;
         if (null != mfs) {
 
@@ -397,8 +397,7 @@ public class MappedFileQueue {
                     result.release();
                     destroy = maxOffsetInLogicQueue < offset;
                     if (destroy) {
-                        log.info("physic min offset " + offset + ", logics in current mappedFile max offset "
-                            + maxOffsetInLogicQueue + ", delete it");
+                        log.info(new StringBuilder().append("physic min offset ").append(offset).append(", logics in current mappedFile max offset ").append(maxOffsetInLogicQueue).append(", delete it").toString());
                     }
                 } else if (!mappedFile.isAvailable()) { // Handle hanged file.
                     log.warn("Found a hanged consume queue file, attempting to delete it.");
@@ -477,6 +476,7 @@ public class MappedFileQueue {
                     try {
                         targetFile = this.mappedFiles.get(index);
                     } catch (Exception ignored) {
+						logger.error(ignored.getMessage(), ignored);
                     }
 
                     if (targetFile != null && offset >= targetFile.getFileFromOffset()
@@ -510,6 +510,7 @@ public class MappedFileQueue {
             try {
                 mappedFileFirst = this.mappedFiles.get(0);
             } catch (IndexOutOfBoundsException e) {
+				logger.error(e.getMessage(), e);
                 //ignore
             } catch (Exception e) {
                 log.error("getFirstMappedFile has exception.", e);
@@ -540,36 +541,31 @@ public class MappedFileQueue {
 
     public boolean retryDeleteFirstFile(final long intervalForcibly) {
         MappedFile mappedFile = this.getFirstMappedFile();
-        if (mappedFile != null) {
-            if (!mappedFile.isAvailable()) {
-                log.warn("the mappedFile was destroyed once, but still alive, " + mappedFile.getFileName());
-                boolean result = mappedFile.destroy(intervalForcibly);
-                if (result) {
-                    log.info("the mappedFile re delete OK, " + mappedFile.getFileName());
-                    List<MappedFile> tmpFiles = new ArrayList<MappedFile>();
-                    tmpFiles.add(mappedFile);
-                    this.deleteExpiredFile(tmpFiles);
-                } else {
-                    log.warn("the mappedFile re delete failed, " + mappedFile.getFileName());
-                }
+        boolean condition = mappedFile != null && !mappedFile.isAvailable();
+		if (condition) {
+		    log.warn("the mappedFile was destroyed once, but still alive, " + mappedFile.getFileName());
+		    boolean result = mappedFile.destroy(intervalForcibly);
+		    if (result) {
+		        log.info("the mappedFile re delete OK, " + mappedFile.getFileName());
+		        List<MappedFile> tmpFiles = new ArrayList<>();
+		        tmpFiles.add(mappedFile);
+		        this.deleteExpiredFile(tmpFiles);
+		    } else {
+		        log.warn("the mappedFile re delete failed, " + mappedFile.getFileName());
+		    }
 
-                return result;
-            }
-        }
+		    return result;
+		}
 
         return false;
     }
 
     public void shutdown(final long intervalForcibly) {
-        for (MappedFile mf : this.mappedFiles) {
-            mf.shutdown(intervalForcibly);
-        }
+        this.mappedFiles.forEach(mf -> mf.shutdown(intervalForcibly));
     }
 
     public void destroy() {
-        for (MappedFile mf : this.mappedFiles) {
-            mf.destroy(1000 * 3);
-        }
+        this.mappedFiles.forEach(mf -> mf.destroy(1000 * 3));
         this.mappedFiles.clear();
         this.flushedWhere = 0;
 

@@ -36,10 +36,14 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class QueryMsgByUniqueKeySubCommand implements SubCommand {
 
-    private DefaultMQAdminExt defaultMQAdminExt;
+    private static final Logger logger = LoggerFactory.getLogger(QueryMsgByUniqueKeySubCommand.class);
+	private DefaultMQAdminExt defaultMQAdminExt;
 
     private DefaultMQAdminExt createMQAdminExt(RPCHook rpcHook) throws SubCommandException {
         if (this.defaultMQAdminExt != null) {
@@ -64,88 +68,58 @@ public class QueryMsgByUniqueKeySubCommand implements SubCommand {
 
         String bodyTmpFilePath = createBodyFile(msg);
 
-        System.out.printf("%-20s %s%n",
-            "Topic:",
-            msg.getTopic()
+        logger.info("%-20s %s%n", "Topic:", msg.getTopic()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Tags:",
-            "[" + msg.getTags() + "]"
+        logger.info("%-20s %s%n", "Tags:", new StringBuilder().append("[").append(msg.getTags()).append("]").toString()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Keys:",
-            "[" + msg.getKeys() + "]"
+        logger.info("%-20s %s%n", "Keys:", new StringBuilder().append("[").append(msg.getKeys()).append("]").toString()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Queue ID:",
-            msg.getQueueId()
+        logger.info("%-20s %d%n", "Queue ID:", msg.getQueueId()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Queue Offset:",
-            msg.getQueueOffset()
+        logger.info("%-20s %d%n", "Queue Offset:", msg.getQueueOffset()
         );
 
-        System.out.printf("%-20s %d%n",
-            "CommitLog Offset:",
-            msg.getCommitLogOffset()
+        logger.info("%-20s %d%n", "CommitLog Offset:", msg.getCommitLogOffset()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Reconsume Times:",
-            msg.getReconsumeTimes()
+        logger.info("%-20s %d%n", "Reconsume Times:", msg.getReconsumeTimes()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Born Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())
+        logger.info("%-20s %s%n", "Born Timestamp:", UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Store Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())
+        logger.info("%-20s %s%n", "Store Timestamp:", UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Born Host:",
-            RemotingHelper.parseSocketAddressAddr(msg.getBornHost())
+        logger.info("%-20s %s%n", "Born Host:", RemotingHelper.parseSocketAddressAddr(msg.getBornHost())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Store Host:",
-            RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())
+        logger.info("%-20s %s%n", "Store Host:", RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())
         );
 
-        System.out.printf("%-20s %d%n",
-            "System Flag:",
-            msg.getSysFlag()
+        logger.info("%-20s %d%n", "System Flag:", msg.getSysFlag()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Properties:",
-            msg.getProperties() != null ? msg.getProperties().toString() : ""
+        logger.info("%-20s %s%n", "Properties:", msg.getProperties() != null ? msg.getProperties().toString() : ""
         );
 
-        System.out.printf("%-20s %s%n",
-            "Message Body Path:",
-            bodyTmpFilePath
+        logger.info("%-20s %s%n", "Message Body Path:", bodyTmpFilePath
         );
 
         try {
             List<MessageTrack> mtdList = admin.messageTrackDetail(msg);
             if (mtdList.isEmpty()) {
-                System.out.printf("%n%nWARN: No Consumer");
+                logger.info("%n%nWARN: No Consumer");
             } else {
-                System.out.printf("%n%n");
-                for (MessageTrack mt : mtdList) {
-                    System.out.printf("%s", mt);
-                }
+                logger.info("%n%n");
+                mtdList.forEach(mt -> logger.info("%s", mt));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -157,13 +131,14 @@ public class QueryMsgByUniqueKeySubCommand implements SubCommand {
             if (!file.exists()) {
                 file.mkdirs();
             }
-            bodyTmpFilePath = bodyTmpFilePath + "/" + msg.getMsgId();
+            bodyTmpFilePath = new StringBuilder().append(bodyTmpFilePath).append("/").append(msg.getMsgId()).toString();
             dos = new DataOutputStream(new FileOutputStream(bodyTmpFilePath));
             dos.write(msg.getBody());
             return bodyTmpFilePath;
         } finally {
-            if (dos != null)
-                dos.close();
+            if (dos != null) {
+				dos.close();
+			}
         }
     }
 
@@ -205,14 +180,14 @@ public class QueryMsgByUniqueKeySubCommand implements SubCommand {
 
             defaultMQAdminExt =  createMQAdminExt(rpcHook);
 
-            final String msgId = commandLine.getOptionValue('i').trim();
-            final String topic = commandLine.getOptionValue('t').trim();
+            final String msgId = StringUtils.trim(commandLine.getOptionValue('i'));
+            final String topic = StringUtils.trim(commandLine.getOptionValue('t'));
             if (commandLine.hasOption('g') && commandLine.hasOption('d')) {
-                final String consumerGroup = commandLine.getOptionValue('g').trim();
-                final String clientId = commandLine.getOptionValue('d').trim();
+                final String consumerGroup = StringUtils.trim(commandLine.getOptionValue('g'));
+                final String clientId = StringUtils.trim(commandLine.getOptionValue('d'));
                 ConsumeMessageDirectlyResult result =
                     defaultMQAdminExt.consumeMessageDirectly(consumerGroup, clientId, topic, msgId);
-                System.out.printf("%s", result);
+                logger.info("%s", result);
             } else {
                 queryById(defaultMQAdminExt, topic, msgId);
             }

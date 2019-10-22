@@ -37,10 +37,14 @@ import org.apache.rocketmq.remoting.netty.NettyRemotingServer;
 import org.apache.rocketmq.remoting.netty.NettyServerConfig;
 import org.apache.rocketmq.remoting.netty.TlsSystemConfig;
 import org.apache.rocketmq.srvutil.FileWatchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class NamesrvController {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(NamesrvController.class);
+
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
     private final NamesrvConfig namesrvConfig;
 
@@ -84,21 +88,9 @@ public class NamesrvController {
 
         this.registerProcessor();
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> NamesrvController.this.routeInfoManager.scanNotActiveBroker(), 5, 10, TimeUnit.SECONDS);
 
-            @Override
-            public void run() {
-                NamesrvController.this.routeInfoManager.scanNotActiveBroker();
-            }
-        }, 5, 10, TimeUnit.SECONDS);
-
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            public void run() {
-                NamesrvController.this.kvConfigManager.printAllPeriodically();
-            }
-        }, 1, 10, TimeUnit.MINUTES);
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> NamesrvController.this.kvConfigManager.printAllPeriodically(), 1, 10, TimeUnit.MINUTES);
 
         if (TlsSystemConfig.tlsMode != TlsMode.DISABLED) {
             // Register a listener to reload SslContext
@@ -110,7 +102,8 @@ public class NamesrvController {
                         TlsSystemConfig.tlsServerTrustCertPath
                     },
                     new FileWatchService.Listener() {
-                        boolean certChanged, keyChanged = false;
+                        boolean certChanged;
+						boolean keyChanged = false;
                         @Override
                         public void onChanged(String path) {
                             if (path.equals(TlsSystemConfig.tlsServerTrustCertPath)) {
@@ -123,18 +116,20 @@ public class NamesrvController {
                             if (path.equals(TlsSystemConfig.tlsServerKeyPath)) {
                                 keyChanged = true;
                             }
-                            if (certChanged && keyChanged) {
-                                log.info("The certificate and private key changed, reload the ssl context");
-                                certChanged = keyChanged = false;
-                                reloadServerSslContext();
-                            }
+                            if (!(certChanged && keyChanged)) {
+								return;
+							}
+							log.info("The certificate and private key changed, reload the ssl context");
+							certChanged = keyChanged = false;
+							reloadServerSslContext();
                         }
                         private void reloadServerSslContext() {
                             ((NettyRemotingServer) remotingServer).loadSslContext();
                         }
                     });
             } catch (Exception e) {
-                log.warn("FileWatchService created error, can't load the certificate dynamically");
+                logger.error(e.getMessage(), e);
+				log.warn("FileWatchService created error, can't load the certificate dynamically");
             }
         }
 

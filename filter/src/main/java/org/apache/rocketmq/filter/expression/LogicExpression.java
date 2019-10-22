@@ -36,7 +36,8 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
 
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
 
                 Boolean lv = (Boolean) left.evaluate(context);
                 if (lv != null && lv.booleanValue()) {
@@ -52,7 +53,8 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
                 return Boolean.FALSE;
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 return "||";
             }
         };
@@ -61,7 +63,8 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
 
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
 
                 Boolean lv = (Boolean) left.evaluate(context);
 
@@ -78,15 +81,18 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
                 return Boolean.TRUE;
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 return "&&";
             }
         };
     }
 
-    public abstract Object evaluate(EvaluationContext context) throws Exception;
+    @Override
+	public abstract Object evaluate(EvaluationContext context) throws Exception;
 
-    public boolean matches(EvaluationContext context) throws Exception {
+    @Override
+	public boolean matches(EvaluationContext context) throws Exception {
         Object object = evaluate(context);
         return object != null && object == Boolean.TRUE;
     }

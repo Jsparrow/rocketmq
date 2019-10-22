@@ -33,33 +33,36 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConsumeQueueTest {
 
-    private static final String msg = "Once, there was a chance for me!";
+    private static final Logger logger = LoggerFactory.getLogger(ConsumeQueueTest.class);
+	private static final String msg = "Once, there was a chance for me!";
     private static final byte[] msgBody = msg.getBytes();
 
     private static final String topic = "abc";
     private static final int queueId = 0;
-    private static final String storePath = "." + File.separator + "unit_test_store";
+    private static final String storePath = new StringBuilder().append(".").append(File.separator).append("unit_test_store").toString();
     private static final int commitLogFileSize = 1024 * 8;
     private static final int cqFileSize = 10 * 20;
     private static final int cqExtFileSize = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
 
-    private static SocketAddress BornHost;
+    private static SocketAddress bornHost;
 
-    private static SocketAddress StoreHost;
+    private static SocketAddress storeHost;
 
     static {
         try {
-            StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+            storeHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         try {
-            BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+            bornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -73,8 +76,8 @@ public class ConsumeQueueTest {
         msg.setQueueId(queueId);
         msg.setSysFlag(0);
         msg.setBornTimestamp(System.currentTimeMillis());
-        msg.setStoreHost(StoreHost);
-        msg.setBornHost(BornHost);
+        msg.setStoreHost(storeHost);
+        msg.setBornHost(bornHost);
         for (int i = 0; i < 1; i++) {
             msg.putUserProperty(String.valueOf(i), "imagoodperson" + i);
         }
@@ -93,7 +96,7 @@ public class ConsumeQueueTest {
         messageStoreConfig.setEnableConsumeQueueExt(enableCqExt);
 
         messageStoreConfig.setStorePathRootDir(storePath);
-        messageStoreConfig.setStorePathCommitLog(storePath + File.separator + "commitlog");
+        messageStoreConfig.setStorePathCommitLog(new StringBuilder().append(storePath).append(File.separator).append("commitlog").toString());
 
         return messageStoreConfig;
     }
@@ -108,11 +111,7 @@ public class ConsumeQueueTest {
         DefaultMessageStore master = new DefaultMessageStore(
             messageStoreConfig,
             new BrokerStatsManager(brokerConfig.getBrokerClusterName()),
-            new MessageArrivingListener() {
-                @Override
-                public void arriving(String topic, int queueId, long logicOffset, long tagsCode,
-                    long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
-                }
+            (String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) -> {
             }
             , brokerConfig);
 
@@ -196,7 +195,7 @@ public class ConsumeQueueTest {
         try {
             master = gen();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             assertThat(Boolean.FALSE).isTrue();
         }
 
@@ -215,7 +214,7 @@ public class ConsumeQueueTest {
                 putMsg(master);
                 Thread.sleep(3000L);//wait ConsumeQueue create success.
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
                 assertThat(Boolean.FALSE).isTrue();
             }
 

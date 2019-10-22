@@ -25,11 +25,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class StoreTestUtil {
 
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(StoreTestUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(StoreTestUtil.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(StoreTestUtil.class);
 
     public static boolean isCommitLogAvailable(DefaultMessageStore store) {
         try {
@@ -64,6 +67,7 @@ public class StoreTestUtil {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
 
@@ -73,7 +77,7 @@ public class StoreTestUtil {
     }
 
 
-    public static void flushConsumeIndex(DefaultMessageStore store) throws NoSuchFieldException, Exception {
+    public static void flushConsumeIndex(DefaultMessageStore store) throws Exception {
         Field field = store.getClass().getDeclaredField("indexService");
         field.setAccessible(true);
         IndexService indexService = (IndexService) field.get(store);
@@ -82,8 +86,6 @@ public class StoreTestUtil {
         field2.setAccessible(true);
         ArrayList<IndexFile> indexFileList = (ArrayList<IndexFile>) field2.get(indexService);
 
-        for (IndexFile f : indexFileList) {
-            indexService.flush(f);
-        }
+        indexFileList.forEach(indexService::flush);
     }
 }

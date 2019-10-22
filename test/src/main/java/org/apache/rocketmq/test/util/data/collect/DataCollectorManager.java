@@ -24,7 +24,7 @@ import org.apache.rocketmq.test.util.data.collect.impl.MapDataCollectorImpl;
 
 public final class DataCollectorManager {
     private static DataCollectorManager instance = new DataCollectorManager();
-    private Map<String, DataCollector> collectMap = new HashMap<String, DataCollector>();
+    private Map<String, DataCollector> collectMap = new HashMap<>();
     private Object lock = new Object();
 
     private DataCollectorManager() {
@@ -97,9 +97,7 @@ public final class DataCollectorManager {
     }
 
     public void resetAll() {
-        for (Map.Entry<String, DataCollector> entry : collectMap.entrySet()) {
-            entry.getValue().resetData();
-        }
+        collectMap.entrySet().forEach(entry -> entry.getValue().resetData());
     }
 
     public void removeDataCollect(String key) {

@@ -27,10 +27,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeleteAccessConfigSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(DeleteAccessConfigSubCommand.class);
+
+	@Override
     public String commandName() {
         return "deleteAccessConfig";
     }
@@ -68,20 +73,20 @@ public class DeleteAccessConfigSubCommand implements SubCommand {
 
         try {
 
-            String accessKey = commandLine.getOptionValue('a').trim();
+            String accessKey = StringUtils.trim(commandLine.getOptionValue('a'));
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
 
                 defaultMQAdminExt.start();
                 defaultMQAdminExt.deletePlainAccessConfig(addr, accessKey);
 
-                System.out.printf("delete plain access config account to %s success.%n", addr);
-                System.out.printf("account's accesskey is:%s", accessKey);
+                logger.info("delete plain access config account to %s success.%n", addr);
+                logger.info("account's accesskey is:%s", accessKey);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
 
@@ -89,10 +94,10 @@ public class DeleteAccessConfigSubCommand implements SubCommand {
                     CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.deletePlainAccessConfig(addr, accessKey);
-                    System.out.printf("delete plain access config account to %s success.%n", addr);
+                    logger.info("delete plain access config account to %s success.%n", addr);
                 }
 
-                System.out.printf("account's accesskey is:%s", accessKey);
+                logger.info("account's accesskey is:%s", accessKey);
                 return;
             }
 

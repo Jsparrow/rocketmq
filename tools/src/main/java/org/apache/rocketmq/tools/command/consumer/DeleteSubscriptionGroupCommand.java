@@ -28,9 +28,14 @@ import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
 import org.apache.rocketmq.tools.command.topic.DeleteTopicSubCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeleteSubscriptionGroupCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(DeleteSubscriptionGroupCommand.class);
+
+	@Override
     public String commandName() {
         return "deleteSubGroup";
     }
@@ -63,27 +68,25 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
         adminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
             // groupName
-            String groupName = commandLine.getOptionValue('g').trim();
+            String groupName = StringUtils.trim(commandLine.getOptionValue('g'));
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
                 adminExt.start();
 
                 adminExt.deleteSubscriptionGroup(addr, groupName);
-                System.out.printf("delete subscription group [%s] from broker [%s] success.%n", groupName,
-                    addr);
+                logger.info("delete subscription group [%s] from broker [%s] success.%n", groupName, addr);
 
                 return;
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
                 adminExt.start();
 
                 Set<String> masterSet = CommandUtil.fetchMasterAddrByClusterName(adminExt, clusterName);
                 for (String master : masterSet) {
                     adminExt.deleteSubscriptionGroup(master, groupName);
-                    System.out.printf(
-                        "delete subscription group [%s] from broker [%s] in cluster [%s] success.%n",
-                        groupName, master, clusterName);
+                    logger.info(
+                        "delete subscription group [%s] from broker [%s] in cluster [%s] success.%n", groupName, master, clusterName);
                 }
 
                 try {
@@ -92,7 +95,7 @@ public class DeleteSubscriptionGroupCommand implements SubCommand {
                     DeleteTopicSubCommand.deleteTopic(adminExt, clusterName, MixAll.DLQ_GROUP_TOPIC_PREFIX
                         + groupName);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
                 return;
             }

@@ -39,6 +39,8 @@ import static org.apache.rocketmq.common.message.MessageDecoder.CHARSET_UTF8;
 import static org.apache.rocketmq.store.ConsumeQueue.CQ_STORE_UNIT_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test case for DefaultMessageStore.CleanCommitLogService and DefaultMessageStore.CleanConsumeQueueService
@@ -67,7 +69,7 @@ public class DefaultMessageStoreCleanFilesTest {
 
     @Test
     public void testDeleteExpiredFilesByTimeUp() throws Exception {
-        String deleteWhen = Calendar.getInstance().get(Calendar.HOUR_OF_DAY) + "";
+        String deleteWhen = Integer.toString(Calendar.getInstance().get(Calendar.HOUR_OF_DAY));
         // the max value of diskMaxUsedSpaceRatio
         int diskMaxUsedSpaceRatio = 99;
         // used to ensure that automatic file deletion is not triggered
@@ -337,9 +339,8 @@ public class DefaultMessageStoreCleanFilesTest {
         messageStoreConfig.setDeleteWhen(deleteWhen);
         messageStoreConfig.setDiskMaxUsedSpaceRatio(diskMaxUsedSpaceRatio);
 
-        String storePathRootDir = System.getProperty("user.home") + File.separator
-                + "DefaultMessageStoreCleanFilesTest-" + UUID.randomUUID();
-        String storePathCommitLog = storePathRootDir + File.separator + "commitlog";
+        String storePathRootDir = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("DefaultMessageStoreCleanFilesTest-").append(UUID.randomUUID()).toString();
+        String storePathCommitLog = new StringBuilder().append(storePathRootDir).append(File.separator).append("commitlog").toString();
         messageStoreConfig.setStorePathRootDir(storePathRootDir);
         messageStoreConfig.setStorePathCommitLog(storePathCommitLog);
 
@@ -353,13 +354,6 @@ public class DefaultMessageStoreCleanFilesTest {
         messageStore.start();
     }
 
-    private class MyMessageArrivingListener implements MessageArrivingListener {
-        @Override
-        public void arriving(String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime,
-                             byte[] filterBitMap, Map<String, String> properties) {
-        }
-    }
-
     @After
     public void destroy() {
         messageStore.shutdown();
@@ -370,8 +364,17 @@ public class DefaultMessageStoreCleanFilesTest {
         UtilAll.deleteFile(file);
     }
 
-    private class MessageStoreConfigForTest extends MessageStoreConfig {
+	private class MyMessageArrivingListener implements MessageArrivingListener {
         @Override
+        public void arriving(String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime,
+                             byte[] filterBitMap, Map<String, String> properties) {
+        }
+    }
+
+    private class MessageStoreConfigForTest extends MessageStoreConfig {
+        private final Logger logger = LoggerFactory.getLogger(MessageStoreConfigForTest.class);
+
+		@Override
         public int getDiskMaxUsedSpaceRatio() {
             try {
                 Field diskMaxUsedSpaceRatioField = this.getClass().getSuperclass().getDeclaredField("diskMaxUsedSpaceRatio");
@@ -380,6 +383,7 @@ public class DefaultMessageStoreCleanFilesTest {
                 diskMaxUsedSpaceRatioField.setAccessible(false);
                 return ratio;
             } catch (Exception ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
             return super.getDiskMaxUsedSpaceRatio();
         }

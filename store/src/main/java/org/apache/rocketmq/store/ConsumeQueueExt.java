@@ -39,23 +39,28 @@ import java.util.List;
 public class ConsumeQueueExt {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
 
-    private final MappedFileQueue mappedFileQueue;
-    private final String topic;
-    private final int queueId;
+	public static final int END_BLANK_DATA_LENGTH = 4;
 
-    private final String storePath;
-    private final int mappedFileSize;
-    private ByteBuffer tempContainer;
-
-    public static final int END_BLANK_DATA_LENGTH = 4;
-
-    /**
+	/**
      * Addr can not exceed this value.For compatible.
      */
     public static final long MAX_ADDR = Integer.MIN_VALUE - 1L;
-    public static final long MAX_REAL_OFFSET = MAX_ADDR - Long.MIN_VALUE;
 
-    /**
+	public static final long MAX_REAL_OFFSET = MAX_ADDR - Long.MIN_VALUE;
+
+	private final MappedFileQueue mappedFileQueue;
+
+	private final String topic;
+
+	private final int queueId;
+
+	private final String storePath;
+
+	private final int mappedFileSize;
+
+	private ByteBuffer tempContainer;
+
+	/**
      * Constructor.
      *
      * @param topic topic
@@ -76,9 +81,8 @@ public class ConsumeQueueExt {
         this.topic = topic;
         this.queueId = queueId;
 
-        String queueDir = this.storePath
-            + File.separator + topic
-            + File.separator + queueId;
+        String queueDir = new StringBuilder().append(this.storePath).append(File.separator).append(topic).append(File.separator)
+				.append(queueId).toString();
 
         this.mappedFileQueue = new MappedFileQueue(queueDir, mappedFileSize, null);
 
@@ -89,7 +93,7 @@ public class ConsumeQueueExt {
         }
     }
 
-    /**
+	/**
      * Check whether {@code address} point to extend file.
      * <p>
      * Just test {@code address} is less than 0.
@@ -99,7 +103,7 @@ public class ConsumeQueueExt {
         return address <= MAX_ADDR;
     }
 
-    /**
+	/**
      * Transform {@code address}(decorated by {@link #decorate}) to offset in mapped file.
      * <p>
      * if {@code address} is less than 0, return {@code address} - {@link java.lang.Long#MIN_VALUE};
@@ -113,7 +117,7 @@ public class ConsumeQueueExt {
         return address;
     }
 
-    /**
+	/**
      * Decorate {@code offset} from mapped file, in order to distinguish with tagsCode(saved in cq originally).
      * <p>
      * if {@code offset} is greater than or equal to 0, then return {@code offset} + {@link java.lang.Long#MIN_VALUE};
@@ -129,7 +133,7 @@ public class ConsumeQueueExt {
         return offset;
     }
 
-    /**
+	/**
      * Get data from buffer.
      *
      * @param address less than 0
@@ -143,7 +147,7 @@ public class ConsumeQueueExt {
         return null;
     }
 
-    /**
+	/**
      * Get data from buffer, and set to {@code cqExtUnit}
      *
      * @param address less than 0
@@ -178,7 +182,7 @@ public class ConsumeQueueExt {
         return ret;
     }
 
-    /**
+	/**
      * Save to mapped buffer of file and return address.
      * <p>
      * Be careful, this method is not thread safe.
@@ -236,7 +240,7 @@ public class ConsumeQueueExt {
         return 1;
     }
 
-    protected void fullFillToEnd(final MappedFile mappedFile, final int wrotePosition) {
+	protected void fullFillToEnd(final MappedFile mappedFile, final int wrotePosition) {
         ByteBuffer mappedFileBuffer = mappedFile.sliceByteBuffer();
         mappedFileBuffer.position(wrotePosition);
 
@@ -246,23 +250,24 @@ public class ConsumeQueueExt {
         mappedFile.setWrotePosition(this.mappedFileSize);
     }
 
-    /**
+	/**
      * Load data from file when startup.
      */
     public boolean load() {
         boolean result = this.mappedFileQueue.load();
-        log.info("load consume queue extend" + this.topic + "-" + this.queueId + " " + (result ? "OK" : "Failed"));
+        log.info(new StringBuilder().append("load consume queue extend").append(this.topic).append("-").append(this.queueId).append(" ")
+				.append(result ? "OK" : "Failed").toString());
         return result;
     }
 
-    /**
+	/**
      * Check whether the step size in mapped file queue is correct.
      */
     public void checkSelf() {
         this.mappedFileQueue.checkSelf();
     }
 
-    /**
+	/**
      * Recover.
      */
     public void recover() {
@@ -309,7 +314,7 @@ public class ConsumeQueueExt {
         this.mappedFileQueue.truncateDirtyFiles(processOffset);
     }
 
-    /**
+	/**
      * Delete files before {@code minAddress}.
      *
      * @param minAddress less than 0
@@ -321,12 +326,12 @@ public class ConsumeQueueExt {
 
         log.info("Truncate consume queue ext by min {}.", minAddress);
 
-        List<MappedFile> willRemoveFiles = new ArrayList<MappedFile>();
+        List<MappedFile> willRemoveFiles = new ArrayList<>();
 
         List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
         final long realOffset = unDecorate(minAddress);
 
-        for (MappedFile file : mappedFiles) {
+        mappedFiles.forEach(file -> {
             long fileTailOffset = file.getFileFromOffset() + this.mappedFileSize;
 
             if (fileTailOffset < realOffset) {
@@ -336,12 +341,12 @@ public class ConsumeQueueExt {
                     willRemoveFiles.add(file);
                 }
             }
-        }
+        });
 
         this.mappedFileQueue.deleteExpiredFile(willRemoveFiles);
     }
 
-    /**
+	/**
      * Delete files after {@code maxAddress}, and reset wrote/commit/flush position to last file.
      *
      * @param maxAddress less than 0
@@ -364,21 +369,21 @@ public class ConsumeQueueExt {
         this.mappedFileQueue.truncateDirtyFiles(realOffset + cqExtUnit.getSize());
     }
 
-    /**
+	/**
      * flush buffer to file.
      */
     public boolean flush(final int flushLeastPages) {
         return this.mappedFileQueue.flush(flushLeastPages);
     }
 
-    /**
+	/**
      * delete files and directory.
      */
     public void destroy() {
         this.mappedFileQueue.destroy();
     }
 
-    /**
+	/**
      * Max address(value is less than 0).
      * <p/>
      * <p>
@@ -393,7 +398,7 @@ public class ConsumeQueueExt {
         return decorate(mappedFile.getFileFromOffset() + mappedFile.getWrotePosition());
     }
 
-    /**
+	/**
      * Minus address saved in file.
      */
     public long getMinAddress() {
@@ -415,10 +420,35 @@ public class ConsumeQueueExt {
 
         public static final int MAX_EXT_UNIT_SIZE = Short.MAX_VALUE;
 
-        public CqExtUnit() {
+		/**
+         * unit size
+         */
+        private short size;
+
+		/**
+         * has code of tags
+         */
+        private long tagsCode;
+
+		/**
+         * the time to store into commit log of message
+         */
+        private long msgStoreTime;
+
+		/**
+         * size of bit map
+         */
+        private short bitMapSize;
+
+		/**
+         * filter bit map
+         */
+        private byte[] filterBitMap;
+
+		public CqExtUnit() {
         }
 
-        public CqExtUnit(Long tagsCode, long msgStoreTime, byte[] filterBitMap) {
+		public CqExtUnit(Long tagsCode, long msgStoreTime, byte[] filterBitMap) {
             this.tagsCode = tagsCode == null ? 0 : tagsCode;
             this.msgStoreTime = msgStoreTime;
             this.filterBitMap = filterBitMap;
@@ -426,28 +456,7 @@ public class ConsumeQueueExt {
             this.size = (short) (MIN_EXT_UNIT_SIZE + this.bitMapSize);
         }
 
-        /**
-         * unit size
-         */
-        private short size;
-        /**
-         * has code of tags
-         */
-        private long tagsCode;
-        /**
-         * the time to store into commit log of message
-         */
-        private long msgStoreTime;
-        /**
-         * size of bit map
-         */
-        private short bitMapSize;
-        /**
-         * filter bit map
-         */
-        private byte[] filterBitMap;
-
-        /**
+		/**
          * build unit from buffer from current position.
          */
         private boolean read(final ByteBuffer buffer) {
@@ -477,7 +486,7 @@ public class ConsumeQueueExt {
             return true;
         }
 
-        /**
+		/**
          * Only read first 2 byte to get unit size.
          * <p>
          * if size > 0, then skip buffer position with size.
@@ -497,7 +506,7 @@ public class ConsumeQueueExt {
             }
         }
 
-        /**
+		/**
          * Transform unit data to byte array.
          * <p/>
          * <li>1. @{code container} can be null, it will be created if null.</li>
@@ -528,7 +537,7 @@ public class ConsumeQueueExt {
             return temp.array();
         }
 
-        /**
+		/**
          * Calculate unit size by current data.
          */
         private int calcUnitSize() {
@@ -536,63 +545,70 @@ public class ConsumeQueueExt {
             return sizeTemp;
         }
 
-        public long getTagsCode() {
+		public long getTagsCode() {
             return tagsCode;
         }
 
-        public void setTagsCode(final long tagsCode) {
+		public void setTagsCode(final long tagsCode) {
             this.tagsCode = tagsCode;
         }
 
-        public long getMsgStoreTime() {
+		public long getMsgStoreTime() {
             return msgStoreTime;
         }
 
-        public void setMsgStoreTime(final long msgStoreTime) {
+		public void setMsgStoreTime(final long msgStoreTime) {
             this.msgStoreTime = msgStoreTime;
         }
 
-        public byte[] getFilterBitMap() {
+		public byte[] getFilterBitMap() {
             if (this.bitMapSize < 1) {
                 return null;
             }
             return filterBitMap;
         }
 
-        public void setFilterBitMap(final byte[] filterBitMap) {
+		public void setFilterBitMap(final byte[] filterBitMap) {
             this.filterBitMap = filterBitMap;
             // not safe transform, but size will be calculate by #calcUnitSize
             this.bitMapSize = (short) (filterBitMap == null ? 0 : filterBitMap.length);
         }
 
-        public short getSize() {
+		public short getSize() {
             return size;
         }
 
-        @Override
+		@Override
         public boolean equals(Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof CqExtUnit))
-                return false;
+            if (this == o) {
+				return true;
+			}
+            if (!(o instanceof CqExtUnit)) {
+				return false;
+			}
 
             CqExtUnit cqExtUnit = (CqExtUnit) o;
 
-            if (bitMapSize != cqExtUnit.bitMapSize)
-                return false;
-            if (msgStoreTime != cqExtUnit.msgStoreTime)
-                return false;
-            if (size != cqExtUnit.size)
-                return false;
-            if (tagsCode != cqExtUnit.tagsCode)
-                return false;
-            if (!Arrays.equals(filterBitMap, cqExtUnit.filterBitMap))
-                return false;
+            if (bitMapSize != cqExtUnit.bitMapSize) {
+				return false;
+			}
+            if (msgStoreTime != cqExtUnit.msgStoreTime) {
+				return false;
+			}
+            if (size != cqExtUnit.size) {
+				return false;
+			}
+            if (tagsCode != cqExtUnit.tagsCode) {
+				return false;
+			}
+            if (!Arrays.equals(filterBitMap, cqExtUnit.filterBitMap)) {
+				return false;
+			}
 
             return true;
         }
 
-        @Override
+		@Override
         public int hashCode() {
             int result = (int) size;
             result = 31 * result + (int) (tagsCode ^ (tagsCode >>> 32));
@@ -602,15 +618,10 @@ public class ConsumeQueueExt {
             return result;
         }
 
-        @Override
+		@Override
         public String toString() {
-            return "CqExtUnit{" +
-                "size=" + size +
-                ", tagsCode=" + tagsCode +
-                ", msgStoreTime=" + msgStoreTime +
-                ", bitMapSize=" + bitMapSize +
-                ", filterBitMap=" + Arrays.toString(filterBitMap) +
-                '}';
+            return new StringBuilder().append("CqExtUnit{").append("size=").append(size).append(", tagsCode=").append(tagsCode).append(", msgStoreTime=")
+					.append(msgStoreTime).append(", bitMapSize=").append(bitMapSize).append(", filterBitMap=").append(Arrays.toString(filterBitMap)).append('}').toString();
         }
     }
 }

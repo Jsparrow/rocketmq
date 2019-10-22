@@ -34,11 +34,9 @@ public class AbstractListener extends MQCollector implements MessageListener {
     protected Collection<Object> allSendMsgs = null;
 
     public AbstractListener() {
-        super();
     }
 
     public AbstractListener(String listenerName) {
-        super();
         this.listenerName = listenerName;
     }
 
@@ -65,7 +63,7 @@ public class AbstractListener extends MQCollector implements MessageListener {
     public Collection<Object> waitForMessageConsume(Collection<Object> allSendMsgs,
         int timeoutMills) {
         this.allSendMsgs = allSendMsgs;
-        List<Object> sendMsgs = new ArrayList<Object>();
+        List<Object> sendMsgs = new ArrayList<>();
         sendMsgs.addAll(allSendMsgs);
 
         long curTime = System.currentTimeMillis();
@@ -119,8 +117,6 @@ public class AbstractListener extends MQCollector implements MessageListener {
 
     public void waitForMessageConsume(Map<Object, Object> sendMsgIndex, int timeoutMills) {
         Collection<Object> notRecvMsgs = waitForMessageConsume(sendMsgIndex.keySet(), timeoutMills);
-        for (Object object : notRecvMsgs) {
-            logger.info(sendMsgIndex.get(object));
-        }
+        notRecvMsgs.forEach(object -> logger.info(sendMsgIndex.get(object)));
     }
 }

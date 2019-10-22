@@ -31,7 +31,7 @@ public class MQMessageFactory {
     private static Integer index = 0;
 
     public static List<Object> getRMQMessage(String tag, String topic, int msgSize) {
-        List<Object> msgs = new ArrayList<Object>();
+        List<Object> msgs = new ArrayList<>();
         for (int i = 0; i < msgSize; i++) {
             msgs.add(new Message(topic, tag, RandomUtil.getStringByUUID().getBytes()));
         }
@@ -40,26 +40,22 @@ public class MQMessageFactory {
     }
 
     public static List<Object> getRMQMessage(List<String> tags, String topic, int msgSize) {
-        List<Object> msgs = new ArrayList<Object>();
+        List<Object> msgs = new ArrayList<>();
         for (int i = 0; i < msgSize; i++) {
-            for (String tag : tags) {
-                msgs.add(new Message(topic, tag, RandomUtil.getStringByUUID().getBytes()));
-            }
+            tags.forEach(tag -> msgs.add(new Message(topic, tag, RandomUtil.getStringByUUID().getBytes())));
         }
         return msgs;
     }
 
     public static List<Object> getMessageBody(List<Object> msgs) {
-        List<Object> msgBodys = new ArrayList<Object>();
-        for (Object msg : msgs) {
-            msgBodys.add(new String(((Message) msg).getBody()));
-        }
+        List<Object> msgBodys = new ArrayList<>();
+        msgs.forEach(msg -> msgBodys.add(new String(((Message) msg).getBody())));
 
         return msgBodys;
     }
 
     public static Collection<Object> getMessage(Collection<Object>... msgs) {
-        Collection<Object> allMsgs = new ArrayList<Object>();
+        Collection<Object> allMsgs = new ArrayList<>();
         for (Collection<Object> msg : msgs) {
             allMsgs.addAll(msg);
         }
@@ -67,7 +63,7 @@ public class MQMessageFactory {
     }
 
     public static List<Object> getDelayMsg(String topic, int delayLevel, int msgSize) {
-        List<Object> msgs = new ArrayList<Object>();
+        List<Object> msgs = new ArrayList<>();
         for (int i = 0; i < msgSize; i++) {
             Message msg = new Message(topic, RandomUtil.getStringByUUID().getBytes());
             msg.setDelayTimeLevel(delayLevel);
@@ -77,7 +73,7 @@ public class MQMessageFactory {
     }
 
     public static List<Object> getKeyMsg(String topic, String key, int msgSize) {
-        List<Object> msgs = new ArrayList<Object>();
+        List<Object> msgs = new ArrayList<>();
         for (int i = 0; i < msgSize; i++) {
             Message msg = new Message(topic, null, key, RandomUtil.getStringByUUID().getBytes());
             msgs.add(msg);
@@ -86,7 +82,7 @@ public class MQMessageFactory {
     }
 
     public static Map<MessageQueue, List<Object>> getMsgByMQ(MessageQueue mq, int msgSize) {
-        List<MessageQueue> mqs = new ArrayList<MessageQueue>();
+        List<MessageQueue> mqs = new ArrayList<>();
         mqs.add(mq);
         return getMsgByMQ(mqs, msgSize);
     }
@@ -97,10 +93,8 @@ public class MQMessageFactory {
 
     public static Map<MessageQueue, List<Object>> getMsgByMQ(List<MessageQueue> mqs, int msgSize,
         String tag) {
-        Map<MessageQueue, List<Object>> msgs = new HashMap<MessageQueue, List<Object>>();
-        for (MessageQueue mq : mqs) {
-            msgs.put(mq, getMsg(mq.getTopic(), msgSize, tag));
-        }
+        Map<MessageQueue, List<Object>> msgs = new HashMap<>();
+        mqs.forEach(mq -> msgs.put(mq, getMsg(mq.getTopic(), msgSize, tag)));
         return msgs;
     }
 
@@ -109,7 +103,7 @@ public class MQMessageFactory {
     }
 
     public static List<Object> getMsg(String topic, int msgSize, String tag) {
-        List<Object> msgs = new ArrayList<Object>();
+        List<Object> msgs = new ArrayList<>();
         while (msgSize > 0) {
             Message msg = new Message(topic, (index++).toString().getBytes());
             if (tag != null) {

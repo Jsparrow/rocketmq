@@ -29,10 +29,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class QueryConsumeQueueCommand implements SubCommand {
 
-    public static void main(String[] args) {
+    private static final Logger logger = LoggerFactory.getLogger(QueryConsumeQueueCommand.class);
+
+	public static void main(String[] args) {
         QueryConsumeQueueCommand cmd = new QueryConsumeQueueCommand();
 
         Options options = ServerUtil.buildCommandlineOptions(new Options());
@@ -91,20 +96,20 @@ public class QueryConsumeQueueCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            String topic = commandLine.getOptionValue("t").trim();
-            int queueId = Integer.valueOf(commandLine.getOptionValue("q").trim());
-            long index = Long.valueOf(commandLine.getOptionValue("i").trim());
-            int count = Integer.valueOf(commandLine.getOptionValue("c", "10").trim());
+            String topic = StringUtils.trim(commandLine.getOptionValue("t"));
+            int queueId = Integer.valueOf(StringUtils.trim(commandLine.getOptionValue("q")));
+            long index = Long.valueOf(StringUtils.trim(commandLine.getOptionValue("i")));
+            int count = Integer.valueOf(StringUtils.trim(commandLine.getOptionValue("c", "10")));
             String broker = null;
             if (commandLine.hasOption("b")) {
-                broker = commandLine.getOptionValue("b").trim();
+                broker = StringUtils.trim(commandLine.getOptionValue("b"));
             }
             String consumerGroup = null;
             if (commandLine.hasOption("g")) {
-                consumerGroup = commandLine.getOptionValue("g").trim();
+                consumerGroup = StringUtils.trim(commandLine.getOptionValue("g"));
             }
 
-            if (broker == null || broker == "") {
+            if (broker == null || broker.equals("")) {
                 TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
 
                 if (topicRouteData == null || topicRouteData.getBrokerDatas() == null
@@ -120,38 +125,37 @@ public class QueryConsumeQueueCommand implements SubCommand {
             );
 
             if (queryConsumeQueueResponseBody.getSubscriptionData() != null) {
-                System.out.printf("Subscription data: \n%s\n", JSON.toJSONString(queryConsumeQueueResponseBody.getSubscriptionData(), true));
-                System.out.print("======================================\n");
+                logger.info("Subscription data: \n%s\n", JSON.toJSONString(queryConsumeQueueResponseBody.getSubscriptionData(), true));
+                logger.info("======================================\n");
             }
 
             if (queryConsumeQueueResponseBody.getFilterData() != null) {
-                System.out.printf("Filter data: \n%s\n", queryConsumeQueueResponseBody.getFilterData());
-                System.out.print("======================================\n");
+                logger.info("Filter data: \n%s\n", queryConsumeQueueResponseBody.getFilterData());
+                logger.info("======================================\n");
             }
 
-            System.out.printf("Queue data: \nmax: %d, min: %d\n", queryConsumeQueueResponseBody.getMaxQueueIndex(),
-                queryConsumeQueueResponseBody.getMinQueueIndex());
-            System.out.print("======================================\n");
+            logger.info("Queue data: \nmax: %d, min: %d\n", queryConsumeQueueResponseBody.getMaxQueueIndex(), queryConsumeQueueResponseBody.getMinQueueIndex());
+            logger.info("======================================\n");
 
             if (queryConsumeQueueResponseBody.getQueueData() != null) {
 
                 long i = index;
                 for (ConsumeQueueData queueData : queryConsumeQueueResponseBody.getQueueData()) {
                     StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append("idx: " + i + "\n");
+                    stringBuilder.append(new StringBuilder().append("idx: ").append(i).append("\n").toString());
 
                     stringBuilder.append(queueData.toString() + "\n");
 
                     stringBuilder.append("======================================\n");
 
-                    System.out.print(stringBuilder.toString());
+                    logger.info(stringBuilder.toString());
                     i++;
                 }
 
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             defaultMQAdminExt.shutdown();
         }

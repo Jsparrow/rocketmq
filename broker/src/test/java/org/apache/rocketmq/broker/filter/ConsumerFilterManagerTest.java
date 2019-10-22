@@ -30,10 +30,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConsumerFilterManagerTest {
 
-    public static ConsumerFilterManager gen(int topicCount, int consumerCount) {
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerFilterManagerTest.class);
+
+	public static ConsumerFilterManager gen(int topicCount, int consumerCount) {
         ConsumerFilterManager filterManager = new ConsumerFilterManager();
 
         for (int i = 0; i < topicCount; i++) {
@@ -51,7 +55,7 @@ public class ConsumerFilterManagerTest {
     }
 
     public static String expr(int i) {
-        return "a is not null and a > " + ((i - 1) * 10) + " and a < " + ((i + 1) * 10);
+        return new StringBuilder().append("a is not null and a > ").append((i - 1) * 10).append(" and a < ").append((i + 1) * 10).toString();
     }
 
     @Test
@@ -83,7 +87,7 @@ public class ConsumerFilterManagerTest {
 
         ConsumerFilterData filterData = filterManager.get("topic9", "CID_9");
 
-        System.out.println(filterData.getCompiledExpression());
+        logger.info(String.valueOf(filterData.getCompiledExpression()));
 
         String newExpr = "a > 0 and a < 10";
 
@@ -93,7 +97,7 @@ public class ConsumerFilterManagerTest {
 
         assertThat(newExpr).isEqualTo(filterData.getExpression());
 
-        System.out.println(filterData.toString());
+        logger.info(filterData.toString());
     }
 
     @Test
@@ -165,7 +169,7 @@ public class ConsumerFilterManagerTest {
                     )
                 );
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
                 assertThat(true).isFalse();
             }
         }
@@ -177,13 +181,10 @@ public class ConsumerFilterManagerTest {
         assertThat(filterDatas).isNotNull();
         assertThat(filterDatas.size()).isEqualTo(10);
 
-        Iterator<ConsumerFilterData> iterator = filterDatas.iterator();
-        while (iterator.hasNext()) {
-            ConsumerFilterData filterData = iterator.next();
-
+        filterDatas.forEach(filterData -> {
             assertThat(filterData).isNotNull();
             assertThat(filterManager.getBloomFilter().isValid(filterData.getBloomFilterData())).isTrue();
-        }
+        });
     }
 
     @Test

@@ -20,7 +20,7 @@ import java.util.List;
 
 public class ServiceProvider {
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
         .getLogger(ServiceProvider.class);
     /**
      * A reference to the classloader that loaded this class. It's more efficient to compute it once and cache it here.
@@ -58,7 +58,7 @@ public class ServiceProvider {
         if (o == null) {
             return "null";
         } else {
-            return o.getClass().getName() + "@" + System.identityHashCode(o);
+            return new StringBuilder().append(o.getClass().getName()).append("@").append(System.identityHashCode(o)).toString();
         }
     }
 
@@ -77,6 +77,7 @@ public class ServiceProvider {
         try {
             classLoader = Thread.currentThread().getContextClassLoader();
         } catch (SecurityException ex) {
+			LOG.error(ex.getMessage(), ex);
             /**
              * The getContextClassLoader() method throws SecurityException when the context
              * class loader isn't an ancestor of the calling class's class
@@ -96,16 +97,17 @@ public class ServiceProvider {
 
     public static <T> List<T> load(String name, Class<?> clazz) {
         LOG.info("Looking for a resource file of name [{}] ...", name);
-        List<T> services = new ArrayList<T>();
+        List<T> services = new ArrayList<>();
         try {
-            ArrayList<String> names = new ArrayList<String>();
+            ArrayList<String> names = new ArrayList<>();
             final InputStream is = getResourceAsStream(getContextClassLoader(), name);
             if (is != null) {
                 BufferedReader reader;
                 try {
                     reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
                 } catch (java.io.UnsupportedEncodingException e) {
-                    reader = new BufferedReader(new InputStreamReader(is));
+                    LOG.error(e.getMessage(), e);
+					reader = new BufferedReader(new InputStreamReader(is));
                 }
                 String serviceName = reader.readLine();
                 while (serviceName != null && !"".equals(serviceName)) {
@@ -139,7 +141,8 @@ public class ServiceProvider {
                 try {
                     reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
                 } catch (java.io.UnsupportedEncodingException e) {
-                    reader = new BufferedReader(new InputStreamReader(is));
+                    LOG.error(e.getMessage(), e);
+					reader = new BufferedReader(new InputStreamReader(is));
                 }
                 String serviceName = reader.readLine();
                 reader.close();

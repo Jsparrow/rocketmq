@@ -108,7 +108,7 @@ public class HAConnection {
 
                     long interval = HAConnection.this.haService.getDefaultMessageStore().getSystemClock().now() - this.lastReadTimestamp;
                     if (interval > HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig().getHaHousekeepingInterval()) {
-                        log.warn("ha housekeeping, found this connection[" + HAConnection.this.clientAddr + "] expired, " + interval);
+                        log.warn(new StringBuilder().append("ha housekeeping, found this connection[").append(HAConnection.this.clientAddr).append("] expired, ").append(interval).toString());
                         break;
                     }
                 } catch (Exception e) {
@@ -167,7 +167,8 @@ public class HAConnection {
                             HAConnection.this.slaveAckOffset = readOffset;
                             if (HAConnection.this.slaveRequestOffset < 0) {
                                 HAConnection.this.slaveRequestOffset = readOffset;
-                                log.info("slave[" + HAConnection.this.clientAddr + "] request offset " + readOffset);
+                                log.info(new StringBuilder().append("slave[").append(HAConnection.this.clientAddr).append("] request offset ").append(readOffset)
+										.toString());
                             }
 
                             HAConnection.this.haService.notifyTransferSome(HAConnection.this.slaveAckOffset);
@@ -177,7 +178,7 @@ public class HAConnection {
                             break;
                         }
                     } else {
-                        log.error("read socket[" + HAConnection.this.clientAddr + "] < 0");
+                        log.error(new StringBuilder().append("read socket[").append(HAConnection.this.clientAddr).append("] < 0").toString());
                         return false;
                     }
                 } catch (IOException e) {
@@ -224,10 +225,9 @@ public class HAConnection {
                     if (-1 == this.nextTransferFromWhere) {
                         if (0 == HAConnection.this.slaveRequestOffset) {
                             long masterOffset = HAConnection.this.haService.getDefaultMessageStore().getCommitLog().getMaxOffset();
-                            masterOffset =
-                                masterOffset
-                                    - (masterOffset % HAConnection.this.haService.getDefaultMessageStore().getMessageStoreConfig()
-                                    .getMappedFileSizeCommitLog());
+                            masterOffset -=
+                                (masterOffset % HAConnection.this.haService.getDefaultMessageStore()
+										.getMessageStoreConfig().getMappedFileSizeCommitLog());
 
                             if (masterOffset < 0) {
                                 masterOffset = 0;
@@ -238,8 +238,8 @@ public class HAConnection {
                             this.nextTransferFromWhere = HAConnection.this.slaveRequestOffset;
                         }
 
-                        log.info("master transfer data from " + this.nextTransferFromWhere + " to slave[" + HAConnection.this.clientAddr
-                            + "], and slave request " + HAConnection.this.slaveRequestOffset);
+                        log.info(new StringBuilder().append("master transfer data from ").append(this.nextTransferFromWhere).append(" to slave[").append(HAConnection.this.clientAddr)
+								.append("], and slave request ").append(HAConnection.this.slaveRequestOffset).toString());
                     }
 
                     if (this.lastWriteOver) {
@@ -258,13 +258,15 @@ public class HAConnection {
                             this.byteBufferHeader.flip();
 
                             this.lastWriteOver = this.transferData();
-                            if (!this.lastWriteOver)
-                                continue;
+                            if (!this.lastWriteOver) {
+								continue;
+							}
                         }
                     } else {
                         this.lastWriteOver = this.transferData();
-                        if (!this.lastWriteOver)
-                            continue;
+                        if (!this.lastWriteOver) {
+							continue;
+						}
                     }
 
                     SelectMappedBufferResult selectResult =

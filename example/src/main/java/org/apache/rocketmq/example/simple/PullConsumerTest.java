@@ -20,9 +20,13 @@ import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullConsumerTest {
-    public static void main(String[] args) throws MQClientException {
+    private static final Logger logger = LoggerFactory.getLogger(PullConsumerTest.class);
+
+	public static void main(String[] args) throws MQClientException {
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer("please_rename_unique_group_name_5");
         consumer.setNamesrvAddr("127.0.0.1:9876");
         consumer.start();
@@ -37,10 +41,10 @@ public class PullConsumerTest {
 
             long beginTime = System.currentTimeMillis();
             PullResult pullResult = consumer.pullBlockIfNotFound(mq, null, offset, 32);
-            System.out.printf("%s%n", System.currentTimeMillis() - beginTime);
-            System.out.printf("%s%n", pullResult);
+            logger.info("%s%n", System.currentTimeMillis() - beginTime);
+            logger.info("%s%n", pullResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         consumer.shutdown();

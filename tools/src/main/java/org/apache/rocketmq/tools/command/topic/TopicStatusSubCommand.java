@@ -30,10 +30,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class TopicStatusSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(TopicStatusSubCommand.class);
+
+	@Override
     public String commandName() {
         return "topicStatus";
     }
@@ -60,22 +65,17 @@ public class TopicStatusSubCommand implements SubCommand {
 
         try {
             defaultMQAdminExt.start();
-            String topic = commandLine.getOptionValue('t').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
             TopicStatsTable topicStatsTable = defaultMQAdminExt.examineTopicStats(topic);
 
-            List<MessageQueue> mqList = new LinkedList<MessageQueue>();
+            List<MessageQueue> mqList = new LinkedList<>();
             mqList.addAll(topicStatsTable.getOffsetTable().keySet());
             Collections.sort(mqList);
 
-            System.out.printf("%-32s  %-4s  %-20s  %-20s    %s%n",
-                "#Broker Name",
-                "#QID",
-                "#Min Offset",
-                "#Max Offset",
-                "#Last Updated"
+            logger.info("%-32s  %-4s  %-20s  %-20s    %s%n", "#Broker Name", "#QID", "#Min Offset", "#Max Offset", "#Last Updated"
             );
 
-            for (MessageQueue mq : mqList) {
+            mqList.forEach(mq -> {
                 TopicOffset topicOffset = topicStatsTable.getOffsetTable().get(mq);
 
                 String humanTimestamp = "";
@@ -83,14 +83,9 @@ public class TopicStatusSubCommand implements SubCommand {
                     humanTimestamp = UtilAll.timeMillisToHumanString2(topicOffset.getLastUpdateTimestamp());
                 }
 
-                System.out.printf("%-32s  %-4d  %-20d  %-20d    %s%n",
-                    UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
-                    mq.getQueueId(),
-                    topicOffset.getMinOffset(),
-                    topicOffset.getMaxOffset(),
-                    humanTimestamp
+                logger.info("%-32s  %-4d  %-20d  %-20d    %s%n", UtilAll.frontStringAtLeast(mq.getBrokerName(), 32), mq.getQueueId(), topicOffset.getMinOffset(), topicOffset.getMaxOffset(), humanTimestamp
                 );
-            }
+            });
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

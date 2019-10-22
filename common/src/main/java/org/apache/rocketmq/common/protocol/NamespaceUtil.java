@@ -38,7 +38,7 @@ public class NamespaceUtil {
             return resourceWithNamespace;
         }
 
-        StringBuffer strBuffer = new StringBuffer();
+        StringBuilder strBuffer = new StringBuilder();
         if (isRetryTopic(resourceWithNamespace)) {
             strBuffer.append(MixAll.RETRY_GROUP_TOPIC_PREFIX);
         }
@@ -47,13 +47,12 @@ public class NamespaceUtil {
         }
 
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resourceWithNamespace);
-        int index = resourceWithoutRetryAndDLQ.indexOf(NAMESPACE_SEPARATOR);
-        if (index > 0) {
-            String resourceWithoutNamespace = resourceWithoutRetryAndDLQ.substring(index + 1);
-            return strBuffer.append(resourceWithoutNamespace).toString();
-        }
-
-        return resourceWithNamespace;
+        int index = StringUtils.indexOf(resourceWithoutRetryAndDLQ, NAMESPACE_SEPARATOR);
+        if (index <= 0) {
+			return resourceWithNamespace;
+		}
+		String resourceWithoutNamespace = StringUtils.substring(resourceWithoutRetryAndDLQ, index + 1);
+		return strBuffer.append(resourceWithoutNamespace).toString();
     }
 
     /**
@@ -73,7 +72,7 @@ public class NamespaceUtil {
         }
 
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resourceWithNamespace);
-        if (resourceWithoutRetryAndDLQ.startsWith(namespace + NAMESPACE_SEPARATOR)) {
+        if (StringUtils.startsWith(resourceWithoutRetryAndDLQ, namespace + NAMESPACE_SEPARATOR)) {
             return withoutNamespace(resourceWithNamespace);
         }
 
@@ -90,7 +89,7 @@ public class NamespaceUtil {
         }
 
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resourceWithOutNamespace);
-        StringBuffer strBuffer = new StringBuffer();
+        StringBuilder strBuffer = new StringBuilder();
 
         if (isRetryTopic(resourceWithOutNamespace)) {
             strBuffer.append(MixAll.RETRY_GROUP_TOPIC_PREFIX);
@@ -111,7 +110,7 @@ public class NamespaceUtil {
 
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resource);
 
-        return resourceWithoutRetryAndDLQ.startsWith(namespace + NAMESPACE_SEPARATOR);
+        return StringUtils.startsWith(resourceWithoutRetryAndDLQ, namespace + NAMESPACE_SEPARATOR);
     }
 
     public static String wrapNamespaceAndRetry(String namespace, String consumerGroup) {
@@ -130,9 +129,9 @@ public class NamespaceUtil {
             return STRING_BLANK;
         }
         String resourceWithoutRetryAndDLQ = withOutRetryAndDLQ(resource);
-        int index = resourceWithoutRetryAndDLQ.indexOf(NAMESPACE_SEPARATOR);
+        int index = StringUtils.indexOf(resourceWithoutRetryAndDLQ, NAMESPACE_SEPARATOR);
 
-        return index > 0 ? resourceWithoutRetryAndDLQ.substring(0, index) : STRING_BLANK;
+        return index > 0 ? StringUtils.substring(resourceWithoutRetryAndDLQ, 0, index) : STRING_BLANK;
     }
 
     private static String withOutRetryAndDLQ(String originalResource) {
@@ -140,11 +139,11 @@ public class NamespaceUtil {
             return STRING_BLANK;
         }
         if (isRetryTopic(originalResource)) {
-            return originalResource.substring(RETRY_PREFIX_LENGTH);
+            return StringUtils.substring(originalResource, RETRY_PREFIX_LENGTH);
         }
 
         if (isDLQTopic(originalResource)) {
-            return originalResource.substring(DLQ_PREFIX_LENGTH);
+            return StringUtils.substring(originalResource, DLQ_PREFIX_LENGTH);
         }
 
         return originalResource;
@@ -163,10 +162,10 @@ public class NamespaceUtil {
     }
 
     public static boolean isRetryTopic(String resource) {
-        return StringUtils.isNotBlank(resource) && resource.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
+        return StringUtils.isNotBlank(resource) && StringUtils.startsWith(resource, MixAll.RETRY_GROUP_TOPIC_PREFIX);
     }
 
     public static boolean isDLQTopic(String resource) {
-        return StringUtils.isNotBlank(resource) && resource.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX);
+        return StringUtils.isNotBlank(resource) && StringUtils.startsWith(resource, MixAll.DLQ_GROUP_TOPIC_PREFIX);
     }
 }

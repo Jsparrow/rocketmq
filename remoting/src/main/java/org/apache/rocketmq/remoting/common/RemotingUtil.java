@@ -138,7 +138,7 @@ public class RemotingUtil {
 
     public static String normalizeHostAddress(final InetAddress localHost) {
         if (localHost instanceof Inet6Address) {
-            return "[" + localHost.getHostAddress() + "]";
+            return new StringBuilder().append("[").append(localHost.getHostAddress()).append("]").toString();
         } else {
             return localHost.getHostAddress();
         }

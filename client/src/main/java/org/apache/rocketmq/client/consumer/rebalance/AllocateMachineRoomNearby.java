@@ -41,7 +41,7 @@ public class AllocateMachineRoomNearby implements AllocateMessageQueueStrategy {
     private final MachineRoomResolver machineRoomResolver;
 
     public AllocateMachineRoomNearby(AllocateMessageQueueStrategy allocateMessageQueueStrategy,
-        MachineRoomResolver machineRoomResolver) throws NullPointerException {
+        MachineRoomResolver machineRoomResolver) {
         if (allocateMessageQueueStrategy == null) {
             throw new NullPointerException("allocateMessageQueueStrategy is null");
         }
@@ -126,7 +126,7 @@ public class AllocateMachineRoomNearby implements AllocateMessageQueueStrategy {
 
     @Override
     public String getName() {
-        return "MACHINE_ROOM_NEARBY" + "-" + allocateMessageQueueStrategy.getName();
+        return new StringBuilder().append("MACHINE_ROOM_NEARBY").append("-").append(allocateMessageQueueStrategy.getName()).toString();
     }
 
     /**

@@ -69,8 +69,7 @@ public class UndoneMsgs {
 
     @Override
     public String toString() {
-        return "UndoneMsgs [consumerGroup=" + consumerGroup + ", topic=" + topic + ", undoneMsgsTotal="
-            + undoneMsgsTotal + ", undoneMsgsSingleMQ=" + undoneMsgsSingleMQ
-            + ", undoneMsgsDelayTimeMills=" + undoneMsgsDelayTimeMills + "]";
+        return new StringBuilder().append("UndoneMsgs [consumerGroup=").append(consumerGroup).append(", topic=").append(topic).append(", undoneMsgsTotal=").append(undoneMsgsTotal).append(", undoneMsgsSingleMQ=")
+				.append(undoneMsgsSingleMQ).append(", undoneMsgsDelayTimeMills=").append(undoneMsgsDelayTimeMills).append("]").toString();
     }
 }

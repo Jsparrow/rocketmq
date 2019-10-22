@@ -43,6 +43,7 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class MixAll {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
@@ -99,9 +100,9 @@ public class MixAll {
     public static String getWSAddr() {
         String wsDomainName = System.getProperty("rocketmq.namesrv.domain", DEFAULT_NAMESRV_ADDR_LOOKUP);
         String wsDomainSubgroup = System.getProperty("rocketmq.namesrv.domain.subgroup", "nsaddr");
-        String wsAddr = "http://" + wsDomainName + ":8080/rocketmq/" + wsDomainSubgroup;
-        if (wsDomainName.indexOf(":") > 0) {
-            wsAddr = "http://" + wsDomainName + "/rocketmq/" + wsDomainSubgroup;
+        String wsAddr = new StringBuilder().append("http://").append(wsDomainName).append(":8080/rocketmq/").append(wsDomainSubgroup).toString();
+        if (StringUtils.indexOf(wsDomainName, ":") > 0) {
+            wsAddr = new StringBuilder().append("http://").append(wsDomainName).append("/rocketmq/").append(wsDomainSubgroup).toString();
         }
         return wsAddr;
     }
@@ -111,11 +112,11 @@ public class MixAll {
     }
 
     public static boolean isSysConsumerGroup(final String consumerGroup) {
-        return consumerGroup.startsWith(CID_RMQ_SYS_PREFIX);
+        return StringUtils.startsWith(consumerGroup, CID_RMQ_SYS_PREFIX);
     }
 
     public static boolean isSystemTopic(final String topic) {
-        return topic.startsWith(SYSTEM_TOPIC_PREFIX);
+        return StringUtils.startsWith(topic, SYSTEM_TOPIC_PREFIX);
     }
 
     public static String getDLQTopic(final String consumerGroup) {
@@ -123,13 +124,12 @@ public class MixAll {
     }
 
     public static String brokerVIPChannel(final boolean isChange, final String brokerAddr) {
-        if (isChange) {
-            String[] ipAndPort = brokerAddr.split(":");
-            String brokerAddrNew = ipAndPort[0] + ":" + (Integer.parseInt(ipAndPort[1]) - 2);
-            return brokerAddrNew;
-        } else {
-            return brokerAddr;
-        }
+        if (!isChange) {
+			return brokerAddr;
+		}
+		String[] ipAndPort = brokerAddr.split(":");
+		String brokerAddrNew = new StringBuilder().append(ipAndPort[0]).append(":").append(Integer.parseInt(ipAndPort[1]) - 2).toString();
+		return brokerAddrNew;
     }
 
     public static long getPID() {
@@ -244,7 +244,7 @@ public class MixAll {
         for (Field field : fields) {
             if (!Modifier.isStatic(field.getModifiers())) {
                 String name = field.getName();
-                if (!name.startsWith("this")) {
+                if (!StringUtils.startsWith(name, "this")) {
                     Object value = null;
                     try {
                         field.setAccessible(true);
@@ -264,7 +264,7 @@ public class MixAll {
                     }
 
                     if (logger != null) {
-                        logger.info(name + "=" + value);
+                        logger.info(new StringBuilder().append(name).append("=").append(value).toString());
                     } else {
                     }
                 }
@@ -276,7 +276,7 @@ public class MixAll {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             if (entry.getValue() != null) {
-                sb.append(entry.getKey().toString() + "=" + entry.getValue().toString() + "\n");
+                sb.append(new StringBuilder().append(entry.getKey().toString()).append("=").append(entry.getValue().toString()).append("\n").toString());
             }
         }
         return sb.toString();
@@ -302,7 +302,7 @@ public class MixAll {
         for (Field field : fields) {
             if (!Modifier.isStatic(field.getModifiers())) {
                 String name = field.getName();
-                if (!name.startsWith("this")) {
+                if (!StringUtils.startsWith(name, "this")) {
                     Object value = null;
                     try {
                         field.setAccessible(true);
@@ -325,29 +325,29 @@ public class MixAll {
         Method[] methods = object.getClass().getMethods();
         for (Method method : methods) {
             String mn = method.getName();
-            if (mn.startsWith("set")) {
+            if (StringUtils.startsWith(mn, "set")) {
                 try {
-                    String tmp = mn.substring(4);
-                    String first = mn.substring(3, 4);
+                    String tmp = StringUtils.substring(mn, 4);
+                    String first = StringUtils.substring(mn, 3, 4);
 
-                    String key = first.toLowerCase() + tmp;
+                    String key = StringUtils.lowerCase(first) + tmp;
                     String property = p.getProperty(key);
                     if (property != null) {
                         Class<?>[] pt = method.getParameterTypes();
                         if (pt != null && pt.length > 0) {
                             String cn = pt[0].getSimpleName();
                             Object arg = null;
-                            if (cn.equals("int") || cn.equals("Integer")) {
+                            if ("int".equals(cn) || "Integer".equals(cn)) {
                                 arg = Integer.parseInt(property);
-                            } else if (cn.equals("long") || cn.equals("Long")) {
+                            } else if ("long".equals(cn) || "Long".equals(cn)) {
                                 arg = Long.parseLong(property);
-                            } else if (cn.equals("double") || cn.equals("Double")) {
+                            } else if ("double".equals(cn) || "Double".equals(cn)) {
                                 arg = Double.parseDouble(property);
-                            } else if (cn.equals("boolean") || cn.equals("Boolean")) {
+                            } else if ("boolean".equals(cn) || "Boolean".equals(cn)) {
                                 arg = Boolean.parseBoolean(property);
-                            } else if (cn.equals("float") || cn.equals("Float")) {
+                            } else if ("float".equals(cn) || "Float".equals(cn)) {
                                 arg = Float.parseFloat(property);
-                            } else if (cn.equals("String")) {
+                            } else if ("String".equals(cn)) {
                                 arg = property;
                             } else {
                                 continue;
@@ -389,8 +389,9 @@ public class MixAll {
         } catch (Throwable e) {
             try {
                 String candidatesHost = getLocalhostByNetworkInterface();
-                if (candidatesHost != null)
-                    return candidatesHost;
+                if (candidatesHost != null) {
+					return candidatesHost;
+				}
 
             } catch (Exception ignored) {
             }
@@ -435,8 +436,9 @@ public class MixAll {
         long prev = target.get();
         while (value > prev) {
             boolean updated = target.compareAndSet(prev, value);
-            if (updated)
-                return true;
+            if (updated) {
+				return true;
+			}
 
             prev = target.get();
         }
@@ -446,8 +448,9 @@ public class MixAll {
 
     public static String humanReadableByteCount(long bytes, boolean si) {
         int unit = si ? 1000 : 1024;
-        if (bytes < unit)
-            return bytes + " B";
+        if (bytes < unit) {
+			return bytes + " B";
+		}
         int exp = (int) (Math.log(bytes) / Math.log(unit));
         String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
         return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);

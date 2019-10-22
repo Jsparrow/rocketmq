@@ -59,12 +59,11 @@ public class MQPullConsumerScheduleService {
         Iterator<Entry<MessageQueue, PullTaskImpl>> it = this.taskTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<MessageQueue, PullTaskImpl> next = it.next();
-            if (next.getKey().getTopic().equals(topic)) {
-                if (!mqNewSet.contains(next.getKey())) {
-                    next.getValue().setCancelled(true);
-                    it.remove();
-                }
-            }
+            boolean condition = next.getKey().getTopic().equals(topic) && !mqNewSet.contains(next.getKey());
+			if (condition) {
+			    next.getValue().setCancelled(true);
+			    it.remove();
+			}
         }
 
         for (MessageQueue mq : mqNewSet) {

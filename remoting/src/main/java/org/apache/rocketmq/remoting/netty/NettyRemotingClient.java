@@ -239,8 +239,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     public void closeChannel(final String addr, final Channel channel) {
-        if (null == channel)
-            return;
+        if (null == channel) {
+			return;
+		}
 
         final String addrRemote = null == addr ? RemotingHelper.parseChannelRemoteAddr(channel) : addr;
 
@@ -288,8 +289,9 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
     }
 
     public void closeChannel(final Channel channel) {
-        if (null == channel)
-            return;
+        if (null == channel) {
+			return;
+		}
 
         try {
             if (this.lockChannelTables.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
@@ -300,13 +302,12 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                     for (Map.Entry<String, ChannelWrapper> entry : channelTables.entrySet()) {
                         String key = entry.getKey();
                         ChannelWrapper prev = entry.getValue();
-                        if (prev.getChannel() != null) {
-                            if (prev.getChannel() == channel) {
-                                prevCW = prev;
-                                addrRemote = key;
-                                break;
-                            }
-                        }
+                        boolean condition = prev.getChannel() != null && prev.getChannel() == channel;
+						if (condition) {
+						    prevCW = prev;
+						    addrRemote = key;
+						    break;
+						}
                     }
 
                     if (null == prevCW) {
@@ -337,25 +338,25 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         List<String> old = this.namesrvAddrList.get();
         boolean update = false;
 
-        if (!addrs.isEmpty()) {
-            if (null == old) {
-                update = true;
-            } else if (addrs.size() != old.size()) {
-                update = true;
-            } else {
-                for (int i = 0; i < addrs.size() && !update; i++) {
-                    if (!old.contains(addrs.get(i))) {
-                        update = true;
-                    }
-                }
-            }
-
-            if (update) {
-                Collections.shuffle(addrs);
-                log.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
-                this.namesrvAddrList.set(addrs);
-            }
-        }
+        if (addrs.isEmpty()) {
+			return;
+		}
+		if (null == old) {
+		    update = true;
+		} else if (addrs.size() != old.size()) {
+		    update = true;
+		} else {
+		    for (int i = 0; i < addrs.size() && !update; i++) {
+		        if (!old.contains(addrs.get(i))) {
+		            update = true;
+		        }
+		    }
+		}
+		if (update) {
+		    Collections.shuffle(addrs);
+		    log.info("name server address updated. NEW : {} , OLD: {}", addrs, old);
+		    this.namesrvAddrList.set(addrs);
+		}
     }
 
 
@@ -427,7 +428,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                 }
 
                 if (addrList != null && !addrList.isEmpty()) {
-                    for (int i = 0; i < addrList.size(); i++) {
+                    for (String anAddrList : addrList) {
                         int index = this.namesrvIndex.incrementAndGet();
                         index = Math.abs(index);
                         index = index % addrList.size();
@@ -502,7 +503,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
                     log.info("createChannel: connect remote host[{}] success, {}", addr, channelFuture.toString());
                     return cw.getChannel();
                 } else {
-                    log.warn("createChannel: connect remote host[" + addr + "] failed, " + channelFuture.toString(), channelFuture.cause());
+                    log.warn(new StringBuilder().append("createChannel: connect remote host[").append(addr).append("] failed, ").append(channelFuture.toString()).toString(), channelFuture.cause());
                 }
             } else {
                 log.warn("createChannel: connect remote host[{}] timeout {}ms, {}", addr, this.nettyClientConfig.getConnectTimeoutMillis(),
@@ -673,7 +674,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
                 IdleStateEvent event = (IdleStateEvent) evt;
-                if (event.state().equals(IdleState.ALL_IDLE)) {
+                if (event.state() == IdleState.ALL_IDLE) {
                     final String remoteAddress = RemotingHelper.parseChannelRemoteAddr(ctx.channel());
                     log.warn("NETTY CLIENT PIPELINE: IDLE exception [{}]", remoteAddress);
                     closeChannel(ctx.channel());

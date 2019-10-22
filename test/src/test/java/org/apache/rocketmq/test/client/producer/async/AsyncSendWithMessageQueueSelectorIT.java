@@ -57,17 +57,14 @@ public class AsyncSendWithMessageQueueSelectorIT extends BaseConf {
         final int queueId = 0;
         RMQNormalConsumer consumer = getConsumer(nsAddr, topic, "*", new RMQNormalListener());
 
-        producer.asyncSend(msgSize, new MessageQueueSelector() {
-            @Override
-            public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
-                for (MessageQueue mq : list) {
-                    if (mq.getQueueId() == queueId && mq.getBrokerName().equals(broker1Name)) {
-                        return mq;
-                    }
-                }
-                return list.get(0);
-            }
-        });
+        producer.asyncSend(msgSize, (List<MessageQueue> list, Message message, Object o) -> {
+		    for (MessageQueue mq : list) {
+		        if (mq.getQueueId() == queueId && mq.getBrokerName().equals(broker1Name)) {
+		            return mq;
+		        }
+		    }
+		    return list.get(0);
+		});
         producer.waitForResponse(5 * 1000);
         assertThat(producer.getSuccessMsgCount()).isEqualTo(msgSize);
 
@@ -82,17 +79,14 @@ public class AsyncSendWithMessageQueueSelectorIT extends BaseConf {
         consumer.clearMsg();
         producer.getSuccessSendResult().clear();
 
-        producer.asyncSend(msgSize, new MessageQueueSelector() {
-            @Override
-            public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
-                for (MessageQueue mq : list) {
-                    if (mq.getQueueId() == queueId && mq.getBrokerName().equals(broker2Name)) {
-                        return mq;
-                    }
-                }
-                return list.get(8);
-            }
-        });
+        producer.asyncSend(msgSize, (List<MessageQueue> list, Message message, Object o) -> {
+		    for (MessageQueue mq : list) {
+		        if (mq.getQueueId() == queueId && mq.getBrokerName().equals(broker2Name)) {
+		            return mq;
+		        }
+		    }
+		    return list.get(8);
+		});
         producer.waitForResponse(5 * 1000);
         assertThat(producer.getSuccessMsgCount()).isEqualTo(msgSize);
 

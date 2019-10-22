@@ -40,9 +40,10 @@ import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 
 import static io.openmessaging.rocketmq.utils.OMSUtil.buildInstanceName;
+import org.apache.commons.lang3.StringUtils;
 
 abstract class AbstractOMSProducer implements ServiceLifecycle, MessageFactory {
-    final static InternalLogger log = ClientLogger.getLog();
+    static final InternalLogger log = ClientLogger.getLog();
     final KeyValue properties;
     final DefaultMQProducer rocketmqProducer;
     private boolean started = false;
@@ -53,9 +54,9 @@ abstract class AbstractOMSProducer implements ServiceLifecycle, MessageFactory {
         this.rocketmqProducer = new DefaultMQProducer();
         this.clientConfig = BeanUtils.populate(properties, ClientConfig.class);
 
-        if ("true".equalsIgnoreCase(System.getenv("OMS_RMQ_DIRECT_NAME_SRV"))) {
+        if (StringUtils.equalsIgnoreCase("true", System.getenv("OMS_RMQ_DIRECT_NAME_SRV"))) {
             String accessPoints = clientConfig.getAccessPoints();
-            if (accessPoints == null || accessPoints.isEmpty()) {
+            if (accessPoints == null || StringUtils.isEmpty(accessPoints)) {
                 throw new OMSRuntimeException("-1", "OMS AccessPoints is null or empty.");
             }
 

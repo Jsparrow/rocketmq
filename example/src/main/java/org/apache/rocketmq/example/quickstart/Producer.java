@@ -21,12 +21,16 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class demonstrates how to send messages to brokers using provided {@link DefaultMQProducer}.
  */
 public class Producer {
-    public static void main(String[] args) throws MQClientException, InterruptedException {
+    private static final Logger logger = LoggerFactory.getLogger(Producer.class);
+
+	public static void main(String[] args) throws MQClientException, InterruptedException {
 
         /*
          * Instantiate with a producer group name.
@@ -66,9 +70,9 @@ public class Producer {
                  */
                 SendResult sendResult = producer.send(msg);
 
-                System.out.printf("%s%n", sendResult);
+                logger.info("%s%n", sendResult);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
                 Thread.sleep(1000);
             }
         }

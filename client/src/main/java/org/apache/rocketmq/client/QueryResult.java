@@ -38,7 +38,6 @@ public class QueryResult {
 
     @Override
     public String toString() {
-        return "QueryResult [indexLastUpdateTimestamp=" + indexLastUpdateTimestamp + ", messageList="
-            + messageList + "]";
+        return new StringBuilder().append("QueryResult [indexLastUpdateTimestamp=").append(indexLastUpdateTimestamp).append(", messageList=").append(messageList).append("]").toString();
     }
 }

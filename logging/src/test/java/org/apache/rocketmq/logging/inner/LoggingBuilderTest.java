@@ -79,7 +79,7 @@ public class LoggingBuilderTest extends BasicLoggerTest {
             if (i == 0) {
                 file = new File(rollingFile);
             } else {
-                file = new File(rollingFile + "." + i);
+                file = new File(new StringBuilder().append(rollingFile).append(".").append(i).toString());
             }
             if (file.exists() && file.length() > 0) {
                 cc += 1;

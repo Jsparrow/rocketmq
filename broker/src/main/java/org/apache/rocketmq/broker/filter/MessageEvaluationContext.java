@@ -47,11 +47,9 @@ public class MessageEvaluationContext implements EvaluationContext {
             return null;
         }
 
-        Map<String, Object> copy = new HashMap<String, Object>(properties.size(), 1);
+        Map<String, Object> copy = new HashMap<>(properties.size(), 1);
 
-        for (String key : properties.keySet()) {
-            copy.put(key, properties.get(key));
-        }
+        properties.keySet().forEach(key -> copy.put(key, properties.get(key)));
 
         return copy;
     }

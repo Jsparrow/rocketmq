@@ -82,7 +82,7 @@ public class AclUtilsTest {
     @Test
     public void isScopeStringTest() {
         for (int i = 0; i < 256; i++) {
-            boolean isScope = AclUtils.isScope(i + "");
+            boolean isScope = AclUtils.isScope(Integer.toString(i));
             Assert.assertTrue(isScope);
         }
         boolean isScope = AclUtils.isScope("-1");
@@ -147,16 +147,16 @@ public class AclUtilsTest {
         transport.delete();
         transport.createNewFile();
 
-        Map<String, Object> aclYamlMap = new HashMap<String, Object>();
+        Map<String, Object> aclYamlMap = new HashMap<>();
 
         // For globalWhiteRemoteAddrs element in acl yaml config file
-        List<String> globalWhiteRemoteAddrs = new ArrayList<String>();
+        List<String> globalWhiteRemoteAddrs = new ArrayList<>();
         globalWhiteRemoteAddrs.add("10.10.103.*");
         globalWhiteRemoteAddrs.add("192.168.0.*");
         aclYamlMap.put("globalWhiteRemoteAddrs",globalWhiteRemoteAddrs);
 
         // For accounts element in acl yaml config file
-        List<Map<String, Object>> accounts = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> accounts = new ArrayList<>();
         Map<String, Object> accountsMap = new LinkedHashMap<String, Object>() {
             {
                 put("accessKey", "RocketMQ");
@@ -180,10 +180,10 @@ public class AclUtilsTest {
         transport.delete();
         transport.createNewFile();
 
-        Map<String, Object> aclYamlMap = new HashMap<String, Object>();
+        Map<String, Object> aclYamlMap = new HashMap<>();
 
         // For globalWhiteRemoteAddrs element in acl yaml config file
-        List<String> globalWhiteRemoteAddrs = new ArrayList<String>();
+        List<String> globalWhiteRemoteAddrs = new ArrayList<>();
         globalWhiteRemoteAddrs.add("10.10.103.*");
         globalWhiteRemoteAddrs.add("192.168.0.*");
         aclYamlMap.put("globalWhiteRemoteAddrs",globalWhiteRemoteAddrs);

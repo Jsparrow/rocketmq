@@ -90,7 +90,7 @@ public class ClientConfig {
     }
 
     public void changeInstanceNameToPID() {
-        if (this.instanceName.equals("DEFAULT")) {
+        if ("DEFAULT".equals(this.instanceName)) {
             this.instanceName = String.valueOf(UtilAll.getPid());
         }
     }
@@ -162,8 +162,8 @@ public class ClientConfig {
     }
 
     public String getNamesrvAddr() {
-        if (StringUtils.isNotEmpty(namesrvAddr) && NameServerAddressUtils.NAMESRV_ENDPOINT_PATTERN.matcher(namesrvAddr.trim()).matches()) {
-            return namesrvAddr.substring(NameServerAddressUtils.ENDPOINT_PREFIX.length());
+        if (StringUtils.isNotEmpty(namesrvAddr) && NameServerAddressUtils.NAMESRV_ENDPOINT_PATTERN.matcher(StringUtils.trim(namesrvAddr)).matches()) {
+            return StringUtils.substring(namesrvAddr, NameServerAddressUtils.ENDPOINT_PREFIX.length());
         }
         return namesrvAddr;
     }
@@ -253,11 +253,9 @@ public class ClientConfig {
             return namespace;
         }
 
-        if (StringUtils.isNotEmpty(this.namesrvAddr)) {
-            if (NameServerAddressUtils.validateInstanceEndpoint(namesrvAddr)) {
-                return NameServerAddressUtils.parseInstanceIdFromEndpoint(namesrvAddr);
-            }
-        }
+        if (StringUtils.isNotEmpty(this.namesrvAddr) && NameServerAddressUtils.validateInstanceEndpoint(namesrvAddr)) {
+		    return NameServerAddressUtils.parseInstanceIdFromEndpoint(namesrvAddr);
+		}
         return namespace;
     }
 
@@ -275,10 +273,9 @@ public class ClientConfig {
 
     @Override
     public String toString() {
-        return "ClientConfig [namesrvAddr=" + namesrvAddr + ", clientIP=" + clientIP + ", instanceName=" + instanceName
-            + ", clientCallbackExecutorThreads=" + clientCallbackExecutorThreads + ", pollNameServerInterval=" + pollNameServerInterval
-            + ", heartbeatBrokerInterval=" + heartbeatBrokerInterval + ", persistConsumerOffsetInterval="
-            + persistConsumerOffsetInterval + ", unitMode=" + unitMode + ", unitName=" + unitName + ", vipChannelEnabled="
-            + vipChannelEnabled + ", useTLS=" + useTLS + ", language=" + language.name() + ", namespace=" + namespace + "]";
+        return new StringBuilder().append("ClientConfig [namesrvAddr=").append(namesrvAddr).append(", clientIP=").append(clientIP).append(", instanceName=").append(instanceName).append(", clientCallbackExecutorThreads=")
+				.append(clientCallbackExecutorThreads).append(", pollNameServerInterval=").append(pollNameServerInterval).append(", heartbeatBrokerInterval=").append(heartbeatBrokerInterval).append(", persistConsumerOffsetInterval=").append(persistConsumerOffsetInterval)
+				.append(", unitMode=").append(unitMode).append(", unitName=").append(unitName).append(", vipChannelEnabled=").append(vipChannelEnabled).append(", useTLS=")
+				.append(useTLS).append(", language=").append(language.name()).append(", namespace=").append(namespace).append("]").toString();
     }
 }

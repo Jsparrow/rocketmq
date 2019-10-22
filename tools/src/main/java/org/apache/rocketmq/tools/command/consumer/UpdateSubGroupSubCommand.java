@@ -27,10 +27,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateSubGroupSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateSubGroupSubCommand.class);
+
+	@Override
     public String commandName() {
         return "updateSubGroup";
     }
@@ -102,67 +107,63 @@ public class UpdateSubGroupSubCommand implements SubCommand {
             subscriptionGroupConfig.setConsumeFromMinEnable(false);
 
             // groupName
-            subscriptionGroupConfig.setGroupName(commandLine.getOptionValue('g').trim());
+            subscriptionGroupConfig.setGroupName(StringUtils.trim(commandLine.getOptionValue('g')));
 
             // consumeEnable
             if (commandLine.hasOption('s')) {
-                subscriptionGroupConfig.setConsumeEnable(Boolean.parseBoolean(commandLine.getOptionValue('s')
-                    .trim()));
+                subscriptionGroupConfig.setConsumeEnable(Boolean.parseBoolean(StringUtils
+                    .trim(commandLine.getOptionValue('s'))));
             }
 
             // consumeFromMinEnable
             if (commandLine.hasOption('m')) {
-                subscriptionGroupConfig.setConsumeFromMinEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('m').trim()));
+                subscriptionGroupConfig.setConsumeFromMinEnable(Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('m'))));
             }
 
             // consumeBroadcastEnable
             if (commandLine.hasOption('d')) {
-                subscriptionGroupConfig.setConsumeBroadcastEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('d').trim()));
+                subscriptionGroupConfig.setConsumeBroadcastEnable(Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('d'))));
             }
 
             // retryQueueNums
             if (commandLine.hasOption('q')) {
-                subscriptionGroupConfig.setRetryQueueNums(Integer.parseInt(commandLine.getOptionValue('q')
-                    .trim()));
+                subscriptionGroupConfig.setRetryQueueNums(Integer.parseInt(StringUtils
+                    .trim(commandLine.getOptionValue('q'))));
             }
 
             // retryMaxTimes
             if (commandLine.hasOption('r')) {
-                subscriptionGroupConfig.setRetryMaxTimes(Integer.parseInt(commandLine.getOptionValue('r')
-                    .trim()));
+                subscriptionGroupConfig.setRetryMaxTimes(Integer.parseInt(StringUtils
+                    .trim(commandLine.getOptionValue('r'))));
             }
 
             // brokerId
             if (commandLine.hasOption('i')) {
-                subscriptionGroupConfig.setBrokerId(Long.parseLong(commandLine.getOptionValue('i').trim()));
+                subscriptionGroupConfig.setBrokerId(Long.parseLong(StringUtils.trim(commandLine.getOptionValue('i'))));
             }
 
             // whichBrokerWhenConsumeSlowly
             if (commandLine.hasOption('w')) {
-                subscriptionGroupConfig.setWhichBrokerWhenConsumeSlowly(Long.parseLong(commandLine
-                    .getOptionValue('w').trim()));
+                subscriptionGroupConfig.setWhichBrokerWhenConsumeSlowly(Long.parseLong(StringUtils.trim(commandLine.getOptionValue('w'))));
             }
 
             // notifyConsumerIdsChanged
             if (commandLine.hasOption('a')) {
-                subscriptionGroupConfig.setNotifyConsumerIdsChangedEnable(Boolean.parseBoolean(commandLine
-                    .getOptionValue('a').trim()));
+                subscriptionGroupConfig.setNotifyConsumerIdsChangedEnable(Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('a'))));
             }
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
 
                 defaultMQAdminExt.start();
 
                 defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                System.out.printf("create subscription group to %s success.%n", addr);
-                System.out.printf("%s", subscriptionGroupConfig);
+                logger.info("create subscription group to %s success.%n", addr);
+                logger.info("%s", subscriptionGroupConfig);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
                 Set<String> masterSet =
@@ -170,13 +171,13 @@ public class UpdateSubGroupSubCommand implements SubCommand {
                 for (String addr : masterSet) {
                     try {
                         defaultMQAdminExt.createAndUpdateSubscriptionGroupConfig(addr, subscriptionGroupConfig);
-                        System.out.printf("create subscription group to %s success.%n", addr);
+                        logger.info("create subscription group to %s success.%n", addr);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                         Thread.sleep(1000 * 1);
                     }
                 }
-                System.out.printf("%s", subscriptionGroupConfig);
+                logger.info("%s", subscriptionGroupConfig);
                 return;
             }
 

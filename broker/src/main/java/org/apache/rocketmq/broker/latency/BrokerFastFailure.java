@@ -27,9 +27,12 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.remoting.netty.RequestTask;
 import org.apache.rocketmq.remoting.protocol.RemotingSysResponseCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BrokerFastFailure {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(BrokerFastFailure.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "BrokerFastFailureScheduledThread"));
     private final BrokerController brokerController;
@@ -52,14 +55,11 @@ public class BrokerFastFailure {
     }
 
     public void start() {
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                if (brokerController.getBrokerConfig().isBrokerFastFailureEnable()) {
-                    cleanExpiredRequest();
-                }
-            }
-        }, 1000, 10, TimeUnit.MILLISECONDS);
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+		    if (brokerController.getBrokerConfig().isBrokerFastFailureEnable()) {
+		        cleanExpiredRequest();
+		    }
+		}, 1000, 10, TimeUnit.MILLISECONDS);
     }
 
     private void cleanExpiredRequest() {
@@ -77,6 +77,7 @@ public class BrokerFastFailure {
                     break;
                 }
             } catch (Throwable ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
 
@@ -119,6 +120,7 @@ public class BrokerFastFailure {
                     break;
                 }
             } catch (Throwable ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
     }

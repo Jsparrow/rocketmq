@@ -56,10 +56,11 @@ public class SelectMappedBufferResult {
 //    }
 
     public synchronized void release() {
-        if (this.mappedFile != null) {
-            this.mappedFile.release();
-            this.mappedFile = null;
-        }
+        if (this.mappedFile == null) {
+			return;
+		}
+		this.mappedFile.release();
+		this.mappedFile = null;
     }
 
     public long getStartOffset() {

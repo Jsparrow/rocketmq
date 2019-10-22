@@ -56,9 +56,8 @@ public class ConsumeQueue {
         this.topic = topic;
         this.queueId = queueId;
 
-        String queueDir = this.storePath
-            + File.separator + topic
-            + File.separator + queueId;
+        String queueDir = new StringBuilder().append(this.storePath).append(File.separator).append(topic).append(File.separator)
+				.append(queueId).toString();
 
         this.mappedFileQueue = new MappedFileQueue(queueDir, mappedFileSize, null);
 
@@ -77,7 +76,8 @@ public class ConsumeQueue {
 
     public boolean load() {
         boolean result = this.mappedFileQueue.load();
-        log.info("load consume queue " + this.topic + "-" + this.queueId + " " + (result ? "OK" : "Failed"));
+        log.info(new StringBuilder().append("load consume queue ").append(this.topic).append("-").append(this.queueId).append(" ")
+				.append(result ? "OK" : "Failed").toString());
         if (isExtReadEnable()) {
             result &= this.consumeQueueExt.load();
         }
@@ -86,69 +86,66 @@ public class ConsumeQueue {
 
     public void recover() {
         final List<MappedFile> mappedFiles = this.mappedFileQueue.getMappedFiles();
-        if (!mappedFiles.isEmpty()) {
+        if (mappedFiles.isEmpty()) {
+			return;
+		}
+		int index = mappedFiles.size() - 3;
+		if (index < 0) {
+			index = 0;
+		}
+		int mappedFileSizeLogics = this.mappedFileSize;
+		MappedFile mappedFile = mappedFiles.get(index);
+		ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
+		long processOffset = mappedFile.getFileFromOffset();
+		long mappedFileOffset = 0;
+		long maxExtAddr = 1;
+		while (true) {
+		    for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
+		        long offset = byteBuffer.getLong();
+		        int size = byteBuffer.getInt();
+		        long tagsCode = byteBuffer.getLong();
 
-            int index = mappedFiles.size() - 3;
-            if (index < 0)
-                index = 0;
+		        if (offset >= 0 && size > 0) {
+		            mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
+		            this.maxPhysicOffset = offset + size;
+		            if (isExtAddr(tagsCode)) {
+		                maxExtAddr = tagsCode;
+		            }
+		        } else {
+		            log.info(new StringBuilder().append("recover current consume queue file over,  ").append(mappedFile.getFileName()).append(" ").append(offset).append(" ")
+							.append(size).append(" ").append(tagsCode).toString());
+		            break;
+		        }
+		    }
 
-            int mappedFileSizeLogics = this.mappedFileSize;
-            MappedFile mappedFile = mappedFiles.get(index);
-            ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
-            long processOffset = mappedFile.getFileFromOffset();
-            long mappedFileOffset = 0;
-            long maxExtAddr = 1;
-            while (true) {
-                for (int i = 0; i < mappedFileSizeLogics; i += CQ_STORE_UNIT_SIZE) {
-                    long offset = byteBuffer.getLong();
-                    int size = byteBuffer.getInt();
-                    long tagsCode = byteBuffer.getLong();
+		    if (mappedFileOffset == mappedFileSizeLogics) {
+		        index++;
+		        if (index >= mappedFiles.size()) {
 
-                    if (offset >= 0 && size > 0) {
-                        mappedFileOffset = i + CQ_STORE_UNIT_SIZE;
-                        this.maxPhysicOffset = offset + size;
-                        if (isExtAddr(tagsCode)) {
-                            maxExtAddr = tagsCode;
-                        }
-                    } else {
-                        log.info("recover current consume queue file over,  " + mappedFile.getFileName() + " "
-                            + offset + " " + size + " " + tagsCode);
-                        break;
-                    }
-                }
-
-                if (mappedFileOffset == mappedFileSizeLogics) {
-                    index++;
-                    if (index >= mappedFiles.size()) {
-
-                        log.info("recover last consume queue file over, last mapped file "
-                            + mappedFile.getFileName());
-                        break;
-                    } else {
-                        mappedFile = mappedFiles.get(index);
-                        byteBuffer = mappedFile.sliceByteBuffer();
-                        processOffset = mappedFile.getFileFromOffset();
-                        mappedFileOffset = 0;
-                        log.info("recover next consume queue file, " + mappedFile.getFileName());
-                    }
-                } else {
-                    log.info("recover current consume queue queue over " + mappedFile.getFileName() + " "
-                        + (processOffset + mappedFileOffset));
-                    break;
-                }
-            }
-
-            processOffset += mappedFileOffset;
-            this.mappedFileQueue.setFlushedWhere(processOffset);
-            this.mappedFileQueue.setCommittedWhere(processOffset);
-            this.mappedFileQueue.truncateDirtyFiles(processOffset);
-
-            if (isExtReadEnable()) {
-                this.consumeQueueExt.recover();
-                log.info("Truncate consume queue extend file by max {}", maxExtAddr);
-                this.consumeQueueExt.truncateByMaxAddress(maxExtAddr);
-            }
-        }
+		            log.info("recover last consume queue file over, last mapped file "
+		                + mappedFile.getFileName());
+		            break;
+		        } else {
+		            mappedFile = mappedFiles.get(index);
+		            byteBuffer = mappedFile.sliceByteBuffer();
+		            processOffset = mappedFile.getFileFromOffset();
+		            mappedFileOffset = 0;
+		            log.info("recover next consume queue file, " + mappedFile.getFileName());
+		        }
+		    } else {
+		        log.info(new StringBuilder().append("recover current consume queue queue over ").append(mappedFile.getFileName()).append(" ").append(processOffset + mappedFileOffset).toString());
+		        break;
+		    }
+		}
+		processOffset += mappedFileOffset;
+		this.mappedFileQueue.setFlushedWhere(processOffset);
+		this.mappedFileQueue.setCommittedWhere(processOffset);
+		this.mappedFileQueue.truncateDirtyFiles(processOffset);
+		if (isExtReadEnable()) {
+		    this.consumeQueueExt.recover();
+		    log.info("Truncate consume queue extend file by max {}", maxExtAddr);
+		    this.consumeQueueExt.truncateByMaxAddress(maxExtAddr);
+		}
     }
 
     public long getOffsetInQueueByTime(final long timestamp) {
@@ -157,8 +154,12 @@ public class ConsumeQueue {
             long offset = 0;
             int low = minLogicOffset > mappedFile.getFileFromOffset() ? (int) (minLogicOffset - mappedFile.getFileFromOffset()) : 0;
             int high = 0;
-            int midOffset = -1, targetOffset = -1, leftOffset = -1, rightOffset = -1;
-            long leftIndexValue = -1L, rightIndexValue = -1L;
+            int midOffset = -1;
+			int targetOffset = -1;
+			int leftOffset = -1;
+			int rightOffset = -1;
+            long leftIndexValue = -1L;
+			long rightIndexValue = -1L;
             long minPhysicOffset = this.defaultMessageStore.getMinPhyOffset();
             SelectMappedBufferResult sbr = mappedFile.selectMappedBuffer(0);
             if (null != sbr) {
@@ -299,8 +300,9 @@ public class ConsumeQueue {
         if (mappedFile != null) {
 
             int position = mappedFile.getWrotePosition() - CQ_STORE_UNIT_SIZE;
-            if (position < 0)
-                position = 0;
+            if (position < 0) {
+				position = 0;
+			}
 
             ByteBuffer byteBuffer = mappedFile.sliceByteBuffer();
             byteBuffer.position(position);
@@ -401,8 +403,8 @@ public class ConsumeQueue {
                 return;
             } else {
                 // XXX: warn and notify me
-                log.warn("[BUG]put commit log position info to " + topic + ":" + queueId + " " + request.getCommitLogOffset()
-                    + " failed, retry " + i + " times");
+                log.warn(new StringBuilder().append("[BUG]put commit log position info to ").append(topic).append(":").append(queueId).append(" ").append(request.getCommitLogOffset())
+						.append(" failed, retry ").append(i).append(" times").toString());
 
                 try {
                     Thread.sleep(1000);
@@ -434,41 +436,39 @@ public class ConsumeQueue {
         final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
 
         MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
-        if (mappedFile != null) {
+        if (mappedFile == null) {
+			return false;
+		}
+		if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
+		    this.minLogicOffset = expectLogicOffset;
+		    this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
+		    this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
+		    this.fillPreBlank(mappedFile, expectLogicOffset);
+		    log.info(new StringBuilder().append("fill pre blank space ").append(mappedFile.getFileName()).append(" ").append(expectLogicOffset).append(" ").append(mappedFile.getWrotePosition())
+					.toString());
+		}
+		if (cqOffset != 0) {
+		    long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
 
-            if (mappedFile.isFirstCreateInQueue() && cqOffset != 0 && mappedFile.getWrotePosition() == 0) {
-                this.minLogicOffset = expectLogicOffset;
-                this.mappedFileQueue.setFlushedWhere(expectLogicOffset);
-                this.mappedFileQueue.setCommittedWhere(expectLogicOffset);
-                this.fillPreBlank(mappedFile, expectLogicOffset);
-                log.info("fill pre blank space " + mappedFile.getFileName() + " " + expectLogicOffset + " "
-                    + mappedFile.getWrotePosition());
-            }
+		    if (expectLogicOffset < currentLogicOffset) {
+		        log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+		            expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
+		        return true;
+		    }
 
-            if (cqOffset != 0) {
-                long currentLogicOffset = mappedFile.getWrotePosition() + mappedFile.getFileFromOffset();
-
-                if (expectLogicOffset < currentLogicOffset) {
-                    log.warn("Build  consume queue repeatedly, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset, currentLogicOffset, this.topic, this.queueId, expectLogicOffset - currentLogicOffset);
-                    return true;
-                }
-
-                if (expectLogicOffset != currentLogicOffset) {
-                    LOG_ERROR.warn(
-                        "[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
-                        expectLogicOffset,
-                        currentLogicOffset,
-                        this.topic,
-                        this.queueId,
-                        expectLogicOffset - currentLogicOffset
-                    );
-                }
-            }
-            this.maxPhysicOffset = offset + size;
-            return mappedFile.appendMessage(this.byteBufferIndex.array());
-        }
-        return false;
+		    if (expectLogicOffset != currentLogicOffset) {
+		        LOG_ERROR.warn(
+		            "[BUG]logic queue order maybe wrong, expectLogicOffset: {} currentLogicOffset: {} Topic: {} QID: {} Diff: {}",
+		            expectLogicOffset,
+		            currentLogicOffset,
+		            this.topic,
+		            this.queueId,
+		            expectLogicOffset - currentLogicOffset
+		        );
+		    }
+		}
+		this.maxPhysicOffset = offset + size;
+		return mappedFile.appendMessage(this.byteBufferIndex.array());
     }
 
     private void fillPreBlank(final MappedFile mappedFile, final long untilWhere) {

@@ -30,9 +30,12 @@ import org.apache.rocketmq.namesrv.NamesrvController;
 import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(ClusterTestRequestProcessor.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
     private final DefaultMQAdminExt adminExt;
     private final String productEnvName;
 
@@ -66,7 +69,8 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
             try {
                 topicRouteData = adminExt.examineTopicRouteInfo(requestHeader.getTopic());
             } catch (Exception e) {
-                log.info("get route info by topic from product environment failed. envName={},", productEnvName);
+                logger.error(e.getMessage(), e);
+				log.info("get route info by topic from product environment failed. envName={},", productEnvName);
             }
         }
 
@@ -79,8 +83,7 @@ public class ClusterTestRequestProcessor extends DefaultRequestProcessor {
         }
 
         response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-        response.setRemark("No topic route info in name server for the topic: " + requestHeader.getTopic()
-            + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));
+        response.setRemark(new StringBuilder().append("No topic route info in name server for the topic: ").append(requestHeader.getTopic()).append(FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)).toString());
         return response;
     }
 }

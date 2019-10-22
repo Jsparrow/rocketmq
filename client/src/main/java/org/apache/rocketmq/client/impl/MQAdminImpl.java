@@ -55,10 +55,13 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.netty.ResponseFuture;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MQAdminImpl {
 
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(MQAdminImpl.class);
+	private final InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private long timeoutMillis = 6000;
 
@@ -166,12 +169,12 @@ public class MQAdminImpl {
                 if (!mqList.isEmpty()) {
                     return mqList;
                 } else {
-                    throw new MQClientException("Can not find Message Queue for this topic, " + topic + " Namesrv return empty", null);
+                    throw new MQClientException(new StringBuilder().append("Can not find Message Queue for this topic, ").append(topic).append(" Namesrv return empty").toString(), null);
                 }
             }
         } catch (Exception e) {
             throw new MQClientException(
-                "Can not find Message Queue for this topic, " + topic + FAQUrl.suggestTodo(FAQUrl.MQLIST_NOT_EXIST),
+                new StringBuilder().append("Can not find Message Queue for this topic, ").append(topic).append(FAQUrl.suggestTodo(FAQUrl.MQLIST_NOT_EXIST)).toString(),
                 e);
         }
 
@@ -190,11 +193,11 @@ public class MQAdminImpl {
                 return this.mQClientFactory.getMQClientAPIImpl().searchOffset(brokerAddr, mq.getTopic(), mq.getQueueId(), timestamp,
                     timeoutMillis);
             } catch (Exception e) {
-                throw new MQClientException("Invoke Broker[" + brokerAddr + "] exception", e);
+                throw new MQClientException(new StringBuilder().append("Invoke Broker[").append(brokerAddr).append("] exception").toString(), e);
             }
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public long maxOffset(MessageQueue mq) throws MQClientException {
@@ -208,11 +211,11 @@ public class MQAdminImpl {
             try {
                 return this.mQClientFactory.getMQClientAPIImpl().getMaxOffset(brokerAddr, mq.getTopic(), mq.getQueueId(), timeoutMillis);
             } catch (Exception e) {
-                throw new MQClientException("Invoke Broker[" + brokerAddr + "] exception", e);
+                throw new MQClientException(new StringBuilder().append("Invoke Broker[").append(brokerAddr).append("] exception").toString(), e);
             }
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public long minOffset(MessageQueue mq) throws MQClientException {
@@ -226,11 +229,11 @@ public class MQAdminImpl {
             try {
                 return this.mQClientFactory.getMQClientAPIImpl().getMinOffset(brokerAddr, mq.getTopic(), mq.getQueueId(), timeoutMillis);
             } catch (Exception e) {
-                throw new MQClientException("Invoke Broker[" + brokerAddr + "] exception", e);
+                throw new MQClientException(new StringBuilder().append("Invoke Broker[").append(brokerAddr).append("] exception").toString(), e);
             }
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public long earliestMsgStoreTime(MessageQueue mq) throws MQClientException {
@@ -245,11 +248,11 @@ public class MQAdminImpl {
                 return this.mQClientFactory.getMQClientAPIImpl().getEarliestMsgStoretime(brokerAddr, mq.getTopic(), mq.getQueueId(),
                     timeoutMillis);
             } catch (Exception e) {
-                throw new MQClientException("Invoke Broker[" + brokerAddr + "] exception", e);
+                throw new MQClientException(new StringBuilder().append("Invoke Broker[").append(brokerAddr).append("] exception").toString(), e);
             }
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public MessageExt viewMessage(
@@ -259,7 +262,8 @@ public class MQAdminImpl {
         try {
             messageId = MessageDecoder.decodeMessageId(msgId);
         } catch (Exception e) {
-            throw new MQClientException(ResponseCode.NO_MESSAGE, "query message by id finished, but no message.");
+            logger.error(e.getMessage(), e);
+			throw new MQClientException(ResponseCode.NO_MESSAGE, "query message by id finished, but no message.");
         }
         return this.mQClientFactory.getMQClientAPIImpl().viewMessage(RemotingUtil.socketAddress2String(messageId.getAddress()),
             messageId.getOffset(), timeoutMillis);
@@ -434,6 +438,6 @@ public class MQAdminImpl {
             }
         }
 
-        throw new MQClientException(ResponseCode.TOPIC_NOT_EXIST, "The topic[" + topic + "] not matched route info");
+        throw new MQClientException(ResponseCode.TOPIC_NOT_EXIST, new StringBuilder().append("The topic[").append(topic).append("] not matched route info").toString());
     }
 }

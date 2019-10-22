@@ -65,7 +65,7 @@ public class RandomUtils {
     private static char getChar(int arg[]) {
         int size = arg.length;
         int c = rd.nextInt(size / 2);
-        c = c * 2;
+        c *= 2;
         return (char) (getIntegerBetween(arg[c], arg[c + 1]));
     }
 

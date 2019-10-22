@@ -25,10 +25,14 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PushConsumer {
 
-    public static void main(String[] args) throws InterruptedException, MQClientException {
+    private static final Logger logger = LoggerFactory.getLogger(PushConsumer.class);
+
+	public static void main(String[] args) throws InterruptedException, MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name_1");
 
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
@@ -37,17 +41,12 @@ public class PushConsumer {
 
         consumer.subscribe("TopicTest", "TagA || TagC || TagD");
 
-        consumer.registerMessageListener(new MessageListenerConcurrently() {
-
-            @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                ConsumeConcurrentlyContext context) {
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-            }
-        });
+        consumer.registerMessageListener((List<MessageExt> msgs, ConsumeConcurrentlyContext context) -> {
+		logger.info("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+		return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+         });
 
         consumer.start();
-        System.out.printf("Broadcast Consumer Started.%n");
+        logger.info("Broadcast Consumer Started.%n");
     }
 }

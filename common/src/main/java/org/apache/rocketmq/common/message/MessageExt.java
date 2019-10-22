@@ -118,21 +118,19 @@ public class MessageExt extends Message {
     }
 
     public String getBornHostString() {
-        if (this.bornHost != null) {
-            InetSocketAddress inetSocketAddress = (InetSocketAddress) this.bornHost;
-            return inetSocketAddress.getAddress().getHostAddress();
-        }
-
-        return null;
+        if (this.bornHost == null) {
+			return null;
+		}
+		InetSocketAddress inetSocketAddress = (InetSocketAddress) this.bornHost;
+		return inetSocketAddress.getAddress().getHostAddress();
     }
 
     public String getBornHostNameString() {
-        if (this.bornHost != null) {
-            InetSocketAddress inetSocketAddress = (InetSocketAddress) this.bornHost;
-            return inetSocketAddress.getAddress().getHostName();
-        }
-
-        return null;
+        if (this.bornHost == null) {
+			return null;
+		}
+		InetSocketAddress inetSocketAddress = (InetSocketAddress) this.bornHost;
+		return inetSocketAddress.getAddress().getHostName();
     }
 
     public long getStoreTimestamp() {
@@ -217,11 +215,10 @@ public class MessageExt extends Message {
 
     @Override
     public String toString() {
-        return "MessageExt [queueId=" + queueId + ", storeSize=" + storeSize + ", queueOffset=" + queueOffset
-            + ", sysFlag=" + sysFlag + ", bornTimestamp=" + bornTimestamp + ", bornHost=" + bornHost
-            + ", storeTimestamp=" + storeTimestamp + ", storeHost=" + storeHost + ", msgId=" + msgId
-            + ", commitLogOffset=" + commitLogOffset + ", bodyCRC=" + bodyCRC + ", reconsumeTimes="
-            + reconsumeTimes + ", preparedTransactionOffset=" + preparedTransactionOffset
-            + ", toString()=" + super.toString() + "]";
+        return new StringBuilder().append("MessageExt [queueId=").append(queueId).append(", storeSize=").append(storeSize).append(", queueOffset=").append(queueOffset).append(", sysFlag=")
+				.append(sysFlag).append(", bornTimestamp=").append(bornTimestamp).append(", bornHost=").append(bornHost).append(", storeTimestamp=").append(storeTimestamp)
+				.append(", storeHost=").append(storeHost).append(", msgId=").append(msgId).append(", commitLogOffset=").append(commitLogOffset).append(", bodyCRC=")
+				.append(bodyCRC).append(", reconsumeTimes=").append(reconsumeTimes).append(", preparedTransactionOffset=").append(preparedTransactionOffset).append(", toString()=")
+				.append(super.toString()).append("]").toString();
     }
 }

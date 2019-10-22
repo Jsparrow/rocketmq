@@ -49,12 +49,11 @@ public class BrokerData implements Comparable<BrokerData> {
     public String selectBrokerAddr() {
         String addr = this.brokerAddrs.get(MixAll.MASTER_ID);
 
-        if (addr == null) {
-            List<String> addrs = new ArrayList<String>(brokerAddrs.values());
-            return addrs.get(random.nextInt(addrs.size()));
-        }
-
-        return addr;
+        if (addr != null) {
+			return addr;
+		}
+		List<String> addrs = new ArrayList<String>(brokerAddrs.values());
+		return addrs.get(random.nextInt(addrs.size()));
     }
 
     public HashMap<Long, String> getBrokerAddrs() {
@@ -84,29 +83,36 @@ public class BrokerData implements Comparable<BrokerData> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) {
+			return true;
+		}
+        if (obj == null) {
+			return false;
+		}
+        if (getClass() != obj.getClass()) {
+			return false;
+		}
         BrokerData other = (BrokerData) obj;
         if (brokerAddrs == null) {
-            if (other.brokerAddrs != null)
-                return false;
-        } else if (!brokerAddrs.equals(other.brokerAddrs))
-            return false;
+            if (other.brokerAddrs != null) {
+				return false;
+			}
+        } else if (!brokerAddrs.equals(other.brokerAddrs)) {
+			return false;
+		}
         if (brokerName == null) {
-            if (other.brokerName != null)
-                return false;
-        } else if (!brokerName.equals(other.brokerName))
-            return false;
+            if (other.brokerName != null) {
+				return false;
+			}
+        } else if (!brokerName.equals(other.brokerName)) {
+			return false;
+		}
         return true;
     }
 
     @Override
     public String toString() {
-        return "BrokerData [brokerName=" + brokerName + ", brokerAddrs=" + brokerAddrs + "]";
+        return new StringBuilder().append("BrokerData [brokerName=").append(brokerName).append(", brokerAddrs=").append(brokerAddrs).append("]").toString();
     }
 
     @Override

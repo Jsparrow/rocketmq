@@ -153,14 +153,10 @@ public class ProcessQueueInfo {
 
     @Override
     public String toString() {
-        return "ProcessQueueInfo [commitOffset=" + commitOffset + ", cachedMsgMinOffset="
-            + cachedMsgMinOffset + ", cachedMsgMaxOffset=" + cachedMsgMaxOffset
-            + ", cachedMsgCount=" + cachedMsgCount + ", cachedMsgSizeInMiB=" + cachedMsgSizeInMiB
-            + ", transactionMsgMinOffset=" + transactionMsgMinOffset
-            + ", transactionMsgMaxOffset=" + transactionMsgMaxOffset + ", transactionMsgCount="
-            + transactionMsgCount + ", locked=" + locked + ", tryUnlockTimes=" + tryUnlockTimes
-            + ", lastLockTimestamp=" + UtilAll.timeMillisToHumanString(lastLockTimestamp) + ", droped="
-            + droped + ", lastPullTimestamp=" + UtilAll.timeMillisToHumanString(lastPullTimestamp)
-            + ", lastConsumeTimestamp=" + UtilAll.timeMillisToHumanString(lastConsumeTimestamp) + "]";
+        return new StringBuilder().append("ProcessQueueInfo [commitOffset=").append(commitOffset).append(", cachedMsgMinOffset=").append(cachedMsgMinOffset).append(", cachedMsgMaxOffset=").append(cachedMsgMaxOffset).append(", cachedMsgCount=")
+				.append(cachedMsgCount).append(", cachedMsgSizeInMiB=").append(cachedMsgSizeInMiB).append(", transactionMsgMinOffset=").append(transactionMsgMinOffset).append(", transactionMsgMaxOffset=").append(transactionMsgMaxOffset)
+				.append(", transactionMsgCount=").append(transactionMsgCount).append(", locked=").append(locked).append(", tryUnlockTimes=").append(tryUnlockTimes).append(", lastLockTimestamp=")
+				.append(UtilAll.timeMillisToHumanString(lastLockTimestamp)).append(", droped=").append(droped).append(", lastPullTimestamp=").append(UtilAll.timeMillisToHumanString(lastPullTimestamp)).append(", lastConsumeTimestamp=").append(UtilAll.timeMillisToHumanString(lastConsumeTimestamp))
+				.append("]").toString();
     }
 }

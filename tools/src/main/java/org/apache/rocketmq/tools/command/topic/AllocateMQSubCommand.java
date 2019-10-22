@@ -32,9 +32,14 @@ import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class AllocateMQSubCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(AllocateMQSubCommand.class);
+
+	@Override
     public String commandName() {
         return "allocateMQ";
     }
@@ -64,10 +69,10 @@ public class AllocateMQSubCommand implements SubCommand {
         try {
             adminExt.start();
 
-            String topic = commandLine.getOptionValue('t').trim();
-            String ips = commandLine.getOptionValue('i').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+            String ips = StringUtils.trim(commandLine.getOptionValue('i'));
             final String[] split = ips.split(",");
-            final List<String> ipList = new LinkedList<String>();
+            final List<String> ipList = new LinkedList<>();
             for (String ip : split) {
                 ipList.add(ip);
             }
@@ -79,13 +84,13 @@ public class AllocateMQSubCommand implements SubCommand {
 
             RebalanceResult rr = new RebalanceResult();
 
-            for (String i : ipList) {
+            ipList.forEach(i -> {
                 final List<MessageQueue> mqResult = averagely.allocate("aa", i, new ArrayList<MessageQueue>(mqs), ipList);
                 rr.getResult().put(i, mqResult);
-            }
+            });
 
             final String json = RemotingSerializable.toJson(rr, false);
-            System.out.printf("%s%n", json);
+            logger.info("%s%n", json);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

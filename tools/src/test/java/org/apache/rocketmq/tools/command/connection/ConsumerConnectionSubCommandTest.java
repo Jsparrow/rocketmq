@@ -79,7 +79,7 @@ public class ConsumerConnectionSubCommandTest {
         HashSet<Connection> connections = new HashSet<>();
         connections.add(new Connection());
         consumerConnection.setConnectionSet(connections);
-        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<String, SubscriptionData>());
+        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<>());
         consumerConnection.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
         when(mQClientAPIImpl.getConsumerConnectionList(anyString(), anyString(), anyLong())).thenReturn(consumerConnection);
     }

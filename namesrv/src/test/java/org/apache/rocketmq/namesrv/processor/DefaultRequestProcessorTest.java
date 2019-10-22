@@ -178,7 +178,7 @@ public class DefaultRequestProcessorTest {
 
         BrokerData broker = new BrokerData();
         broker.setBrokerName("broker");
-        broker.setBrokerAddrs((HashMap) Maps.newHashMap(new Long(2333), "10.10.1.1"));
+        broker.setBrokerAddrs((HashMap) Maps.newHashMap(Long.valueOf(2333), "10.10.1.1"));
 
         assertThat((Map) brokerAddrTable.get(routes))
             .contains(new HashMap.SimpleEntry("broker", broker));
@@ -206,7 +206,7 @@ public class DefaultRequestProcessorTest {
 
         BrokerData broker = new BrokerData();
         broker.setBrokerName("broker");
-        broker.setBrokerAddrs((HashMap) Maps.newHashMap(new Long(2333), "10.10.1.1"));
+        broker.setBrokerAddrs((HashMap) Maps.newHashMap(Long.valueOf(2333), "10.10.1.1"));
 
         assertThat((Map) brokerAddrTable.get(routes))
             .contains(new HashMap.SimpleEntry("broker", broker));
@@ -269,7 +269,7 @@ public class DefaultRequestProcessorTest {
         topicConfigSerializeWrapper.setTopicConfigTable(topicConfigConcurrentHashMap);
         Channel channel = mock(Channel.class);
         RegisterBrokerResult registerBrokerResult = routeInfoManager.registerBroker("default-cluster", "127.0.0.1:10911", "default-broker", 1234, "127.0.0.1:1001",
-            topicConfigSerializeWrapper, new ArrayList<String>(), channel);
+            topicConfigSerializeWrapper, new ArrayList<>(), channel);
 
     }
 }

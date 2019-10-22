@@ -105,18 +105,17 @@ public class TransactionalMessageBridge {
         String group = TransactionalMessageUtil.buildConsumerGroup();
         String topic = TransactionalMessageUtil.buildHalfTopic();
         SubscriptionData sub = new SubscriptionData(topic, "*");
-        return getMessage(group, topic, queueId, offset, nums, sub);
+        return getMessage(group, topic, queueId, offset, nums);
     }
 
     public PullResult getOpMessage(int queueId, long offset, int nums) {
         String group = TransactionalMessageUtil.buildConsumerGroup();
         String topic = TransactionalMessageUtil.buildOpTopic();
         SubscriptionData sub = new SubscriptionData(topic, "*");
-        return getMessage(group, topic, queueId, offset, nums, sub);
+        return getMessage(group, topic, queueId, offset, nums);
     }
 
-    private PullResult getMessage(String group, String topic, int queueId, long offset, int nums,
-        SubscriptionData sub) {
+    private PullResult getMessage(String group, String topic, int queueId, long offset, int nums) {
         GetMessageResult getMessageResult = store.getMessage(group, topic, queueId, offset, nums, null);
 
         if (getMessageResult != null) {
@@ -174,10 +173,7 @@ public class TransactionalMessageBridge {
         List<MessageExt> foundList = new ArrayList<>();
         try {
             List<ByteBuffer> messageBufferList = getMessageResult.getMessageBufferList();
-            for (ByteBuffer bb : messageBufferList) {
-                MessageExt msgExt = MessageDecoder.decode(bb);
-                foundList.add(msgExt);
-            }
+            messageBufferList.stream().map(MessageDecoder::decode).forEach(foundList::add);
 
         } finally {
             getMessageResult.release();

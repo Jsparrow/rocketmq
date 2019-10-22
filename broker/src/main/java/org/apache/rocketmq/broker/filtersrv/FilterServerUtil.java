@@ -31,8 +31,9 @@ public class FilterServerUtil {
         } catch (Throwable e) {
             log.error("CallShell: readLine IOException, {}", shellString, e);
         } finally {
-            if (null != process)
-                process.destroy();
+            if (null != process) {
+				process.destroy();
+			}
         }
     }
 

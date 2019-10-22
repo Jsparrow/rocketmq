@@ -33,15 +33,18 @@ import org.apache.rocketmq.common.message.MessageAccessor;
 import org.apache.rocketmq.common.message.MessageConst;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.common.protocol.body.ProcessQueueInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Queue consumption snapshot
  */
 public class ProcessQueue {
-    public final static long REBALANCE_LOCK_MAX_LIVE_TIME =
+    private static final Logger logger = LoggerFactory.getLogger(ProcessQueue.class);
+	public static final long REBALANCE_LOCK_MAX_LIVE_TIME =
         Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockMaxLiveTime", "30000"));
-    public final static long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
-    private final static long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
+    public static final long REBALANCE_LOCK_INTERVAL = Long.parseLong(System.getProperty("rocketmq.client.rebalance.lockInterval", "20000"));
+    private static final long PULL_MAX_IDLE_TIME = Long.parseLong(System.getProperty("rocketmq.client.pull.pullMaxIdleTime", "120000"));
     private final InternalLogger log = ClientLogger.getLog();
     private final ReadWriteLock lockTreeMap = new ReentrantReadWriteLock();
     private final TreeMap<Long, MessageExt> msgTreeMap = new TreeMap<Long, MessageExt>();
@@ -336,6 +339,7 @@ public class ProcessQueue {
                 this.lockTreeMap.readLock().unlock();
             }
         } catch (InterruptedException e) {
+			logger.error(e.getMessage(), e);
         }
 
         return true;
@@ -419,6 +423,7 @@ public class ProcessQueue {
             info.setLastPullTimestamp(this.lastPullTimestamp);
             info.setLastConsumeTimestamp(this.lastConsumeTimestamp);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         } finally {
             this.lockTreeMap.readLock().unlock();
         }

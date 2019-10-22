@@ -68,7 +68,7 @@ public class BrokerStatusSubCommandTest {
         field.set(defaultMQAdminExt, defaultMQAdminExtImpl);
 
         KVTable kvTable = new KVTable();
-        kvTable.setTable(new HashMap<String, String>());
+        kvTable.setTable(new HashMap<>());
         when(mQClientAPIImpl.getBrokerRuntimeInfo(anyString(), anyLong())).thenReturn(kvTable);
     }
 

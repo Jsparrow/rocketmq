@@ -28,44 +28,45 @@ public class Logger implements Appender.AppenderPipeline {
 
     private static final DefaultLoggerRepository REPOSITORY = new DefaultLoggerRepository(new RootLogger(Level.DEBUG));
 
-    public static LoggerRepository getRepository() {
-        return REPOSITORY;
-    }
+	private String name;
 
-    private String name;
+	private volatile Level level;
 
-    volatile private Level level;
+	private volatile Logger parent;
 
-    volatile private Logger parent;
+	Appender.AppenderPipelineImpl appenderPipeline;
 
-    Appender.AppenderPipelineImpl appenderPipeline;
+	private boolean additive = true;
 
-    private boolean additive = true;
-
-    private Logger(String name) {
+	private Logger(String name) {
         this.name = name;
     }
 
-    static public Logger getLogger(String name) {
+	public static LoggerRepository getRepository() {
+        return REPOSITORY;
+    }
+
+	public static Logger getLogger(String name) {
         return getRepository().getLogger(name);
     }
 
-    static public Logger getLogger(Class clazz) {
+	public static Logger getLogger(Class clazz) {
         return getRepository().getLogger(clazz.getName());
     }
 
-    public static Logger getRootLogger() {
+	public static Logger getRootLogger() {
         return getRepository().getRootLogger();
     }
 
-    synchronized public void addAppender(Appender newAppender) {
+	@Override
+	public synchronized void addAppender(Appender newAppender) {
         if (appenderPipeline == null) {
             appenderPipeline = new Appender.AppenderPipelineImpl();
         }
         appenderPipeline.addAppender(newAppender);
     }
 
-    public void callAppenders(LoggingEvent event) {
+	public void callAppenders(LoggingEvent event) {
         int writes = 0;
 
         for (Logger logger = this; logger != null; logger = logger.parent) {
@@ -84,7 +85,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    synchronized void closeNestedAppenders() {
+	synchronized void closeNestedAppenders() {
         Enumeration enumeration = this.getAllAppenders();
         if (enumeration != null) {
             while (enumeration.hasMoreElements()) {
@@ -96,7 +97,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    public void debug(Object message) {
+	public void debug(Object message) {
         if (getRepository().isDisabled(Level.DEBUG_INT)) {
             return;
         }
@@ -105,8 +106,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-
-    public void debug(Object message, Throwable t) {
+	public void debug(Object message, Throwable t) {
         if (getRepository().isDisabled(Level.DEBUG_INT)) {
             return;
         }
@@ -115,8 +115,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-
-    public void error(Object message) {
+	public void error(Object message) {
         if (getRepository().isDisabled(Level.ERROR_INT)) {
             return;
         }
@@ -125,7 +124,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    public void error(Object message, Throwable t) {
+	public void error(Object message, Throwable t) {
         if (getRepository().isDisabled(Level.ERROR_INT)) {
             return;
         }
@@ -135,13 +134,12 @@ public class Logger implements Appender.AppenderPipeline {
 
     }
 
-
-    protected void forcedLog(String fqcn, Level level, Object message, Throwable t) {
+	protected void forcedLog(String fqcn, Level level, Object message, Throwable t) {
         callAppenders(new LoggingEvent(fqcn, this, level, message, t));
     }
 
-
-    synchronized public Enumeration getAllAppenders() {
+	@Override
+	public synchronized Enumeration getAllAppenders() {
         if (appenderPipeline == null) {
             return null;
         } else {
@@ -149,7 +147,8 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    synchronized public Appender getAppender(String name) {
+	@Override
+	public synchronized Appender getAppender(String name) {
         if (appenderPipeline == null || name == null) {
             return null;
         }
@@ -157,7 +156,7 @@ public class Logger implements Appender.AppenderPipeline {
         return appenderPipeline.getAppender(name);
     }
 
-    public Level getEffectiveLevel() {
+	public Level getEffectiveLevel() {
         for (Logger c = this; c != null; c = c.parent) {
             if (c.level != null) {
                 return c.level;
@@ -166,16 +165,15 @@ public class Logger implements Appender.AppenderPipeline {
         return null;
     }
 
-    public final String getName() {
+	public final String getName() {
         return name;
     }
 
-    final public Level getLevel() {
+	public final Level getLevel() {
         return this.level;
     }
 
-
-    public void info(Object message) {
+	public void info(Object message) {
         if (getRepository().isDisabled(Level.INFO_INT)) {
             return;
         }
@@ -184,7 +182,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    public void info(Object message, Throwable t) {
+	public void info(Object message, Throwable t) {
         if (getRepository().isDisabled(Level.INFO_INT)) {
             return;
         }
@@ -193,40 +191,45 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    public boolean isAttached(Appender appender) {
+	@Override
+	public boolean isAttached(Appender appender) {
         return appender != null && appenderPipeline != null && appenderPipeline.isAttached(appender);
     }
 
-    synchronized public void removeAllAppenders() {
-        if (appenderPipeline != null) {
-            appenderPipeline.removeAllAppenders();
-            appenderPipeline = null;
-        }
+	@Override
+	public synchronized void removeAllAppenders() {
+        if (appenderPipeline == null) {
+			return;
+		}
+		appenderPipeline.removeAllAppenders();
+		appenderPipeline = null;
     }
 
-    synchronized public void removeAppender(Appender appender) {
+	@Override
+	public synchronized void removeAppender(Appender appender) {
         if (appender == null || appenderPipeline == null) {
             return;
         }
         appenderPipeline.removeAppender(appender);
     }
 
-    synchronized public void removeAppender(String name) {
+	@Override
+	public synchronized void removeAppender(String name) {
         if (name == null || appenderPipeline == null) {
             return;
         }
         appenderPipeline.removeAppender(name);
     }
 
-    public void setAdditivity(boolean additive) {
+	public void setAdditivity(boolean additive) {
         this.additive = additive;
     }
 
-    public void setLevel(Level level) {
+	public void setLevel(Level level) {
         this.level = level;
     }
 
-    public void warn(Object message) {
+	public void warn(Object message) {
         if (getRepository().isDisabled(Level.WARN_INT)) {
             return;
         }
@@ -236,7 +239,7 @@ public class Logger implements Appender.AppenderPipeline {
         }
     }
 
-    public void warn(Object message, Throwable t) {
+	public void warn(Object message, Throwable t) {
         if (getRepository().isDisabled(Level.WARN_INT)) {
             return;
         }
@@ -269,7 +272,6 @@ public class Logger implements Appender.AppenderPipeline {
     public static class ProvisionNode extends Vector<Logger> {
 
         ProvisionNode(Logger logger) {
-            super();
             addElement(logger);
         }
     }
@@ -289,15 +291,18 @@ public class Logger implements Appender.AppenderPipeline {
             setLogLevel(Level.ALL);
         }
 
-        public void emitNoAppenderWarning(Logger cat) {
-            if (!this.emittedNoAppenderWarning) {
-                SysLogger.warn("No appenders could be found for logger (" + cat.getName() + ").");
-                SysLogger.warn("Please initialize the logger system properly.");
-                this.emittedNoAppenderWarning = true;
-            }
+        @Override
+		public void emitNoAppenderWarning(Logger cat) {
+            if (this.emittedNoAppenderWarning) {
+				return;
+			}
+			SysLogger.warn(new StringBuilder().append("No appenders could be found for logger (").append(cat.getName()).append(").").toString());
+			SysLogger.warn("Please initialize the logger system properly.");
+			this.emittedNoAppenderWarning = true;
         }
 
-        public Logger exists(String name) {
+        @Override
+		public Logger exists(String name) {
             Object o = ht.get(new CategoryKey(name));
             if (o instanceof Logger) {
                 return (Logger) o;
@@ -306,19 +311,23 @@ public class Logger implements Appender.AppenderPipeline {
             }
         }
 
-        public void setLogLevel(Level l) {
-            if (l != null) {
-                logLevelInt = l.level;
-                logLevel = l;
-            }
+        @Override
+		public void setLogLevel(Level l) {
+            if (l == null) {
+				return;
+			}
+			logLevelInt = l.level;
+			logLevel = l;
         }
 
-        public Level getLogLevel() {
+        @Override
+		public Level getLogLevel() {
             return logLevel;
         }
 
 
-        public Logger getLogger(String name) {
+        @Override
+		public Logger getLogger(String name) {
             CategoryKey key = new CategoryKey(name);
             Logger logger;
 
@@ -347,7 +356,8 @@ public class Logger implements Appender.AppenderPipeline {
             return new Logger(name);
         }
 
-        public Enumeration getCurrentLoggers() {
+        @Override
+		public Enumeration getCurrentLoggers() {
             Vector<Logger> loggers = new Vector<Logger>(ht.size());
 
             Enumeration elems = ht.elements();
@@ -362,16 +372,19 @@ public class Logger implements Appender.AppenderPipeline {
         }
 
 
-        public Logger getRootLogger() {
+        @Override
+		public Logger getRootLogger() {
             return root;
         }
 
-        public boolean isDisabled(int level) {
+        @Override
+		public boolean isDisabled(int level) {
             return logLevelInt > level;
         }
 
 
-        public void shutdown() {
+        @Override
+		public void shutdown() {
             Logger root = getRootLogger();
             root.closeNestedAppenders();
 
@@ -406,7 +419,7 @@ public class Logger implements Appender.AppenderPipeline {
                 } else if (o instanceof ProvisionNode) {
                     ((ProvisionNode) o).addElement(cat);
                 } else {
-                    Exception e = new IllegalStateException("unexpected object type " + o.getClass() + " in ht.");
+                    Exception e = new IllegalStateException(new StringBuilder().append("unexpected object type ").append(o.getClass()).append(" in ht.").toString());
                     e.printStackTrace();
                 }
             }
@@ -437,16 +450,18 @@ public class Logger implements Appender.AppenderPipeline {
                 hashCache = name.hashCode();
             }
 
-            final public int hashCode() {
+            @Override
+			public final int hashCode() {
                 return hashCache;
             }
 
-            final public boolean equals(Object o) {
+            @Override
+			public final boolean equals(Object o) {
                 if (this == o) {
                     return true;
                 }
 
-                if (o != null && o instanceof CategoryKey) {
+                if (o instanceof CategoryKey) {
                     CategoryKey cc = (CategoryKey) o;
                     return name.equals(cc.name);
                 } else {

@@ -30,17 +30,21 @@ import org.apache.rocketmq.common.constant.LoggerName;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.store.config.BrokerRole;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Create MappedFile in advance
  */
 public class AllocateMappedFileService extends ServiceThread {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(AllocateMappedFileService.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
     private static int waitTimeOut = 1000 * 5;
     private ConcurrentMap<String, AllocateRequest> requestTable =
-        new ConcurrentHashMap<String, AllocateRequest>();
+        new ConcurrentHashMap<>();
     private PriorityBlockingQueue<AllocateRequest> requestQueue =
-        new PriorityBlockingQueue<AllocateRequest>();
+        new PriorityBlockingQueue<>();
     private volatile boolean hasException = false;
     private DefaultMessageStore messageStore;
 
@@ -50,12 +54,11 @@ public class AllocateMappedFileService extends ServiceThread {
 
     public MappedFile putRequestAndReturnMappedFile(String nextFilePath, String nextNextFilePath, int fileSize) {
         int canSubmitRequests = 2;
-        if (this.messageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
-            if (this.messageStore.getMessageStoreConfig().isFastFailIfNoBufferInStorePool()
-                && BrokerRole.SLAVE != this.messageStore.getMessageStoreConfig().getBrokerRole()) { //if broker is slave, don't fast fail even no buffer in pool
-                canSubmitRequests = this.messageStore.getTransientStorePool().availableBufferNums() - this.requestQueue.size();
-            }
-        }
+        boolean condition = this.messageStore.getMessageStoreConfig().isTransientStorePoolEnable() && this.messageStore.getMessageStoreConfig().isFastFailIfNoBufferInStorePool()
+		    && BrokerRole.SLAVE != this.messageStore.getMessageStoreConfig().getBrokerRole();
+		if (condition) { //if broker is slave, don't fast fail even no buffer in pool
+		canSubmitRequests = this.messageStore.getTransientStorePool().availableBufferNums() - this.requestQueue.size();
+         }
 
         AllocateRequest nextReq = new AllocateRequest(nextFilePath, fileSize);
         boolean nextPutOK = this.requestTable.putIfAbsent(nextFilePath, nextReq) == null;
@@ -99,7 +102,7 @@ public class AllocateMappedFileService extends ServiceThread {
             if (result != null) {
                 boolean waitOK = result.getCountDownLatch().await(waitTimeOut, TimeUnit.MILLISECONDS);
                 if (!waitOK) {
-                    log.warn("create mmap timeout " + result.getFilePath() + " " + result.getFileSize());
+                    log.warn(new StringBuilder().append("create mmap timeout ").append(result.getFilePath()).append(" ").append(result.getFileSize()).toString());
                     return null;
                 } else {
                     this.requestTable.remove(nextFilePath);
@@ -123,15 +126,14 @@ public class AllocateMappedFileService extends ServiceThread {
     @Override
     public void shutdown() {
         super.shutdown(true);
-        for (AllocateRequest req : this.requestTable.values()) {
-            if (req.mappedFile != null) {
-                log.info("delete pre allocated maped file, {}", req.mappedFile.getFileName());
-                req.mappedFile.destroy(1000);
-            }
-        }
+        this.requestTable.values().stream().filter(req -> req.mappedFile != null).forEach(req -> {
+		    log.info("delete pre allocated maped file, {}", req.mappedFile.getFileName());
+		    req.mappedFile.destroy(1000);
+		});
     }
 
-    public void run() {
+    @Override
+	public void run() {
         log.info(this.getServiceName() + " service started");
 
         while (!this.isStopped() && this.mmapOperation()) {
@@ -150,13 +152,12 @@ public class AllocateMappedFileService extends ServiceThread {
             req = this.requestQueue.take();
             AllocateRequest expectedRequest = this.requestTable.get(req.getFilePath());
             if (null == expectedRequest) {
-                log.warn("this mmap request expired, maybe cause timeout " + req.getFilePath() + " "
-                    + req.getFileSize());
+                log.warn(new StringBuilder().append("this mmap request expired, maybe cause timeout ").append(req.getFilePath()).append(" ").append(req.getFileSize()).toString());
                 return true;
             }
             if (expectedRequest != req) {
-                log.warn("never expected here,  maybe cause timeout " + req.getFilePath() + " "
-                    + req.getFileSize() + ", req:" + req + ", expectedRequest:" + expectedRequest);
+                log.warn(new StringBuilder().append("never expected here,  maybe cause timeout ").append(req.getFilePath()).append(" ").append(req.getFileSize()).append(", req:").append(req)
+						.append(", expectedRequest:").append(expectedRequest).toString());
                 return true;
             }
 
@@ -169,7 +170,8 @@ public class AllocateMappedFileService extends ServiceThread {
                         mappedFile = ServiceLoader.load(MappedFile.class).iterator().next();
                         mappedFile.init(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
                     } catch (RuntimeException e) {
-                        log.warn("Use default implementation.");
+                        logger.error(e.getMessage(), e);
+						log.warn("Use default implementation.");
                         mappedFile = new MappedFile(req.getFilePath(), req.getFileSize(), messageStore.getTransientStorePool());
                     }
                 } else {
@@ -179,8 +181,8 @@ public class AllocateMappedFileService extends ServiceThread {
                 long elapsedTime = UtilAll.computeElapsedTimeMilliseconds(beginTime);
                 if (elapsedTime > 10) {
                     int queueSize = this.requestQueue.size();
-                    log.warn("create mappedFile spent time(ms) " + elapsedTime + " queue size " + queueSize
-                        + " " + req.getFilePath() + " " + req.getFileSize());
+                    log.warn(new StringBuilder().append("create mappedFile spent time(ms) ").append(elapsedTime).append(" queue size ").append(queueSize).append(" ")
+							.append(req.getFilePath()).append(" ").append(req.getFileSize()).toString());
                 }
 
                 // pre write mappedFile
@@ -197,7 +199,8 @@ public class AllocateMappedFileService extends ServiceThread {
                 isSuccess = true;
             }
         } catch (InterruptedException e) {
-            log.warn(this.getServiceName() + " interrupted, possibly by shutdown.");
+            logger.error(e.getMessage(), e);
+			log.warn(this.getServiceName() + " interrupted, possibly by shutdown.");
             this.hasException = true;
             return false;
         } catch (IOException e) {
@@ -208,11 +211,13 @@ public class AllocateMappedFileService extends ServiceThread {
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException ignored) {
+					logger.error(ignored.getMessage(), ignored);
                 }
             }
         } finally {
-            if (req != null && isSuccess)
-                req.getCountDownLatch().countDown();
+            if (req != null && isSuccess) {
+				req.getCountDownLatch().countDown();
+			}
         }
         return true;
     }
@@ -261,16 +266,17 @@ public class AllocateMappedFileService extends ServiceThread {
             this.mappedFile = mappedFile;
         }
 
-        public int compareTo(AllocateRequest other) {
-            if (this.fileSize < other.fileSize)
-                return 1;
-            else if (this.fileSize > other.fileSize) {
+        @Override
+		public int compareTo(AllocateRequest other) {
+            if (this.fileSize < other.fileSize) {
+				return 1;
+			} else if (this.fileSize > other.fileSize) {
                 return -1;
             } else {
                 int mIndex = this.filePath.lastIndexOf(File.separator);
-                long mName = Long.parseLong(this.filePath.substring(mIndex + 1));
+                long mName = Long.parseLong(StringUtils.substring(this.filePath, mIndex + 1));
                 int oIndex = other.filePath.lastIndexOf(File.separator);
-                long oName = Long.parseLong(other.filePath.substring(oIndex + 1));
+                long oName = Long.parseLong(StringUtils.substring(other.filePath, oIndex + 1));
                 if (mName < oName) {
                     return -1;
                 } else if (mName > oName) {
@@ -294,20 +300,26 @@ public class AllocateMappedFileService extends ServiceThread {
 
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
+            if (this == obj) {
+				return true;
+			}
+            if (obj == null) {
+				return false;
+			}
+            if (getClass() != obj.getClass()) {
+				return false;
+			}
             AllocateRequest other = (AllocateRequest) obj;
             if (filePath == null) {
-                if (other.filePath != null)
-                    return false;
-            } else if (!filePath.equals(other.filePath))
-                return false;
-            if (fileSize != other.fileSize)
-                return false;
+                if (other.filePath != null) {
+					return false;
+				}
+            } else if (!filePath.equals(other.filePath)) {
+				return false;
+			}
+            if (fileSize != other.fileSize) {
+				return false;
+			}
             return true;
         }
     }

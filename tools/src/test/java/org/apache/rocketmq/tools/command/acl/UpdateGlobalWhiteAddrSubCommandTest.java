@@ -23,6 +23,7 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateGlobalWhiteAddrSubCommandTest {
 
@@ -33,7 +34,7 @@ public class UpdateGlobalWhiteAddrSubCommandTest {
         String[] subargs = new String[] {"-g 10.10.103.*,192.168.0.*", "-c default-cluster"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('g').trim()).isEqualTo("10.10.103.*,192.168.0.*");
-        assertThat(commandLine.getOptionValue('c').trim()).isEqualTo("default-cluster");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('g'))).isEqualTo("10.10.103.*,192.168.0.*");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('c'))).isEqualTo("default-cluster");
     }
 }

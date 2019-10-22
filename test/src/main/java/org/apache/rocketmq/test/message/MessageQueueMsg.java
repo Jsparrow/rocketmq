@@ -36,8 +36,8 @@ public class MessageQueueMsg {
 
     public MessageQueueMsg(List<MessageQueue> mqs, int msgSize, String tag) {
         msgsWithMQ = MQMessageFactory.getMsgByMQ(mqs, msgSize, tag);
-        msgsWithMQId = new HashMap<Integer, List<Object>>();
-        msgBodys = new ArrayList<Object>();
+        msgsWithMQId = new HashMap<>();
+        msgBodys = new ArrayList<>();
         init();
     }
 
@@ -54,9 +54,9 @@ public class MessageQueueMsg {
     }
 
     private void init() {
-        for (MessageQueue mq : msgsWithMQ.keySet()) {
+        msgsWithMQ.keySet().forEach(mq -> {
             msgsWithMQId.put(mq.getQueueId(), msgsWithMQ.get(mq));
             msgBodys.addAll(MQMessageFactory.getMessageBody(msgsWithMQ.get(mq)));
-        }
+        });
     }
 }

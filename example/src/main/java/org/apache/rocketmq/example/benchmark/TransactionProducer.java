@@ -33,9 +33,12 @@ import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionProducer {
-    private static int threadCount;
+    private static final Logger logger = LoggerFactory.getLogger(TransactionProducer.class);
+	private static int threadCount;
     private static int messageSize;
     private static boolean ischeck;
     private static boolean ischeckffalse;
@@ -54,7 +57,7 @@ public class TransactionProducer {
 
         final Timer timer = new Timer("BenchmarkTimerThread", true);
 
-        final LinkedList<Long[]> snapshotList = new LinkedList<Long[]>();
+        final LinkedList<Long[]> snapshotList = new LinkedList<>();
 
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -68,18 +71,16 @@ public class TransactionProducer {
 
         timer.scheduleAtFixedRate(new TimerTask() {
             private void printStats() {
-                if (snapshotList.size() >= 10) {
-                    Long[] begin = snapshotList.getFirst();
-                    Long[] end = snapshotList.getLast();
-
-                    final long sendTps =
-                        (long) (((end[3] - begin[3]) / (double) (end[0] - begin[0])) * 1000L);
-                    final double averageRT = (end[5] - begin[5]) / (double) (end[3] - begin[3]);
-
-                    System.out.printf(
-                        "Send TPS: %d Max RT: %d Average RT: %7.3f Send Failed: %d Response Failed: %d transaction checkCount: %d %n",
-                        sendTps, statsBenchmark.getSendMessageMaxRT().get(), averageRT, end[2], end[4], end[6]);
-                }
+                if (snapshotList.size() < 10) {
+					return;
+				}
+				Long[] begin = snapshotList.getFirst();
+				Long[] end = snapshotList.getLast();
+				final long sendTps =
+				    (long) (((end[3] - begin[3]) / (double) (end[0] - begin[0])) * 1000L);
+				final double averageRT = (end[5] - begin[5]) / (double) (end[3] - begin[3]);
+				logger.info(
+				    "Send TPS: %d Max RT: %d Average RT: %7.3f Send Failed: %d Response Failed: %d transaction checkCount: %d %n", sendTps, statsBenchmark.getSendMessageMaxRT().get(), averageRT, end[2], end[4], end[6]);
             }
 
             @Override
@@ -87,7 +88,7 @@ public class TransactionProducer {
                 try {
                     this.printStats();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }, 10000, 10000);
@@ -103,38 +104,37 @@ public class TransactionProducer {
         final TransactionExecuterBImpl tranExecuter = new TransactionExecuterBImpl(ischeck);
 
         for (int i = 0; i < threadCount; i++) {
-            sendThreadPool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    while (true) {
-                        try {
-                            // Thread.sleep(1000);
-                            final long beginTimestamp = System.currentTimeMillis();
-                            SendResult sendResult =
-                                producer.sendMessageInTransaction(msg, tranExecuter, null);
-                            if (sendResult != null) {
-                                statsBenchmark.getSendRequestSuccessCount().incrementAndGet();
-                                statsBenchmark.getReceiveResponseSuccessCount().incrementAndGet();
-                            }
+            sendThreadPool.execute(() -> {
+			    while (true) {
+			        try {
+			            // Thread.sleep(1000);
+			            final long beginTimestamp = System.currentTimeMillis();
+			            SendResult sendResult =
+			                producer.sendMessageInTransaction(msg, tranExecuter, null);
+			            if (sendResult != null) {
+			                statsBenchmark.getSendRequestSuccessCount().incrementAndGet();
+			                statsBenchmark.getReceiveResponseSuccessCount().incrementAndGet();
+			            }
 
-                            final long currentRT = System.currentTimeMillis() - beginTimestamp;
-                            statsBenchmark.getSendMessageSuccessTimeTotal().addAndGet(currentRT);
-                            long prevMaxRT = statsBenchmark.getSendMessageMaxRT().get();
-                            while (currentRT > prevMaxRT) {
-                                boolean updated =
-                                    statsBenchmark.getSendMessageMaxRT().compareAndSet(prevMaxRT,
-                                        currentRT);
-                                if (updated)
-                                    break;
+			            final long currentRT = System.currentTimeMillis() - beginTimestamp;
+			            statsBenchmark.getSendMessageSuccessTimeTotal().addAndGet(currentRT);
+			            long prevMaxRT = statsBenchmark.getSendMessageMaxRT().get();
+			            while (currentRT > prevMaxRT) {
+			                boolean updated =
+			                    statsBenchmark.getSendMessageMaxRT().compareAndSet(prevMaxRT,
+			                        currentRT);
+			                if (updated) {
+								break;
+							}
 
-                                prevMaxRT = statsBenchmark.getSendMessageMaxRT().get();
-                            }
-                        } catch (MQClientException e) {
-                            statsBenchmark.getSendRequestFailedCount().incrementAndGet();
-                        }
-                    }
-                }
-            });
+			                prevMaxRT = statsBenchmark.getSendMessageMaxRT().get();
+			            }
+			        } catch (MQClientException e) {
+			            logger.error(e.getMessage(), e);
+						statsBenchmark.getSendRequestFailedCount().incrementAndGet();
+			        }
+			    }
+			});
         }
     }
 

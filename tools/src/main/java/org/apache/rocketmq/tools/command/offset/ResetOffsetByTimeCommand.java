@@ -30,10 +30,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ResetOffsetByTimeCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(ResetOffsetByTimeCommand.class);
+
+	@Override
     public String commandName() {
         return "resetOffsetByTime";
     }
@@ -72,10 +77,10 @@ public class ResetOffsetByTimeCommand implements SubCommand {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
-            String group = commandLine.getOptionValue("g").trim();
-            String topic = commandLine.getOptionValue("t").trim();
-            String timeStampStr = commandLine.getOptionValue("s").trim();
-            long timestamp = timeStampStr.equals("now") ? System.currentTimeMillis() : 0;
+            String group = StringUtils.trim(commandLine.getOptionValue("g"));
+            String topic = StringUtils.trim(commandLine.getOptionValue("t"));
+            String timeStampStr = StringUtils.trim(commandLine.getOptionValue("s"));
+            long timestamp = "now".equals(timeStampStr) ? System.currentTimeMillis() : 0;
 
             try {
                 if (timestamp == 0) {
@@ -83,12 +88,13 @@ public class ResetOffsetByTimeCommand implements SubCommand {
                 }
             } catch (NumberFormatException e) {
 
-                timestamp = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+                logger.error(e.getMessage(), e);
+				timestamp = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
             }
 
             boolean force = true;
             if (commandLine.hasOption('f')) {
-                force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
+                force = Boolean.valueOf(StringUtils.trim(commandLine.getOptionValue("f")));
             }
 
             boolean isC = false;
@@ -108,21 +114,14 @@ public class ResetOffsetByTimeCommand implements SubCommand {
                 throw e;
             }
 
-            System.out.printf("rollback consumer offset by specified group[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n",
-                group, topic, force, timeStampStr, timestamp);
+            logger.info("rollback consumer offset by specified group[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n", group, topic, force, timeStampStr, timestamp);
 
-            System.out.printf("%-40s  %-40s  %-40s%n",
-                "#brokerName",
-                "#queueId",
-                "#offset");
+            logger.info("%-40s  %-40s  %-40s%n", "#brokerName", "#queueId", "#offset");
 
             Iterator<Map.Entry<MessageQueue, Long>> iterator = offsetTable.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<MessageQueue, Long> entry = iterator.next();
-                System.out.printf("%-40s  %-40d  %-40d%n",
-                    UtilAll.frontStringAtLeast(entry.getKey().getBrokerName(), 32),
-                    entry.getKey().getQueueId(),
-                    entry.getValue());
+                logger.info("%-40s  %-40d  %-40d%n", UtilAll.frontStringAtLeast(entry.getKey().getBrokerName(), 32), entry.getKey().getQueueId(), entry.getValue());
             }
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

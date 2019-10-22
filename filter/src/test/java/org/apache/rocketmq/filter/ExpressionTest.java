@@ -525,7 +525,7 @@ public class ExpressionTest {
 
     protected void eval(Expression expression, EvaluationContext context, Boolean result) throws Exception {
         Object ret = expression.evaluate(context);
-        if (ret == null || !(ret instanceof Boolean)) {
+        if (!(ret instanceof Boolean)) {
             assertThat(result).isFalse();
         } else {
             assertThat(result).isEqualTo(ret);
@@ -561,22 +561,21 @@ public class ExpressionTest {
     }
 
     static class KeyValue {
-        public static KeyValue c(String key, Object value) {
-            return new KeyValue(key, value);
-        }
-
-        public KeyValue(String key, Object value) {
+        public String key;
+		public Object value;
+		public KeyValue(String key, Object value) {
             this.key = key;
             this.value = value;
         }
 
-        public String key;
-        public Object value;
+		public static KeyValue c(String key, Object value) {
+            return new KeyValue(key, value);
+        }
     }
 
     class PropertyContext implements EvaluationContext {
 
-        public Map<String, Object> properties = new HashMap<String, Object>(8);
+        public Map<String, Object> properties = new HashMap<>(8);
 
         @Override
         public Object get(final String name) {

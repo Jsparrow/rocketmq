@@ -47,7 +47,7 @@ public class ConsumerFilterManager extends ConfigManager {
     private static final long MS_24_HOUR = 24 * 3600 * 1000;
 
     private ConcurrentMap<String/*Topic*/, FilterDataMapByTopic>
-        filterDataByTopic = new ConcurrentHashMap<String/*consumer group*/, FilterDataMapByTopic>(256);
+        filterDataByTopic = new ConcurrentHashMap<>(256);
 
     private transient BrokerController brokerController;
     private transient BloomFilter bloomFilter;
@@ -102,30 +102,14 @@ public class ConsumerFilterManager extends ConfigManager {
     }
 
     public void register(final String consumerGroup, final Collection<SubscriptionData> subList) {
-        for (SubscriptionData subscriptionData : subList) {
-            register(
-                subscriptionData.getTopic(),
-                consumerGroup,
-                subscriptionData.getSubString(),
-                subscriptionData.getExpressionType(),
-                subscriptionData.getSubVersion()
-            );
-        }
+        subList.forEach(subscriptionData -> register(subscriptionData.getTopic(), consumerGroup, subscriptionData.getSubString(),
+				subscriptionData.getExpressionType(), subscriptionData.getSubVersion()));
 
         // make illegal topic dead.
         Collection<ConsumerFilterData> groupFilterData = getByGroup(consumerGroup);
 
-        Iterator<ConsumerFilterData> iterator = groupFilterData.iterator();
-        while (iterator.hasNext()) {
-            ConsumerFilterData filterData = iterator.next();
-
-            boolean exist = false;
-            for (SubscriptionData subscriptionData : subList) {
-                if (subscriptionData.getTopic().equals(filterData.getTopic())) {
-                    exist = true;
-                    break;
-                }
-            }
+        for (ConsumerFilterData filterData : groupFilterData) {
+            boolean exist = subList.stream().anyMatch(subscriptionData -> subscriptionData.getTopic().equals(filterData.getTopic()));
 
             if (!exist && !filterData.isDead()) {
                 filterData.setDeadTime(System.currentTimeMillis());
@@ -140,7 +124,7 @@ public class ConsumerFilterManager extends ConfigManager {
             return false;
         }
 
-        if (expression == null || expression.length() == 0) {
+        if (expression == null || expression.isEmpty()) {
             return false;
         }
 
@@ -152,15 +136,13 @@ public class ConsumerFilterManager extends ConfigManager {
             filterDataMapByTopic = prev != null ? prev : temp;
         }
 
-        BloomFilterData bloomFilterData = bloomFilter.generate(consumerGroup + "#" + topic);
+        BloomFilterData bloomFilterData = bloomFilter.generate(new StringBuilder().append(consumerGroup).append("#").append(topic).toString());
 
         return filterDataMapByTopic.register(consumerGroup, expression, type, bloomFilterData, clientVersion);
     }
 
     public void unRegister(final String consumerGroup) {
-        for (String topic : filterDataByTopic.keySet()) {
-            this.filterDataByTopic.get(topic).unRegister(consumerGroup);
-        }
+        filterDataByTopic.keySet().forEach(topic -> this.filterDataByTopic.get(topic).unRegister(consumerGroup));
     }
 
     public ConsumerFilterData get(final String topic, final String consumerGroup) {
@@ -175,7 +157,7 @@ public class ConsumerFilterManager extends ConfigManager {
     }
 
     public Collection<ConsumerFilterData> getByGroup(final String consumerGroup) {
-        Collection<ConsumerFilterData> ret = new HashSet<ConsumerFilterData>();
+        Collection<ConsumerFilterData> ret = new HashSet<>();
 
         Iterator<FilterDataMapByTopic> topicIterator = this.filterDataByTopic.values().iterator();
         while (topicIterator.hasNext()) {
@@ -228,54 +210,54 @@ public class ConsumerFilterManager extends ConfigManager {
     @Override
     public void decode(final String jsonString) {
         ConsumerFilterManager load = RemotingSerializable.fromJson(jsonString, ConsumerFilterManager.class);
-        if (load != null && load.filterDataByTopic != null) {
-            boolean bloomChanged = false;
-            for (String topic : load.filterDataByTopic.keySet()) {
-                FilterDataMapByTopic dataMapByTopic = load.filterDataByTopic.get(topic);
-                if (dataMapByTopic == null) {
-                    continue;
-                }
+        if (!(load != null && load.filterDataByTopic != null)) {
+			return;
+		}
+		boolean bloomChanged = false;
+		for (String topic : load.filterDataByTopic.keySet()) {
+		    FilterDataMapByTopic dataMapByTopic = load.filterDataByTopic.get(topic);
+		    if (dataMapByTopic == null) {
+		        continue;
+		    }
 
-                for (String group : dataMapByTopic.getGroupFilterData().keySet()) {
+		    for (String group : dataMapByTopic.getGroupFilterData().keySet()) {
 
-                    ConsumerFilterData filterData = dataMapByTopic.getGroupFilterData().get(group);
+		        ConsumerFilterData filterData = dataMapByTopic.getGroupFilterData().get(group);
 
-                    if (filterData == null) {
-                        continue;
-                    }
+		        if (filterData == null) {
+		            continue;
+		        }
 
-                    try {
-                        filterData.setCompiledExpression(
-                            FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
-                        );
-                    } catch (Exception e) {
-                        log.error("load filter data error, " + filterData, e);
-                    }
+		        try {
+		            filterData.setCompiledExpression(
+		                FilterFactory.INSTANCE.get(filterData.getExpressionType()).compile(filterData.getExpression())
+		            );
+		        } catch (Exception e) {
+		            log.error("load filter data error, " + filterData, e);
+		        }
 
-                    // check whether bloom filter is changed
-                    // if changed, ignore the bit map calculated before.
-                    if (!this.bloomFilter.isValid(filterData.getBloomFilterData())) {
-                        bloomChanged = true;
-                        log.info("Bloom filter is changed!So ignore all filter data persisted! {}, {}", this.bloomFilter, filterData.getBloomFilterData());
-                        break;
-                    }
+		        // check whether bloom filter is changed
+		        // if changed, ignore the bit map calculated before.
+		        if (!this.bloomFilter.isValid(filterData.getBloomFilterData())) {
+		            bloomChanged = true;
+		            log.info("Bloom filter is changed!So ignore all filter data persisted! {}, {}", this.bloomFilter, filterData.getBloomFilterData());
+		            break;
+		        }
 
-                    log.info("load exist consumer filter data: {}", filterData);
+		        log.info("load exist consumer filter data: {}", filterData);
 
-                    if (filterData.getDeadTime() == 0) {
-                        // we think all consumers are dead when load
-                        long deadTime = System.currentTimeMillis() - 30 * 1000;
-                        filterData.setDeadTime(
-                            deadTime <= filterData.getBornTime() ? filterData.getBornTime() : deadTime
-                        );
-                    }
-                }
-            }
-
-            if (!bloomChanged) {
-                this.filterDataByTopic = load.filterDataByTopic;
-            }
-        }
+		        if (filterData.getDeadTime() == 0) {
+		            // we think all consumers are dead when load
+		            long deadTime = System.currentTimeMillis() - 30 * 1000;
+		            filterData.setDeadTime(
+		                deadTime <= filterData.getBornTime() ? filterData.getBornTime() : deadTime
+		            );
+		        }
+		    }
+		}
+		if (!bloomChanged) {
+		    this.filterDataByTopic = load.filterDataByTopic;
+		}
     }
 
     @Override
@@ -323,7 +305,7 @@ public class ConsumerFilterManager extends ConfigManager {
     public static class FilterDataMapByTopic {
 
         private ConcurrentMap<String/*consumer group*/, ConsumerFilterData>
-            groupFilterData = new ConcurrentHashMap<String, ConsumerFilterData>();
+            groupFilterData = new ConcurrentHashMap<>();
 
         private String topic;
 

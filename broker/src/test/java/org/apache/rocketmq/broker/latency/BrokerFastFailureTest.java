@@ -34,12 +34,9 @@ public class BrokerFastFailureTest {
         assertThat(queue.size()).isZero();
 
         //Normal Runnable
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
+        Runnable runnable = () -> {
 
-            }
-        };
+		};
         queue.add(runnable);
 
         assertThat(queue.size()).isEqualTo(1);

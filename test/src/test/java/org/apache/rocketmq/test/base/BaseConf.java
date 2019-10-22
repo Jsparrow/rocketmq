@@ -46,7 +46,7 @@ public class BaseConf {
     protected static NamesrvController namesrvController;
     protected static BrokerController brokerController1;
     protected static BrokerController brokerController2;
-    protected static List<Object> mqClients = new ArrayList<Object>();
+    protected static List<Object> mqClients = new ArrayList<>();
     protected static boolean debug = false;
     private static Logger log = Logger.getLogger(BaseConf.class);
 
@@ -147,14 +147,14 @@ public class BaseConf {
 
     public static void shutdown() {
         try {
-            for (Object mqClient : mqClients) {
+            mqClients.forEach(mqClient -> {
                 if (mqClient instanceof AbstractMQProducer) {
                     ((AbstractMQProducer) mqClient).shutdown();
 
                 } else {
                     ((AbstractMQConsumer) mqClient).shutdown();
                 }
-            }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }

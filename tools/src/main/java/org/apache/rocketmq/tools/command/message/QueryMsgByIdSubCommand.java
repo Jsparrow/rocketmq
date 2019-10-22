@@ -40,9 +40,13 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.admin.api.MessageTrack;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QueryMsgByIdSubCommand implements SubCommand {
-    public static void queryById(final DefaultMQAdminExt admin, final String msgId) throws MQClientException,
+    private static final Logger logger = LoggerFactory.getLogger(QueryMsgByIdSubCommand.class);
+
+	public static void queryById(final DefaultMQAdminExt admin, final String msgId) throws MQClientException,
         RemotingException, MQBrokerException, InterruptedException, IOException {
         MessageExt msg = admin.viewMessage(msgId);
 
@@ -51,7 +55,7 @@ public class QueryMsgByIdSubCommand implements SubCommand {
 
     public static void printMsg(final DefaultMQAdminExt admin, final MessageExt msg) throws IOException {
         if (msg == null) {
-            System.out.printf("%nMessage not found!");
+            logger.info("%nMessage not found!");
             return;
         }
 
@@ -61,98 +65,64 @@ public class QueryMsgByIdSubCommand implements SubCommand {
             msgId = ((MessageClientExt) msg).getOffsetMsgId();
         }
 
-        System.out.printf("%-20s %s%n",
-            "OffsetID:",
-            msgId
+        logger.info("%-20s %s%n", "OffsetID:", msgId
         );
 
-        System.out.printf("%-20s %s%n",
-            "OffsetID:",
-            msgId
+        logger.info("%-20s %s%n", "OffsetID:", msgId
         );
 
-        System.out.printf("%-20s %s%n",
-            "Topic:",
-            msg.getTopic()
+        logger.info("%-20s %s%n", "Topic:", msg.getTopic()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Tags:",
-            "[" + msg.getTags() + "]"
+        logger.info("%-20s %s%n", "Tags:", new StringBuilder().append("[").append(msg.getTags()).append("]").toString()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Keys:",
-            "[" + msg.getKeys() + "]"
+        logger.info("%-20s %s%n", "Keys:", new StringBuilder().append("[").append(msg.getKeys()).append("]").toString()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Queue ID:",
-            msg.getQueueId()
+        logger.info("%-20s %d%n", "Queue ID:", msg.getQueueId()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Queue Offset:",
-            msg.getQueueOffset()
+        logger.info("%-20s %d%n", "Queue Offset:", msg.getQueueOffset()
         );
 
-        System.out.printf("%-20s %d%n",
-            "CommitLog Offset:",
-            msg.getCommitLogOffset()
+        logger.info("%-20s %d%n", "CommitLog Offset:", msg.getCommitLogOffset()
         );
 
-        System.out.printf("%-20s %d%n",
-            "Reconsume Times:",
-            msg.getReconsumeTimes()
+        logger.info("%-20s %d%n", "Reconsume Times:", msg.getReconsumeTimes()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Born Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())
+        logger.info("%-20s %s%n", "Born Timestamp:", UtilAll.timeMillisToHumanString2(msg.getBornTimestamp())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Store Timestamp:",
-            UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())
+        logger.info("%-20s %s%n", "Store Timestamp:", UtilAll.timeMillisToHumanString2(msg.getStoreTimestamp())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Born Host:",
-            RemotingHelper.parseSocketAddressAddr(msg.getBornHost())
+        logger.info("%-20s %s%n", "Born Host:", RemotingHelper.parseSocketAddressAddr(msg.getBornHost())
         );
 
-        System.out.printf("%-20s %s%n",
-            "Store Host:",
-            RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())
+        logger.info("%-20s %s%n", "Store Host:", RemotingHelper.parseSocketAddressAddr(msg.getStoreHost())
         );
 
-        System.out.printf("%-20s %d%n",
-            "System Flag:",
-            msg.getSysFlag()
+        logger.info("%-20s %d%n", "System Flag:", msg.getSysFlag()
         );
 
-        System.out.printf("%-20s %s%n",
-            "Properties:",
-            msg.getProperties() != null ? msg.getProperties().toString() : ""
+        logger.info("%-20s %s%n", "Properties:", msg.getProperties() != null ? msg.getProperties().toString() : ""
         );
 
-        System.out.printf("%-20s %s%n",
-            "Message Body Path:",
-            bodyTmpFilePath
+        logger.info("%-20s %s%n", "Message Body Path:", bodyTmpFilePath
         );
 
         try {
             List<MessageTrack> mtdList = admin.messageTrackDetail(msg);
             if (mtdList.isEmpty()) {
-                System.out.printf("%n%nWARN: No Consumer");
+                logger.info("%n%nWARN: No Consumer");
             } else {
-                System.out.printf("%n%n");
-                for (MessageTrack mt : mtdList) {
-                    System.out.printf("%s", mt);
-                }
+                logger.info("%n%n");
+                mtdList.forEach(mt -> logger.info("%s", mt));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -164,13 +134,14 @@ public class QueryMsgByIdSubCommand implements SubCommand {
             if (!file.exists()) {
                 file.mkdirs();
             }
-            bodyTmpFilePath = bodyTmpFilePath + "/" + msg.getMsgId();
+            bodyTmpFilePath = new StringBuilder().append(bodyTmpFilePath).append("/").append(msg.getMsgId()).toString();
             dos = new DataOutputStream(new FileOutputStream(bodyTmpFilePath));
             dos.write(msg.getBody());
             return bodyTmpFilePath;
         } finally {
-            if (dos != null)
-                dos.close();
+            if (dos != null) {
+				dos.close();
+			}
         }
     }
 
@@ -220,36 +191,36 @@ public class QueryMsgByIdSubCommand implements SubCommand {
             defaultMQAdminExt.start();
             if (commandLine.hasOption('s')) {
                 if (commandLine.hasOption('u')) {
-                    String unitName = commandLine.getOptionValue('u').trim();
+                    String unitName = StringUtils.trim(commandLine.getOptionValue('u'));
                     defaultMQProducer.setUnitName(unitName);
                 }
                 defaultMQProducer.start();
             }
 
-            final String msgIds = commandLine.getOptionValue('i').trim();
+            final String msgIds = StringUtils.trim(commandLine.getOptionValue('i'));
             final String[] msgIdArr = StringUtils.split(msgIds, ",");
 
             if (commandLine.hasOption('g') && commandLine.hasOption('d')) {
-                final String consumerGroup = commandLine.getOptionValue('g').trim();
-                final String clientId = commandLine.getOptionValue('d').trim();
+                final String consumerGroup = StringUtils.trim(commandLine.getOptionValue('g'));
+                final String clientId = StringUtils.trim(commandLine.getOptionValue('d'));
                 for (String msgId : msgIdArr) {
                     if (StringUtils.isNotBlank(msgId)) {
-                        pushMsg(defaultMQAdminExt, consumerGroup, clientId, msgId.trim());
+                        pushMsg(defaultMQAdminExt, consumerGroup, clientId, StringUtils.trim(msgId));
                     }
                 }
             } else if (commandLine.hasOption('s')) {
-                boolean resend = Boolean.parseBoolean(commandLine.getOptionValue('s', "false").trim());
+                boolean resend = Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('s', "false")));
                 if (resend) {
                     for (String msgId : msgIdArr) {
                         if (StringUtils.isNotBlank(msgId)) {
-                            sendMsg(defaultMQAdminExt, defaultMQProducer, msgId.trim());
+                            sendMsg(defaultMQAdminExt, defaultMQProducer, StringUtils.trim(msgId));
                         }
                     }
                 }
             } else {
                 for (String msgId : msgIdArr) {
                     if (StringUtils.isNotBlank(msgId)) {
-                        queryById(defaultMQAdminExt, msgId.trim());
+                        queryById(defaultMQAdminExt, StringUtils.trim(msgId));
                     }
                 }
 
@@ -267,9 +238,9 @@ public class QueryMsgByIdSubCommand implements SubCommand {
         try {
             ConsumeMessageDirectlyResult result =
                 defaultMQAdminExt.consumeMessageDirectly(consumerGroup, clientId, msgId);
-            System.out.printf("%s", result);
+            logger.info("%s", result);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -279,14 +250,14 @@ public class QueryMsgByIdSubCommand implements SubCommand {
             MessageExt msg = defaultMQAdminExt.viewMessage(msgId);
             if (msg != null) {
                 // resend msg by id
-                System.out.printf("prepare resend msg. originalMsgId=%s", msgId);
+                logger.info("prepare resend msg. originalMsgId=%s", msgId);
                 SendResult result = defaultMQProducer.send(msg);
-                System.out.printf("%s", result);
+                logger.info("%s", result);
             } else {
-                System.out.printf("no message. msgId=%s", msgId);
+                logger.info("no message. msgId=%s", msgId);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

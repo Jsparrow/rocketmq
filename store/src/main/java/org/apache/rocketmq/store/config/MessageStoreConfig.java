@@ -23,12 +23,12 @@ import org.apache.rocketmq.store.ConsumeQueue;
 public class MessageStoreConfig {
     //The root directory in which the log data is kept
     @ImportantField
-    private String storePathRootDir = System.getProperty("user.home") + File.separator + "store";
+    private String storePathRootDir = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("store").toString();
 
     //The directory in which the commitlog is kept
     @ImportantField
-    private String storePathCommitLog = System.getProperty("user.home") + File.separator + "store"
-        + File.separator + "commitlog";
+    private String storePathCommitLog = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("store").append(File.separator).append("commitlog")
+			.toString();
 
     // CommitLog file size,default is 1G
     private int mappedFileSizeCommitLog = 1024 * 1024 * 1024;
@@ -299,11 +299,13 @@ public class MessageStoreConfig {
     }
 
     public int getDiskMaxUsedSpaceRatio() {
-        if (this.diskMaxUsedSpaceRatio < 10)
-            return 10;
+        if (this.diskMaxUsedSpaceRatio < 10) {
+			return 10;
+		}
 
-        if (this.diskMaxUsedSpaceRatio > 95)
-            return 95;
+        if (this.diskMaxUsedSpaceRatio > 95) {
+			return 95;
+		}
 
         return diskMaxUsedSpaceRatio;
     }

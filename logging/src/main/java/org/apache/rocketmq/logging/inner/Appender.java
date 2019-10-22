@@ -29,7 +29,7 @@ public abstract class Appender {
     public static final int CODE_CLOSE_FAILURE = 3;
     public static final int CODE_FILE_OPEN_FAILURE = 4;
 
-    public final static String LINE_SEP = System.getProperty("line.separator");
+    public static final String LINE_SEP = System.getProperty("line.separator");
 
     boolean firstTime = true;
 
@@ -42,19 +42,20 @@ public abstract class Appender {
     public void activateOptions() {
     }
 
-    abstract protected void append(LoggingEvent event);
+    protected abstract void append(LoggingEvent event);
 
-    public void finalize() {
+    @Override
+	public void finalize() {
         try {
             super.finalize();
         } catch (Throwable throwable) {
-            SysLogger.error("Finalizing appender named [" + name + "]. error", throwable);
+            SysLogger.error(new StringBuilder().append("Finalizing appender named [").append(name).append("]. error").toString(), throwable);
         }
         if (this.closed) {
             return;
         }
 
-        SysLogger.debug("Finalizing appender named [" + name + "].");
+        SysLogger.debug(new StringBuilder().append("Finalizing appender named [").append(name).append("].").toString());
         close();
     }
 
@@ -68,7 +69,7 @@ public abstract class Appender {
 
     public synchronized void doAppend(LoggingEvent event) {
         if (closed) {
-            SysLogger.error("Attempted to append to closed appender named [" + name + "].");
+            SysLogger.error(new StringBuilder().append("Attempted to append to closed appender named [").append(name).append("].").toString());
             return;
         }
         this.append(event);
@@ -88,17 +89,19 @@ public abstract class Appender {
         if (e instanceof InterruptedIOException || e instanceof InterruptedException) {
             Thread.currentThread().interrupt();
         }
-        if (firstTime) {
-            SysLogger.error(message + " code:" + errorCode, e);
-            firstTime = false;
-        }
+        if (!firstTime) {
+			return;
+		}
+		SysLogger.error(new StringBuilder().append(message).append(" code:").append(errorCode).toString(), e);
+		firstTime = false;
     }
 
     public void handleError(String message) {
-        if (firstTime) {
-            SysLogger.error(message);
-            firstTime = false;
-        }
+        if (!firstTime) {
+			return;
+		}
+		SysLogger.error(message);
+		firstTime = false;
     }
 
 
@@ -125,7 +128,8 @@ public abstract class Appender {
 
         protected Vector<Appender> appenderList;
 
-        public void addAppender(Appender newAppender) {
+        @Override
+		public void addAppender(Appender newAppender) {
             if (newAppender == null) {
                 return;
             }
@@ -152,7 +156,8 @@ public abstract class Appender {
             return size;
         }
 
-        public Enumeration getAllAppenders() {
+        @Override
+		public Enumeration getAllAppenders() {
             if (appenderList == null) {
                 return null;
             } else {
@@ -160,7 +165,8 @@ public abstract class Appender {
             }
         }
 
-        public Appender getAppender(String name) {
+        @Override
+		public Appender getAppender(String name) {
             if (appenderList == null || name == null) {
                 return null;
             }
@@ -176,7 +182,8 @@ public abstract class Appender {
             return null;
         }
 
-        public boolean isAttached(Appender appender) {
+        @Override
+		public boolean isAttached(Appender appender) {
             if (appenderList == null || appender == null) {
                 return false;
             }
@@ -192,26 +199,30 @@ public abstract class Appender {
             return false;
         }
 
-        public void removeAllAppenders() {
-            if (appenderList != null) {
-                int len = appenderList.size();
-                for (int i = 0; i < len; i++) {
-                    Appender a = appenderList.elementAt(i);
-                    a.close();
-                }
-                appenderList.removeAllElements();
-                appenderList = null;
-            }
+        @Override
+		public void removeAllAppenders() {
+            if (appenderList == null) {
+				return;
+			}
+			int len = appenderList.size();
+			for (int i = 0; i < len; i++) {
+			    Appender a = appenderList.elementAt(i);
+			    a.close();
+			}
+			appenderList.removeAllElements();
+			appenderList = null;
         }
 
-        public void removeAppender(Appender appender) {
+        @Override
+		public void removeAppender(Appender appender) {
             if (appender == null || appenderList == null) {
                 return;
             }
             appenderList.removeElement(appender);
         }
 
-        public void removeAppender(String name) {
+        @Override
+		public void removeAppender(String name) {
             if (name == null || appenderList == null) {
                 return;
             }

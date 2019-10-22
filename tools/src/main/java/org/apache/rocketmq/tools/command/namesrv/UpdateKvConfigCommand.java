@@ -23,9 +23,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateKvConfigCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateKvConfigCommand.class);
+
+	@Override
     public String commandName() {
         return "updateKvConfig";
     }
@@ -57,15 +62,15 @@ public class UpdateKvConfigCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
             // namespace
-            String namespace = commandLine.getOptionValue('s').trim();
+            String namespace = StringUtils.trim(commandLine.getOptionValue('s'));
             // key name
-            String key = commandLine.getOptionValue('k').trim();
+            String key = StringUtils.trim(commandLine.getOptionValue('k'));
             // key name
-            String value = commandLine.getOptionValue('v').trim();
+            String value = StringUtils.trim(commandLine.getOptionValue('v'));
 
             defaultMQAdminExt.start();
             defaultMQAdminExt.createAndUpdateKvConfig(namespace, key, value);
-            System.out.printf("create or update kv config to namespace success.%n");
+            logger.info("create or update kv config to namespace success.%n");
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

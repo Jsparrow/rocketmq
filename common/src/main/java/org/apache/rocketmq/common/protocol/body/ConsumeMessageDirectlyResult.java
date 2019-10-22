@@ -68,8 +68,7 @@ public class ConsumeMessageDirectlyResult extends RemotingSerializable {
 
     @Override
     public String toString() {
-        return "ConsumeMessageDirectlyResult [order=" + order + ", autoCommit=" + autoCommit
-            + ", consumeResult=" + consumeResult + ", remark=" + remark + ", spentTimeMills="
-            + spentTimeMills + "]";
+        return new StringBuilder().append("ConsumeMessageDirectlyResult [order=").append(order).append(", autoCommit=").append(autoCommit).append(", consumeResult=").append(consumeResult).append(", remark=")
+				.append(remark).append(", spentTimeMills=").append(spentTimeMills).append("]").toString();
     }
 }

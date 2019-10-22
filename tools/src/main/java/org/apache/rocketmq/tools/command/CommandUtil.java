@@ -32,10 +32,13 @@ import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingSendRequestException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.tools.admin.MQAdminExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CommandUtil {
 
-    private static final String ERROR_MESSAGE = "Make sure the specified clusterName exists or the name server " +
+    private static final Logger logger = LoggerFactory.getLogger(CommandUtil.class);
+	private static final String ERROR_MESSAGE = "Make sure the specified clusterName exists or the name server " +
         "connected to is correct.";
 
     public static Map<String/*master addr*/, List<String>/*slave addr*/> fetchMasterAndSlaveDistinguish(
@@ -43,13 +46,13 @@ public class CommandUtil {
         throws InterruptedException, RemotingConnectException,
         RemotingTimeoutException, RemotingSendRequestException,
         MQBrokerException {
-        Map<String, List<String>> masterAndSlaveMap = new HashMap<String, List<String>>(4);
+        Map<String, List<String>> masterAndSlaveMap = new HashMap<>(4);
 
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
         Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
 
         if (brokerNameSet == null) {
-            System.out.printf("[error] %s", ERROR_MESSAGE);
+            logger.info("[error] %s", ERROR_MESSAGE);
             return masterAndSlaveMap;
         }
 
@@ -61,7 +64,7 @@ public class CommandUtil {
             }
 
             String masterAddr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
-            masterAndSlaveMap.put(masterAddr, new ArrayList<String>());
+            masterAndSlaveMap.put(masterAddr, new ArrayList<>());
 
             for (Long id : brokerData.getBrokerAddrs().keySet()) {
                 if (brokerData.getBrokerAddrs().get(id) == null || id == MixAll.MASTER_ID) {
@@ -78,25 +81,24 @@ public class CommandUtil {
     public static Set<String> fetchMasterAddrByClusterName(final MQAdminExt adminExt, final String clusterName)
         throws InterruptedException, RemotingConnectException, RemotingTimeoutException,
         RemotingSendRequestException, MQBrokerException {
-        Set<String> masterSet = new HashSet<String>();
+        Set<String> masterSet = new HashSet<>();
 
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
 
         Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
 
         if (brokerNameSet != null) {
-            for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
+            brokerNameSet.stream().map(brokerName -> clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName)).forEach(brokerData -> {
+				if (brokerData != null) {
 
                     String addr = brokerData.getBrokerAddrs().get(MixAll.MASTER_ID);
                     if (addr != null) {
                         masterSet.add(addr);
                     }
                 }
-            }
+			});
         } else {
-            System.out.printf("[error] %s", ERROR_MESSAGE);
+            logger.info("[error] %s", ERROR_MESSAGE);
         }
 
         return masterSet;
@@ -105,19 +107,18 @@ public class CommandUtil {
     public static Set<String> fetchMasterAndSlaveAddrByClusterName(final MQAdminExt adminExt, final String clusterName)
         throws InterruptedException, RemotingConnectException, RemotingTimeoutException,
         RemotingSendRequestException, MQBrokerException {
-        Set<String> brokerAddressSet = new HashSet<String>();
+        Set<String> brokerAddressSet = new HashSet<>();
         ClusterInfo clusterInfoSerializeWrapper = adminExt.examineBrokerClusterInfo();
         Set<String> brokerNameSet = clusterInfoSerializeWrapper.getClusterAddrTable().get(clusterName);
         if (brokerNameSet != null) {
-            for (String brokerName : brokerNameSet) {
-                BrokerData brokerData = clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName);
-                if (brokerData != null) {
+            brokerNameSet.stream().map(brokerName -> clusterInfoSerializeWrapper.getBrokerAddrTable().get(brokerName)).forEach(brokerData -> {
+				if (brokerData != null) {
                     final Collection<String> addrs = brokerData.getBrokerAddrs().values();
                     brokerAddressSet.addAll(addrs);
                 }
-            }
+			});
         } else {
-            System.out.printf("[error] %s", ERROR_MESSAGE);
+            logger.info("[error] %s", ERROR_MESSAGE);
         }
 
         return brokerAddressSet;

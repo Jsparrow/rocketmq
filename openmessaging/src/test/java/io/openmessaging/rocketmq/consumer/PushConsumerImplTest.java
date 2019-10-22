@@ -71,14 +71,11 @@ public class PushConsumerImplTest {
         consumedMsg.setBody(testBody);
         consumedMsg.putUserProperty(NonStandardKeys.MESSAGE_DESTINATION, "TOPIC");
         consumedMsg.setTopic("HELLO_QUEUE");
-        consumer.attachQueue("HELLO_QUEUE", new MessageListener() {
-            @Override
-            public void onReceived(Message message, Context context) {
-                assertThat(message.sysHeaders().getString(Message.BuiltinKeys.MESSAGE_ID)).isEqualTo("NewMsgId");
-                assertThat(((BytesMessage) message).getBody(byte[].class)).isEqualTo(testBody);
-                context.ack();
-            }
-        });
+        consumer.attachQueue("HELLO_QUEUE", (Message message, Context context) -> {
+		    assertThat(message.sysHeaders().getString(Message.BuiltinKeys.MESSAGE_ID)).isEqualTo("NewMsgId");
+		    assertThat(((BytesMessage) message).getBody(byte[].class)).isEqualTo(testBody);
+		    context.ack();
+		});
         ((MessageListenerConcurrently) rocketmqPushConsumer
             .getMessageListener()).consumeMessage(Collections.singletonList(consumedMsg), null);
     }

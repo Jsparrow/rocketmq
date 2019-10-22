@@ -53,7 +53,7 @@ public class ShutdownHookThread extends Thread {
     @Override
     public void run() {
         synchronized (this) {
-            log.info("shutdown hook was invoked, " + this.shutdownTimes.incrementAndGet() + " times.");
+            log.info(new StringBuilder().append("shutdown hook was invoked, ").append(this.shutdownTimes.incrementAndGet()).append(" times.").toString());
             if (!this.hasShutdown) {
                 this.hasShutdown = true;
                 long beginTime = System.currentTimeMillis();

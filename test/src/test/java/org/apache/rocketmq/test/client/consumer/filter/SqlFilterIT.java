@@ -43,11 +43,11 @@ import static com.google.common.truth.Truth.assertThat;
 
 public class SqlFilterIT extends BaseConf {
     private static Logger logger = Logger.getLogger(SqlFilterIT.class);
-    private RMQNormalProducer producer = null;
-    private String topic = null;
-    private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<MessageQueue, Long>();
+	private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<>();
+	private RMQNormalProducer producer = null;
+	private String topic = null;
 
-    @Before
+	@Before
     public void setUp() {
         topic = initTopic();
         logger.info(String.format("use topic: %s;", topic));
@@ -55,12 +55,12 @@ public class SqlFilterIT extends BaseConf {
         OFFSE_TABLE.clear();
     }
 
-    @After
+	@After
     public void tearDown() {
         super.shutdown();
     }
 
-    @Test
+	@Test
     public void testFilterConsumer() throws Exception {
         int msgSize = 16;
 
@@ -80,7 +80,7 @@ public class SqlFilterIT extends BaseConf {
         assertThat(consumer.getListener().getAllMsgBody().size()).isEqualTo(msgSize * 2);
     }
 
-    @Test
+	@Test
     public void testFilterPullConsumer() throws Exception {
         int msgSize = 16;
 
@@ -107,9 +107,7 @@ public class SqlFilterIT extends BaseConf {
                     switch (pullResult.getPullStatus()) {
                         case FOUND:
                             List<MessageExt> msgs = pullResult.getMsgFoundList();
-                            for (MessageExt msg : msgs) {
-                                receivedMessage.add(new String(msg.getBody()));
-                            }
+						msgs.forEach(msg -> receivedMessage.add(new String(msg.getBody())));
                             break;
                         case NO_MATCHED_MSG:
                             break;
@@ -129,15 +127,16 @@ public class SqlFilterIT extends BaseConf {
         assertThat(receivedMessage.size()).isEqualTo(msgSize * 2);
     }
 
-    private static long getMessageQueueOffset(MessageQueue mq) {
+	private static long getMessageQueueOffset(MessageQueue mq) {
         Long offset = OFFSE_TABLE.get(mq);
-        if (offset != null)
-            return offset;
+        if (offset != null) {
+			return offset;
+		}
 
         return 0;
     }
 
-    private static void putMessageQueueOffset(MessageQueue mq, long offset) {
+	private static void putMessageQueueOffset(MessageQueue mq, long offset) {
         OFFSE_TABLE.put(mq, offset);
     }
 }

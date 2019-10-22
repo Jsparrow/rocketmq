@@ -50,13 +50,13 @@ public class UtilAll {
     public static final String YYYY_MM_DD_HH_MM_SS = "yyyy-MM-dd HH:mm:ss";
     public static final String YYYY_MM_DD_HH_MM_SS_SSS = "yyyy-MM-dd#HH:mm:ss:SSS";
     public static final String YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
-    final static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
     public static int getPid() {
         RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
         String name = runtime.getName(); // format: "pid@hostname"
         try {
-            return Integer.parseInt(name.substring(0, name.indexOf('@')));
+            return Integer.parseInt(StringUtils.substring(name, 0, StringUtils.indexOf(name, '@')));
         } catch (Exception e) {
             return -1;
         }
@@ -198,14 +198,16 @@ public class UtilAll {
     }
 
     public static double getDiskPartitionSpaceUsedPercent(final String path) {
-        if (null == path || path.isEmpty())
-            return -1;
+        if (null == path || StringUtils.isEmpty(path)) {
+			return -1;
+		}
 
         try {
             File file = new File(path);
 
-            if (!file.exists())
-                return -1;
+            if (!file.exists()) {
+				return -1;
+			}
 
             long totalSpace = file.getTotalSpace();
 
@@ -247,10 +249,10 @@ public class UtilAll {
     }
 
     public static byte[] string2bytes(String hexString) {
-        if (hexString == null || hexString.equals("")) {
+        if (hexString == null || "".equals(hexString)) {
             return null;
         }
-        hexString = hexString.toUpperCase();
+        hexString = StringUtils.upperCase(hexString);
         int length = hexString.length() / 2;
         char[] hexChars = hexString.toCharArray();
         byte[] d = new byte[length];
@@ -262,7 +264,7 @@ public class UtilAll {
     }
 
     private static byte charToByte(char c) {
-        return (byte) "0123456789ABCDEF".indexOf(c);
+        return (byte) StringUtils.indexOf("0123456789ABCDEF", c);
     }
 
     public static byte[] uncompress(final byte[] src) throws IOException {
@@ -365,11 +367,10 @@ public class UtilAll {
     }
 
     public static String frontStringAtLeast(final String str, final int size) {
-        if (str != null) {
-            if (str.length() > size) {
-                return str.substring(0, size);
-            }
-        }
+        boolean condition = str != null && str.length() > size;
+		if (condition) {
+		    return StringUtils.substring(str, 0, size);
+		}
 
         return str;
     }
@@ -493,17 +494,16 @@ public class UtilAll {
                 Enumeration addresses = netInterface.getInetAddresses();
                 while (addresses.hasMoreElements()) {
                     ip = (InetAddress) addresses.nextElement();
-                    if (ip != null && ip instanceof Inet4Address) {
+                    if (ip instanceof Inet4Address) {
                         byte[] ipByte = ip.getAddress();
-                        if (ipByte.length == 4) {
-                            if (ipCheck(ipByte)) {
-                                if (!isInternalIP(ipByte)) {
-                                    return ipByte;
-                                } else if (internalIP == null) {
-                                    internalIP = ipByte;
-                                }
-                            }
-                        }
+                        boolean condition = ipByte.length == 4 && ipCheck(ipByte);
+						if (condition) {
+						    if (!isInternalIP(ipByte)) {
+						        return ipByte;
+						    } else if (internalIP == null) {
+						        internalIP = ipByte;
+						    }
+						}
                     }
                 }
             }
@@ -536,7 +536,7 @@ public class UtilAll {
         if (list == null || list.size() == 0) {
             return null;
         }
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (int i = 0;i < list.size();i++) {
             str.append(list.get(i));
             if (i == list.size() - 1) {

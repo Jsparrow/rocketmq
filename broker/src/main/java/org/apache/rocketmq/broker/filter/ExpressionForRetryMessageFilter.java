@@ -25,6 +25,7 @@ import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Support filter to retry topic.
@@ -46,7 +47,7 @@ public class ExpressionForRetryMessageFilter extends ExpressionMessageFilter {
             return true;
         }
 
-        boolean isRetryTopic = subscriptionData.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
+        boolean isRetryTopic = StringUtils.startsWith(subscriptionData.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX);
 
         if (!isRetryTopic && ExpressionType.isTagType(subscriptionData.getExpressionType())) {
             return true;
@@ -63,7 +64,7 @@ public class ExpressionForRetryMessageFilter extends ExpressionMessageFilter {
                 tempProperties = MessageDecoder.decodeProperties(msgBuffer);
             }
             String realTopic = tempProperties.get(MessageConst.PROPERTY_RETRY_TOPIC);
-            String group = subscriptionData.getTopic().substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+            String group = StringUtils.substring(subscriptionData.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
             realFilterData = this.consumerFilterManager.get(realTopic, group);
         }
 
@@ -83,12 +84,12 @@ public class ExpressionForRetryMessageFilter extends ExpressionMessageFilter {
 
             ret = realFilterData.getCompiledExpression().evaluate(context);
         } catch (Throwable e) {
-            log.error("Message Filter error, " + realFilterData + ", " + tempProperties, e);
+            log.error(new StringBuilder().append("Message Filter error, ").append(realFilterData).append(", ").append(tempProperties).toString(), e);
         }
 
         log.debug("Pull eval result: {}, {}, {}", ret, realFilterData, tempProperties);
 
-        if (ret == null || !(ret instanceof Boolean)) {
+        if (!(ret instanceof Boolean)) {
             return false;
         }
 

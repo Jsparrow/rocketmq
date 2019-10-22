@@ -90,10 +90,7 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
 
     @Override
     public String toString() {
-        return "LatencyFaultToleranceImpl{" +
-            "faultItemTable=" + faultItemTable +
-            ", whichItemWorst=" + whichItemWorst +
-            '}';
+        return new StringBuilder().append("LatencyFaultToleranceImpl{").append("faultItemTable=").append(faultItemTable).append(", whichItemWorst=").append(whichItemWorst).append('}').toString();
     }
 
     class FaultItem implements Comparable<FaultItem> {
@@ -108,22 +105,24 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
         @Override
         public int compareTo(final FaultItem other) {
             if (this.isAvailable() != other.isAvailable()) {
-                if (this.isAvailable())
-                    return -1;
+                if (this.isAvailable()) {
+					return -1;
+				}
 
-                if (other.isAvailable())
-                    return 1;
+                if (other.isAvailable()) {
+					return 1;
+				}
             }
 
-            if (this.currentLatency < other.currentLatency)
-                return -1;
-            else if (this.currentLatency > other.currentLatency) {
+            if (this.currentLatency < other.currentLatency) {
+				return -1;
+			} else if (this.currentLatency > other.currentLatency) {
                 return 1;
             }
 
-            if (this.startTimestamp < other.startTimestamp)
-                return -1;
-            else if (this.startTimestamp > other.startTimestamp) {
+            if (this.startTimestamp < other.startTimestamp) {
+				return -1;
+			} else if (this.startTimestamp > other.startTimestamp) {
                 return 1;
             }
 
@@ -144,28 +143,29 @@ public class LatencyFaultToleranceImpl implements LatencyFaultTolerance<String> 
 
         @Override
         public boolean equals(final Object o) {
-            if (this == o)
-                return true;
-            if (!(o instanceof FaultItem))
-                return false;
+            if (this == o) {
+				return true;
+			}
+            if (!(o instanceof FaultItem)) {
+				return false;
+			}
 
             final FaultItem faultItem = (FaultItem) o;
 
-            if (getCurrentLatency() != faultItem.getCurrentLatency())
-                return false;
-            if (getStartTimestamp() != faultItem.getStartTimestamp())
-                return false;
+            if (getCurrentLatency() != faultItem.getCurrentLatency()) {
+				return false;
+			}
+            if (getStartTimestamp() != faultItem.getStartTimestamp()) {
+				return false;
+			}
             return getName() != null ? getName().equals(faultItem.getName()) : faultItem.getName() == null;
 
         }
 
         @Override
         public String toString() {
-            return "FaultItem{" +
-                "name='" + name + '\'' +
-                ", currentLatency=" + currentLatency +
-                ", startTimestamp=" + startTimestamp +
-                '}';
+            return new StringBuilder().append("FaultItem{").append("name='").append(name).append('\'').append(", currentLatency=").append(currentLatency).append(", startTimestamp=")
+					.append(startTimestamp).append('}').toString();
         }
 
         public String getName() {

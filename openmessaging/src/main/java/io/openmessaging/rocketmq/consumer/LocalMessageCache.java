@@ -44,16 +44,15 @@ import org.apache.rocketmq.common.utils.ThreadUtils;
 import org.apache.rocketmq.logging.InternalLogger;
 
 class LocalMessageCache implements ServiceLifecycle {
-    private final BlockingQueue<ConsumeRequest> consumeRequestCache;
-    private final Map<String, ConsumeRequest> consumedRequest;
-    private final ConcurrentHashMap<MessageQueue, Long> pullOffsetTable;
-    private final DefaultMQPullConsumer rocketmqPullConsumer;
-    private final ClientConfig clientConfig;
-    private final ScheduledExecutorService cleanExpireMsgExecutors;
+    private static final InternalLogger log = ClientLogger.getLog();
+	private final BlockingQueue<ConsumeRequest> consumeRequestCache;
+	private final Map<String, ConsumeRequest> consumedRequest;
+	private final ConcurrentHashMap<MessageQueue, Long> pullOffsetTable;
+	private final DefaultMQPullConsumer rocketmqPullConsumer;
+	private final ClientConfig clientConfig;
+	private final ScheduledExecutorService cleanExpireMsgExecutors;
 
-    private final static InternalLogger log = ClientLogger.getLog();
-
-    LocalMessageCache(final DefaultMQPullConsumer rocketmqPullConsumer, final ClientConfig clientConfig) {
+	LocalMessageCache(final DefaultMQPullConsumer rocketmqPullConsumer, final ClientConfig clientConfig) {
         consumeRequestCache = new LinkedBlockingQueue<>(clientConfig.getRmqPullMessageCacheCapacity());
         this.consumedRequest = new ConcurrentHashMap<>();
         this.pullOffsetTable = new ConcurrentHashMap<>();
@@ -63,11 +62,11 @@ class LocalMessageCache implements ServiceLifecycle {
             "OMS_CleanExpireMsgScheduledThread_"));
     }
 
-    int nextPullBatchNums() {
+	int nextPullBatchNums() {
         return Math.min(clientConfig.getRmqPullMessageBatchNums(), consumeRequestCache.remainingCapacity());
     }
 
-    long nextPullOffset(MessageQueue remoteQueue) {
+	long nextPullOffset(MessageQueue remoteQueue) {
         if (!pullOffsetTable.containsKey(remoteQueue)) {
             try {
                 pullOffsetTable.putIfAbsent(remoteQueue,
@@ -79,22 +78,22 @@ class LocalMessageCache implements ServiceLifecycle {
         return pullOffsetTable.get(remoteQueue);
     }
 
-    void updatePullOffset(MessageQueue remoteQueue, long nextPullOffset) {
+	void updatePullOffset(MessageQueue remoteQueue, long nextPullOffset) {
         pullOffsetTable.put(remoteQueue, nextPullOffset);
     }
 
-    void submitConsumeRequest(ConsumeRequest consumeRequest) {
+	void submitConsumeRequest(ConsumeRequest consumeRequest) {
         try {
             consumeRequestCache.put(consumeRequest);
         } catch (InterruptedException ignore) {
         }
     }
 
-    MessageExt poll() {
+	MessageExt poll() {
         return poll(clientConfig.getOperationTimeout());
     }
 
-    MessageExt poll(final KeyValue properties) {
+	MessageExt poll(final KeyValue properties) {
         int currentPollTimeout = clientConfig.getOperationTimeout();
         if (properties.containsKey(Message.BuiltinKeys.TIMEOUT)) {
             currentPollTimeout = properties.getInt(Message.BuiltinKeys.TIMEOUT);
@@ -102,7 +101,7 @@ class LocalMessageCache implements ServiceLifecycle {
         return poll(currentPollTimeout);
     }
 
-    private MessageExt poll(long timeout) {
+	private MessageExt poll(long timeout) {
         try {
             ConsumeRequest consumeRequest = consumeRequestCache.poll(timeout, TimeUnit.MILLISECONDS);
             if (consumeRequest != null) {
@@ -117,19 +116,20 @@ class LocalMessageCache implements ServiceLifecycle {
         return null;
     }
 
-    void ack(final String messageId) {
+	void ack(final String messageId) {
         ConsumeRequest consumeRequest = consumedRequest.remove(messageId);
-        if (consumeRequest != null) {
-            long offset = consumeRequest.getProcessQueue().removeMessage(Collections.singletonList(consumeRequest.getMessageExt()));
-            try {
-                rocketmqPullConsumer.updateConsumeOffset(consumeRequest.getMessageQueue(), offset);
-            } catch (MQClientException e) {
-                log.error("A error occurred in update consume offset process.", e);
-            }
-        }
+        if (consumeRequest == null) {
+			return;
+		}
+		long offset = consumeRequest.getProcessQueue().removeMessage(Collections.singletonList(consumeRequest.getMessageExt()));
+		try {
+		    rocketmqPullConsumer.updateConsumeOffset(consumeRequest.getMessageQueue(), offset);
+		} catch (MQClientException e) {
+		    log.error("A error occurred in update consume offset process.", e);
+		}
     }
 
-    void ack(final MessageQueue messageQueue, final ProcessQueue processQueue, final MessageExt messageExt) {
+	void ack(final MessageQueue messageQueue, final ProcessQueue processQueue, final MessageExt messageExt) {
         consumedRequest.remove(messageExt.getMsgId());
         long offset = processQueue.removeMessage(Collections.singletonList(messageExt));
         try {
@@ -139,22 +139,17 @@ class LocalMessageCache implements ServiceLifecycle {
         }
     }
 
-    @Override
+	@Override
     public void startup() {
-        this.cleanExpireMsgExecutors.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                cleanExpireMsg();
-            }
-        }, clientConfig.getRmqMessageConsumeTimeout(), clientConfig.getRmqMessageConsumeTimeout(), TimeUnit.MINUTES);
+        this.cleanExpireMsgExecutors.scheduleAtFixedRate(this::cleanExpireMsg, clientConfig.getRmqMessageConsumeTimeout(), clientConfig.getRmqMessageConsumeTimeout(), TimeUnit.MINUTES);
     }
 
-    @Override
+	@Override
     public void shutdown() {
         ThreadUtils.shutdownGracefully(cleanExpireMsgExecutors, 5000, TimeUnit.MILLISECONDS);
     }
 
-    private void cleanExpireMsg() {
+	private void cleanExpireMsg() {
         for (final Map.Entry<MessageQueue, ProcessQueue> next : rocketmqPullConsumer.getDefaultMQPullConsumerImpl()
             .getRebalanceImpl().getProcessQueueTable().entrySet()) {
             ProcessQueue pq = next.getValue();
@@ -203,7 +198,7 @@ class LocalMessageCache implements ServiceLifecycle {
         }
     }
 
-    private ReadWriteLock getLockInProcessQueue(ProcessQueue pq) {
+	private ReadWriteLock getLockInProcessQueue(ProcessQueue pq) {
         try {
             return (ReadWriteLock) FieldUtils.readDeclaredField(pq, "lockTreeMap", true);
         } catch (IllegalAccessException e) {

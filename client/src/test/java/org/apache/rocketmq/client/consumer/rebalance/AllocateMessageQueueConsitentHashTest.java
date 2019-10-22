@@ -27,28 +27,32 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AllocateMessageQueueConsitentHashTest {
 
-    private String topic;
-    private static final String CID_PREFIX = "CID-";
+    private static final Logger logger = LoggerFactory.getLogger(AllocateMessageQueueConsitentHashTest.class);
+	private static final String CID_PREFIX = "CID-";
+	private String topic;
 
-    @Before
+	@Before
     public void init() {
         topic = "topic_test";
     }
 
-    public void printMessageQueue(List<MessageQueue> messageQueueList, String name) {
-        if (messageQueueList == null || messageQueueList.size() < 1)
-            return;
-        System.out.println(name + ".......................................start");
+	public void printMessageQueue(List<MessageQueue> messageQueueList, String name) {
+        if (messageQueueList == null || messageQueueList.size() < 1) {
+			return;
+		}
+        logger.info(name + ".......................................start");
         for (MessageQueue messageQueue : messageQueueList) {
-            System.out.println(messageQueue);
+            logger.info(String.valueOf(messageQueue));
         }
-        System.out.println(name + ".......................................end");
+        logger.info(name + ".......................................end");
     }
 
-    @Test
+	@Test
     public void testCurrentCIDNotExists() {
         String currentCID = String.valueOf(Integer.MAX_VALUE);
         List<String> consumerIdList = createConsumerIdList(2);
@@ -58,38 +62,38 @@ public class AllocateMessageQueueConsitentHashTest {
         Assert.assertEquals(result.size(), 0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
     public void testCurrentCIDIllegalArgument() {
         List<String> consumerIdList = createConsumerIdList(2);
         List<MessageQueue> messageQueueList = createMessageQueueList(6);
         new AllocateMessageQueueConsistentHash().allocate("", "", messageQueueList, consumerIdList);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
     public void testMessageQueueIllegalArgument() {
         String currentCID = "0";
         List<String> consumerIdList = createConsumerIdList(2);
         new AllocateMessageQueueConsistentHash().allocate("", currentCID, null, consumerIdList);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+	@Test(expected = IllegalArgumentException.class)
     public void testConsumerIdIllegalArgument() {
         String currentCID = "0";
         List<MessageQueue> messageQueueList = createMessageQueueList(6);
         new AllocateMessageQueueConsistentHash().allocate("", currentCID, messageQueueList, null);
     }
 
-    @Test
+	@Test
     public void testAllocate1() {
         testAllocate(20, 10);
     }
 
-    @Test
+	@Test
     public void testAllocate2() {
         testAllocate(10, 20);
     }
 
-    @Test
+	@Test
     public void testRun100RandomCase() {
         for (int i = 0; i < 10; i++) {
             int consumerSize = new Random().nextInt(20) + 1;//1-20
@@ -98,11 +102,12 @@ public class AllocateMessageQueueConsitentHashTest {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
+				logger.error(e.getMessage(), e);
             }
         }
     }
 
-    public void testAllocate(int queueSize, int consumerSize) {
+	public void testAllocate(int queueSize, int consumerSize) {
         AllocateMessageQueueStrategy allocateMessageQueueConsistentHash = new AllocateMessageQueueConsistentHash(3);
 
         List<MessageQueue> mqAll = createMessageQueueList(queueSize);
@@ -157,7 +162,8 @@ public class AllocateMessageQueueConsitentHashTest {
                 //System.out.println("rs[" + cid + "]:" + "[" + rs.size() + "]" + rs.toString());
             }
 
-            Assert.assertTrue("queueSize" + queueSize + "consumerSize:" + consumerSize + "\nmqAll:" + mqAll + "\nallocatedResAllAfterRemove" + allocatedResAllAfterRemove,
+            Assert.assertTrue(new StringBuilder().append("queueSize").append(queueSize).append("consumerSize:").append(consumerSize).append("\nmqAll:").append(mqAll)
+					.append("\nallocatedResAllAfterRemove").append(allocatedResAllAfterRemove).toString(),
                 verifyAllocateAll(cidAfterRemoveOne, mqAll, allocatedResAllAfterRemove));
             verifyAfterRemove(allocateToAllOrigin, allocateToAllAfterRemoveOne, removeCID);
         }
@@ -190,7 +196,7 @@ public class AllocateMessageQueueConsitentHashTest {
         }
     }
 
-    private boolean verifyAllocateAll(List<String> cidAll, List<MessageQueue> mqAll,
+	private boolean verifyAllocateAll(List<String> cidAll, List<MessageQueue> mqAll,
         List<MessageQueue> allocatedResAll) {
         if (cidAll.isEmpty()) {
             return allocatedResAll.isEmpty();
@@ -198,7 +204,7 @@ public class AllocateMessageQueueConsitentHashTest {
         return mqAll.containsAll(allocatedResAll) && allocatedResAll.containsAll(mqAll);
     }
 
-    private void verifyAfterRemove(Map<MessageQueue, String> allocateToBefore, Map<MessageQueue, String> allocateAfter,
+	private void verifyAfterRemove(Map<MessageQueue, String> allocateToBefore, Map<MessageQueue, String> allocateAfter,
         String removeCID) {
         for (MessageQueue mq : allocateToBefore.keySet()) {
             String allocateToOrigin = allocateToBefore.get(mq);
@@ -210,7 +216,7 @@ public class AllocateMessageQueueConsitentHashTest {
         }
     }
 
-    private void verifyAfterAdd(Map<MessageQueue, String> allocateBefore, Map<MessageQueue, String> allocateAfter,
+	private void verifyAfterAdd(Map<MessageQueue, String> allocateBefore, Map<MessageQueue, String> allocateAfter,
         String newCID) {
         for (MessageQueue mq : allocateAfter.keySet()) {
             String allocateToOrigin = allocateBefore.get(mq);
@@ -218,12 +224,13 @@ public class AllocateMessageQueueConsitentHashTest {
             if (allocateToAfter.equals(newCID)) {
 
             } else {//the rest queue should be the same
-                Assert.assertTrue("it was allocated to " + allocateToOrigin + ". Now, it is to " + allocateAfter.get(mq) + " mq:" + mq, allocateAfter.get(mq).equals(allocateToOrigin));//should be the same
+                Assert.assertTrue(new StringBuilder().append("it was allocated to ").append(allocateToOrigin).append(". Now, it is to ").append(allocateAfter.get(mq)).append(" mq:").append(mq)
+						.toString(), allocateAfter.get(mq).equals(allocateToOrigin));//should be the same
             }
         }
     }
 
-    private List<String> createConsumerIdList(int size) {
+	private List<String> createConsumerIdList(int size) {
         List<String> consumerIdList = new ArrayList<String>(size);
         for (int i = 0; i < size; i++) {
             consumerIdList.add(CID_PREFIX + String.valueOf(i));
@@ -231,7 +238,7 @@ public class AllocateMessageQueueConsitentHashTest {
         return consumerIdList;
     }
 
-    private List<MessageQueue> createMessageQueueList(int size) {
+	private List<MessageQueue> createMessageQueueList(int size) {
         List<MessageQueue> messageQueueList = new ArrayList<MessageQueue>(size);
         for (int i = 0; i < size; i++) {
             MessageQueue mq = new MessageQueue(topic, "brokerName", i);

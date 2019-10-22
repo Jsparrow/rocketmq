@@ -37,33 +37,38 @@ import org.apache.rocketmq.common.MixAll;
 import org.apache.rocketmq.common.filter.ExpressionType;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.srvutil.ServerUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class Consumer {
 
-    public static void main(String[] args) throws MQClientException, IOException {
+    private static final Logger logger = LoggerFactory.getLogger(Consumer.class);
+
+	public static void main(String[] args) throws MQClientException, IOException {
         Options options = ServerUtil.buildCommandlineOptions(new Options());
         CommandLine commandLine = ServerUtil.parseCmdLine("benchmarkConsumer", args, buildCommandlineOptions(options), new PosixParser());
         if (null == commandLine) {
             System.exit(-1);
         }
 
-        final String topic = commandLine.hasOption('t') ? commandLine.getOptionValue('t').trim() : "BenchmarkTest";
-        final String groupPrefix = commandLine.hasOption('g') ? commandLine.getOptionValue('g').trim() : "benchmark_consumer";
-        final String isPrefixEnable = commandLine.hasOption('p') ? commandLine.getOptionValue('p').trim() : "true";
-        final String filterType = commandLine.hasOption('f') ? commandLine.getOptionValue('f').trim() : null;
-        final String expression = commandLine.hasOption('e') ? commandLine.getOptionValue('e').trim() : null;
+        final String topic = commandLine.hasOption('t') ? StringUtils.trim(commandLine.getOptionValue('t')) : "BenchmarkTest";
+        final String groupPrefix = commandLine.hasOption('g') ? StringUtils.trim(commandLine.getOptionValue('g')) : "benchmark_consumer";
+        final String isPrefixEnable = commandLine.hasOption('p') ? StringUtils.trim(commandLine.getOptionValue('p')) : "true";
+        final String filterType = commandLine.hasOption('f') ? StringUtils.trim(commandLine.getOptionValue('f')) : null;
+        final String expression = commandLine.hasOption('e') ? StringUtils.trim(commandLine.getOptionValue('e')) : null;
         String group = groupPrefix;
         if (Boolean.parseBoolean(isPrefixEnable)) {
-            group = groupPrefix + "_" + Long.toString(System.currentTimeMillis() % 100);
+            group = new StringBuilder().append(groupPrefix).append("_").append(Long.toString(System.currentTimeMillis() % 100)).toString();
         }
 
-        System.out.printf("topic: %s, group: %s, prefix: %s, filterType: %s, expression: %s%n", topic, group, isPrefixEnable, filterType, expression);
+        logger.info("topic: %s, group: %s, prefix: %s, filterType: %s, expression: %s%n", topic, group, isPrefixEnable, filterType, expression);
 
         final StatsBenchmarkConsumer statsBenchmarkConsumer = new StatsBenchmarkConsumer();
 
         final Timer timer = new Timer("BenchmarkTimerThread", true);
 
-        final LinkedList<Long[]> snapshotList = new LinkedList<Long[]>();
+        final LinkedList<Long[]> snapshotList = new LinkedList<>();
 
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -77,19 +82,17 @@ public class Consumer {
 
         timer.scheduleAtFixedRate(new TimerTask() {
             private void printStats() {
-                if (snapshotList.size() >= 10) {
-                    Long[] begin = snapshotList.getFirst();
-                    Long[] end = snapshotList.getLast();
-
-                    final long consumeTps =
-                        (long) (((end[1] - begin[1]) / (double) (end[0] - begin[0])) * 1000L);
-                    final double averageB2CRT = (end[2] - begin[2]) / (double) (end[1] - begin[1]);
-                    final double averageS2CRT = (end[3] - begin[3]) / (double) (end[1] - begin[1]);
-
-                    System.out.printf("Consume TPS: %d Average(B2C) RT: %7.3f Average(S2C) RT: %7.3f MAX(B2C) RT: %d MAX(S2C) RT: %d%n",
-                        consumeTps, averageB2CRT, averageS2CRT, end[4], end[5]
-                    );
-                }
+                if (snapshotList.size() < 10) {
+					return;
+				}
+				Long[] begin = snapshotList.getFirst();
+				Long[] end = snapshotList.getLast();
+				final long consumeTps =
+				    (long) (((end[1] - begin[1]) / (double) (end[0] - begin[0])) * 1000L);
+				final double averageB2CRT = (end[2] - begin[2]) / (double) (end[1] - begin[1]);
+				final double averageS2CRT = (end[3] - begin[3]) / (double) (end[1] - begin[1]);
+				logger.info("Consume TPS: %d Average(B2C) RT: %7.3f Average(S2C) RT: %7.3f MAX(B2C) RT: %d MAX(S2C) RT: %d%n", consumeTps, averageB2CRT, averageS2CRT, end[4], end[5]
+				);
             }
 
             @Override
@@ -97,7 +100,7 @@ public class Consumer {
                 try {
                     this.printStats();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }, 10000, 10000);
@@ -110,43 +113,39 @@ public class Consumer {
         } else {
             if (ExpressionType.TAG.equals(filterType)) {
                 String expr = MixAll.file2String(expression);
-                System.out.printf("Expression: %s%n", expr);
+                logger.info("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.byTag(expr));
             } else if (ExpressionType.SQL92.equals(filterType)) {
                 String expr = MixAll.file2String(expression);
-                System.out.printf("Expression: %s%n", expr);
+                logger.info("Expression: %s%n", expr);
                 consumer.subscribe(topic, MessageSelector.bySql(expr));
             } else {
                 throw new IllegalArgumentException("Not support filter type! " + filterType);
             }
         }
 
-        consumer.registerMessageListener(new MessageListenerConcurrently() {
-            @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                ConsumeConcurrentlyContext context) {
-                MessageExt msg = msgs.get(0);
-                long now = System.currentTimeMillis();
+        consumer.registerMessageListener((List<MessageExt> msgs, ConsumeConcurrentlyContext context) -> {
+		MessageExt msg = msgs.get(0);
+		long now = System.currentTimeMillis();
 
-                statsBenchmarkConsumer.getReceiveMessageTotalCount().incrementAndGet();
+		statsBenchmarkConsumer.getReceiveMessageTotalCount().incrementAndGet();
 
-                long born2ConsumerRT = now - msg.getBornTimestamp();
-                statsBenchmarkConsumer.getBorn2ConsumerTotalRT().addAndGet(born2ConsumerRT);
+		long born2ConsumerRT = now - msg.getBornTimestamp();
+		statsBenchmarkConsumer.getBorn2ConsumerTotalRT().addAndGet(born2ConsumerRT);
 
-                long store2ConsumerRT = now - msg.getStoreTimestamp();
-                statsBenchmarkConsumer.getStore2ConsumerTotalRT().addAndGet(store2ConsumerRT);
+		long store2ConsumerRT = now - msg.getStoreTimestamp();
+		statsBenchmarkConsumer.getStore2ConsumerTotalRT().addAndGet(store2ConsumerRT);
 
-                compareAndSetMax(statsBenchmarkConsumer.getBorn2ConsumerMaxRT(), born2ConsumerRT);
+		compareAndSetMax(statsBenchmarkConsumer.getBorn2ConsumerMaxRT(), born2ConsumerRT);
 
-                compareAndSetMax(statsBenchmarkConsumer.getStore2ConsumerMaxRT(), store2ConsumerRT);
+		compareAndSetMax(statsBenchmarkConsumer.getStore2ConsumerMaxRT(), store2ConsumerRT);
 
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-            }
-        });
+		return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+         });
 
         consumer.start();
 
-        System.out.printf("Consumer Started.%n");
+        logger.info("Consumer Started.%n");
     }
 
     public static Options buildCommandlineOptions(final Options options) {
@@ -177,8 +176,9 @@ public class Consumer {
         long prev = target.get();
         while (value > prev) {
             boolean updated = target.compareAndSet(prev, value);
-            if (updated)
-                break;
+            if (updated) {
+				break;
+			}
 
             prev = target.get();
         }

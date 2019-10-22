@@ -29,7 +29,8 @@ public abstract class Op {
         return symbol;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return symbol;
     }
 }

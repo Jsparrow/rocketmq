@@ -30,50 +30,38 @@ import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
 
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConsumeMessageCommand implements SubCommand {
 
-    private String topic = null;
+    private static final Logger logger = LoggerFactory.getLogger(ConsumeMessageCommand.class);
+	private String topic = null;
     private long messageCount = 128;
     private DefaultMQPullConsumer defaultMQPullConsumer;
 
-
-    public enum ConsumeType {
-        /**
-         * Topic only
-         */
-        DEFAULT,
-        /**
-         * Topic brokerName queueId set
-         */
-        BYQUEUE,
-        /**
-         * Topic brokerName queueId offset set
-         */
-        BYOFFSET
-    }
 
     private static long timestampFormat(final String value) {
         long timestamp;
         try {
             timestamp = Long.parseLong(value);
         } catch (NumberFormatException e) {
-            timestamp = UtilAll.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+            logger.error(e.getMessage(), e);
+			timestamp = UtilAll.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
         }
 
         return timestamp;
     }
-    @Override
+	@Override
     public String commandName() {
         return "consumeMessage";
     }
-
-    @Override
+	@Override
     public String commandDesc() {
         return "Consume message";
     }
-
-    @Override
+	@Override
     public Options buildCommandlineOptions(final Options options) {
         Option opt = new Option("t", "topic", true, "Topic name");
         opt.setRequired(true);
@@ -113,8 +101,7 @@ public class ConsumeMessageCommand implements SubCommand {
         return options;
 
     }
-
-    @Override
+	@Override
     public void execute(final CommandLine commandLine, final Options options, RPCHook rpcHook) throws SubCommandException {
         if (defaultMQPullConsumer == null) {
             defaultMQPullConsumer = new DefaultMQPullConsumer(MixAll.TOOLS_CONSUMER_GROUP, rpcHook);
@@ -131,61 +118,61 @@ public class ConsumeMessageCommand implements SubCommand {
         try {
             /* Group name must be set before consumer start */
             if (commandLine.hasOption('g')) {
-                String consumerGroup = commandLine.getOptionValue('g').trim();
+                String consumerGroup = StringUtils.trim(commandLine.getOptionValue('g'));
                 defaultMQPullConsumer.setConsumerGroup(consumerGroup);
             }
 
             defaultMQPullConsumer.start();
 
-            topic = commandLine.getOptionValue('t').trim();
+            topic = StringUtils.trim(commandLine.getOptionValue('t'));
 
             if (commandLine.hasOption('c')) {
-                messageCount = Long.parseLong(commandLine.getOptionValue('c').trim());
+                messageCount = Long.parseLong(StringUtils.trim(commandLine.getOptionValue('c')));
                 if (messageCount <= 0) {
-                    System.out.print("Please input a positive messageNumber!");
+                    logger.info("Please input a positive messageNumber!");
                     return;
                 }
             }
             if (commandLine.hasOption('b')) {
-                brokerName = commandLine.getOptionValue('b').trim();
+                brokerName = StringUtils.trim(commandLine.getOptionValue('b'));
 
             }
             if (commandLine.hasOption('i')) {
                 if (!commandLine.hasOption('b')) {
-                    System.out.print("Please set the brokerName before queueId!");
+                    logger.info("Please set the brokerName before queueId!");
                     return;
                 }
-                queueId = commandLine.getOptionValue('i').trim();
+                queueId = StringUtils.trim(commandLine.getOptionValue('i'));
 
                 consumeType = ConsumeType.BYQUEUE;
             }
             if (commandLine.hasOption('o')) {
                 if (consumeType != ConsumeType.BYQUEUE) {
-                    System.out.print("Please set queueId before offset!");
+                    logger.info("Please set queueId before offset!");
                     return;
                 }
-                offset = Long.parseLong(commandLine.getOptionValue('o').trim());
+                offset = Long.parseLong(StringUtils.trim(commandLine.getOptionValue('o')));
                 consumeType = ConsumeType.BYOFFSET;
             }
 
             long now = System.currentTimeMillis();
             if (commandLine.hasOption('s')) {
-                String timestampStr = commandLine.getOptionValue('s').trim();
+                String timestampStr = StringUtils.trim(commandLine.getOptionValue('s'));
                 timeValueBegin = timestampFormat(timestampStr);
                 if (timeValueBegin > now) {
-                    System.out.print("Please set the beginTimestamp before now!");
+                    logger.info("Please set the beginTimestamp before now!");
                     return;
                 }
             }
             if (commandLine.hasOption('e')) {
-                String timestampStr = commandLine.getOptionValue('e').trim();
+                String timestampStr = StringUtils.trim(commandLine.getOptionValue('e'));
                 timeValueEnd = timestampFormat(timestampStr);
                 if (timeValueEnd > now) {
-                    System.out.print("Please set the endTimestamp before now!");
+                    logger.info("Please set the endTimestamp before now!");
                     return;
                 }
                 if (timeValueBegin > timeValueEnd) {
-                    System.out.print("Please make sure that the beginTimestamp is less than or equal to the endTimestamp");
+                    logger.info("Please make sure that the beginTimestamp is less than or equal to the endTimestamp");
                     return;
                 }
             }
@@ -201,7 +188,7 @@ public class ConsumeMessageCommand implements SubCommand {
                     executeByCondition(brokerName, queueId, 0, timeValueBegin, timeValueEnd);
                     break;
                 default:
-                    System.out.print("Unknown type of consume!");
+                    logger.info("Unknown type of consume!");
                     break;
             }
 
@@ -211,33 +198,30 @@ public class ConsumeMessageCommand implements SubCommand {
             defaultMQPullConsumer.shutdown();
         }
     }
-
-    private void pullMessageByQueue(MessageQueue mq, long minOffset, long maxOffset) {
+	private void pullMessageByQueue(MessageQueue mq, long minOffset, long maxOffset) {
         READQ:
         for (long offset = minOffset; offset <= maxOffset; ) {
             PullResult pullResult = null;
             try {
                 pullResult = defaultMQPullConsumer.pull(mq, "*", offset, (int)(maxOffset - offset + 1));
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
                 return;
             }
             if (pullResult != null) {
                 offset = pullResult.getNextBeginOffset();
                 switch (pullResult.getPullStatus()) {
                     case FOUND:
-                        System.out.print("Consume ok\n");
+                        logger.info("Consume ok\n");
                         PrintMessageByQueueCommand.printMessage(pullResult.getMsgFoundList(), "UTF-8",
                             true, true);
                         break;
                     case NO_MATCHED_MSG:
-                        System.out.printf("%s no matched msg. status=%s, offset=%s\n", mq, pullResult.getPullStatus(),
-                            offset);
+                        logger.info("%s no matched msg. status=%s, offset=%s\n", mq, pullResult.getPullStatus(), offset);
                         break;
                     case NO_NEW_MSG:
                     case OFFSET_ILLEGAL:
-                        System.out.printf("%s print msg finished. status=%s, offset=%s\n", mq,
-                            pullResult.getPullStatus(), offset);
+                        logger.info("%s print msg finished. status=%s, offset=%s\n", mq, pullResult.getPullStatus(), offset);
                         break READQ;
                     default:
                         break;
@@ -245,8 +229,7 @@ public class ConsumeMessageCommand implements SubCommand {
             }
         }
     }
-
-    private void executeDefault(long timeValueBegin, long timeValueEnd) {
+	private void executeDefault(long timeValueBegin, long timeValueEnd) {
         try {
             Set<MessageQueue> mqs = defaultMQPullConsumer.fetchSubscribeMessageQueues(topic);
             long countLeft = messageCount;
@@ -263,7 +246,7 @@ public class ConsumeMessageCommand implements SubCommand {
                     maxOffset = defaultMQPullConsumer.searchOffset(mq, timeValueEnd);
                 }
                 if (maxOffset - minOffset > countLeft) {
-                    System.out.printf("The older %d message of the %d queue will be provided\n", countLeft, mq.getQueueId());
+                    logger.info("The older %d message of the %d queue will be provided\n", countLeft, mq.getQueueId());
                     maxOffset = minOffset + countLeft - 1;
                     countLeft = 0;
                 } else {
@@ -273,11 +256,10 @@ public class ConsumeMessageCommand implements SubCommand {
                 pullMessageByQueue(mq, minOffset, maxOffset);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
-
-    private void executeByCondition(String brokerName, String queueId, long offset, long timeValueBegin, long timeValueEnd) {
+	private void executeByCondition(String brokerName, String queueId, long offset, long timeValueBegin, long timeValueEnd) {
         MessageQueue mq = new MessageQueue(topic, brokerName, Integer.parseInt(queueId));
         try {
             long minOffset = defaultMQPullConsumer.minOffset(mq);
@@ -289,18 +271,33 @@ public class ConsumeMessageCommand implements SubCommand {
                 maxOffset = defaultMQPullConsumer.searchOffset(mq, timeValueEnd);
             }
             if (offset > maxOffset) {
-                System.out.printf("%s no matched msg, offset=%s\n", mq, offset);
+                logger.info("%s no matched msg, offset=%s\n", mq, offset);
                 return;
             }
             minOffset = minOffset > offset ? minOffset : offset;
             if (maxOffset - minOffset > messageCount) {
-                System.out.printf("The oldler %d message will be provided\n", messageCount);
+                logger.info("The oldler %d message will be provided\n", messageCount);
                 maxOffset = minOffset + messageCount - 1;
             }
 
             pullMessageByQueue(mq, minOffset, maxOffset);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
+    }
+
+	public enum ConsumeType {
+        /**
+         * Topic only
+         */
+        DEFAULT,
+        /**
+         * Topic brokerName queueId set
+         */
+        BYQUEUE,
+        /**
+         * Topic brokerName queueId offset set
+         */
+        BYOFFSET
     }
 }

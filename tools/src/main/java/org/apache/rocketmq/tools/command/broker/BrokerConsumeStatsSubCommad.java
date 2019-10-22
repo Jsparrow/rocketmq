@@ -33,10 +33,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class BrokerConsumeStatsSubCommad implements SubCommand {
 
-    private DefaultMQAdminExt defaultMQAdminExt;
+    private static final Logger logger = LoggerFactory.getLogger(BrokerConsumeStatsSubCommad.class);
+	private DefaultMQAdminExt defaultMQAdminExt;
 
     private DefaultMQAdminExt createMQAdminExt(RPCHook rpcHook) throws SubCommandException {
         if (this.defaultMQAdminExt != null) {
@@ -90,36 +94,28 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
         try {
             defaultMQAdminExt =  createMQAdminExt(rpcHook);
 
-            String brokerAddr = commandLine.getOptionValue('b').trim();
+            String brokerAddr = StringUtils.trim(commandLine.getOptionValue('b'));
             boolean isOrder = false;
             long timeoutMillis = 50000;
             long diffLevel = 0;
             if (commandLine.hasOption('o')) {
-                isOrder = Boolean.parseBoolean(commandLine.getOptionValue('o').trim());
+                isOrder = Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('o')));
             }
             if (commandLine.hasOption('t')) {
-                timeoutMillis = Long.parseLong(commandLine.getOptionValue('t').trim());
+                timeoutMillis = Long.parseLong(StringUtils.trim(commandLine.getOptionValue('t')));
             }
             if (commandLine.hasOption('l')) {
-                diffLevel = Long.parseLong(commandLine.getOptionValue('l').trim());
+                diffLevel = Long.parseLong(StringUtils.trim(commandLine.getOptionValue('l')));
             }
 
             ConsumeStatsList consumeStatsList = defaultMQAdminExt.fetchConsumeStatsInBroker(brokerAddr, isOrder, timeoutMillis);
-            System.out.printf("%-32s  %-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s%n",
-                "#Topic",
-                "#Group",
-                "#Broker Name",
-                "#QID",
-                "#Broker Offset",
-                "#Consumer Offset",
-                "#Diff",
-                "#LastTime");
+            logger.info("%-32s  %-32s  %-32s  %-4s  %-20s  %-20s  %-20s  %s%n", "#Topic", "#Group", "#Broker Name", "#QID", "#Broker Offset", "#Consumer Offset", "#Diff", "#LastTime");
             for (Map<String, List<ConsumeStats>> map : consumeStatsList.getConsumeStatsList()) {
                 for (Map.Entry<String, List<ConsumeStats>> entry : map.entrySet()) {
                     String group = entry.getKey();
                     List<ConsumeStats> consumeStatsArray = entry.getValue();
                     for (ConsumeStats consumeStats : consumeStatsArray) {
-                        List<MessageQueue> mqList = new LinkedList<MessageQueue>();
+                        List<MessageQueue> mqList = new LinkedList<>();
                         mqList.addAll(consumeStats.getOffsetTable().keySet());
                         Collections.sort(mqList);
                         for (MessageQueue mq : mqList) {
@@ -133,24 +129,18 @@ public class BrokerConsumeStatsSubCommad implements SubCommand {
                             try {
                                 lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.YYYY_MM_DD_HH_MM_SS);
                             } catch (Exception ignored) {
+								logger.error(ignored.getMessage(), ignored);
 
                             }
-                            if (offsetWrapper.getLastTimestamp() > 0)
-                                System.out.printf("%-32s  %-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s%n",
-                                    UtilAll.frontStringAtLeast(mq.getTopic(), 32),
-                                    group,
-                                    UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
-                                    mq.getQueueId(),
-                                    offsetWrapper.getBrokerOffset(),
-                                    offsetWrapper.getConsumerOffset(),
-                                    diff,
-                                    lastTime
+                            if (offsetWrapper.getLastTimestamp() > 0) {
+								logger.info("%-32s  %-32s  %-32s  %-4d  %-20d  %-20d  %-20d  %s%n", UtilAll.frontStringAtLeast(mq.getTopic(), 32), group, UtilAll.frontStringAtLeast(mq.getBrokerName(), 32), mq.getQueueId(), offsetWrapper.getBrokerOffset(), offsetWrapper.getConsumerOffset(), diff, lastTime
                                 );
+							}
                         }
                     }
                 }
             }
-            System.out.printf("%nDiff Total: %d%n", consumeStatsList.getTotalDiff());
+            logger.info("%nDiff Total: %d%n", consumeStatsList.getTotalDiff());
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

@@ -27,10 +27,14 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class SendMessageCommand implements SubCommand {
 
-    private DefaultMQProducer producer;
+    private static final Logger logger = LoggerFactory.getLogger(SendMessageCommand.class);
+	private DefaultMQProducer producer;
 
     @Override
     public String commandName() {
@@ -84,28 +88,28 @@ public class SendMessageCommand implements SubCommand {
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) throws SubCommandException {
         Message msg = null;
-        String topic = commandLine.getOptionValue('t').trim();
-        String body = commandLine.getOptionValue('p').trim();
+        String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+        String body = StringUtils.trim(commandLine.getOptionValue('p'));
         String tag = null;
         String keys = null;
         String brokerName = null;
         int queueId = -1;
         try {
             if (commandLine.hasOption('k')) {
-                keys = commandLine.getOptionValue('k').trim();
+                keys = StringUtils.trim(commandLine.getOptionValue('k'));
             }
             if (commandLine.hasOption('c')) {
-                tag = commandLine.getOptionValue('c').trim();
+                tag = StringUtils.trim(commandLine.getOptionValue('c'));
             }
             if (commandLine.hasOption('b')) {
-                brokerName = commandLine.getOptionValue('b').trim();
+                brokerName = StringUtils.trim(commandLine.getOptionValue('b'));
             }
             if (commandLine.hasOption('i')) {
                 if (!commandLine.hasOption('b')) {
-                    System.out.print("Broker name must be set if the queue is chosen!");
+                    logger.info("Broker name must be set if the queue is chosen!");
                     return;
                 } else {
-                    queueId = Integer.parseInt(commandLine.getOptionValue('i').trim());
+                    queueId = Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('i')));
                 }
             }
             msg = new Message(topic, tag, keys, body.getBytes("utf-8"));
@@ -130,26 +134,14 @@ public class SendMessageCommand implements SubCommand {
             producer.shutdown();
         }
 
-        System.out.printf("%-32s  %-4s  %-20s    %s%n",
-            "#Broker Name",
-            "#QID",
-            "#Send Result",
-            "#MsgId"
+        logger.info("%-32s  %-4s  %-20s    %s%n", "#Broker Name", "#QID", "#Send Result", "#MsgId"
         );
 
         if (result != null) {
-            System.out.printf("%-32s  %-4s  %-20s    %s%n",
-                result.getMessageQueue().getBrokerName(),
-                result.getMessageQueue().getQueueId(),
-                result.getSendStatus(),
-                result.getMsgId()
+            logger.info("%-32s  %-4s  %-20s    %s%n", result.getMessageQueue().getBrokerName(), result.getMessageQueue().getQueueId(), result.getSendStatus(), result.getMsgId()
             );
         } else {
-            System.out.printf("%-32s  %-4s  %-20s    %s%n",
-                "Unknown",
-                "Unknown",
-                "Failed",
-                "None"
+            logger.info("%-32s  %-4s  %-20s    %s%n", "Unknown", "Unknown", "Failed", "None"
             );
         }
     }

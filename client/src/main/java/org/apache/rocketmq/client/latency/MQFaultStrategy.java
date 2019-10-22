@@ -23,7 +23,7 @@ import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.common.message.MessageQueue;
 
 public class MQFaultStrategy {
-    private final static InternalLogger log = ClientLogger.getLog();
+    private static final InternalLogger log = ClientLogger.getLog();
     private final LatencyFaultTolerance<String> latencyFaultTolerance = new LatencyFaultToleranceImpl();
 
     private boolean sendLatencyFaultEnable = false;
@@ -56,53 +56,54 @@ public class MQFaultStrategy {
     }
 
     public MessageQueue selectOneMessageQueue(final TopicPublishInfo tpInfo, final String lastBrokerName) {
-        if (this.sendLatencyFaultEnable) {
-            try {
-                int index = tpInfo.getSendWhichQueue().getAndIncrement();
-                for (int i = 0; i < tpInfo.getMessageQueueList().size(); i++) {
-                    int pos = Math.abs(index++) % tpInfo.getMessageQueueList().size();
-                    if (pos < 0)
-                        pos = 0;
-                    MessageQueue mq = tpInfo.getMessageQueueList().get(pos);
-                    if (latencyFaultTolerance.isAvailable(mq.getBrokerName())) {
-                        if (null == lastBrokerName || mq.getBrokerName().equals(lastBrokerName))
-                            return mq;
-                    }
-                }
+        if (!(this.sendLatencyFaultEnable)) {
+			return tpInfo.selectOneMessageQueue(lastBrokerName);
+		}
+		try {
+		    int index = tpInfo.getSendWhichQueue().getAndIncrement();
+		    for (int i = 0; i < tpInfo.getMessageQueueList().size(); i++) {
+		        int pos = Math.abs(index++) % tpInfo.getMessageQueueList().size();
+		        if (pos < 0) {
+					pos = 0;
+				}
+		        MessageQueue mq = tpInfo.getMessageQueueList().get(pos);
+		        boolean condition = latencyFaultTolerance.isAvailable(mq.getBrokerName()) && (null == lastBrokerName || mq.getBrokerName().equals(lastBrokerName));
+				if (condition) {
+					return mq;
+				}
+		    }
 
-                final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
-                int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
-                if (writeQueueNums > 0) {
-                    final MessageQueue mq = tpInfo.selectOneMessageQueue();
-                    if (notBestBroker != null) {
-                        mq.setBrokerName(notBestBroker);
-                        mq.setQueueId(tpInfo.getSendWhichQueue().getAndIncrement() % writeQueueNums);
-                    }
-                    return mq;
-                } else {
-                    latencyFaultTolerance.remove(notBestBroker);
-                }
-            } catch (Exception e) {
-                log.error("Error occurred when selecting message queue", e);
-            }
-
-            return tpInfo.selectOneMessageQueue();
-        }
-
-        return tpInfo.selectOneMessageQueue(lastBrokerName);
+		    final String notBestBroker = latencyFaultTolerance.pickOneAtLeast();
+		    int writeQueueNums = tpInfo.getQueueIdByBroker(notBestBroker);
+		    if (writeQueueNums > 0) {
+		        final MessageQueue mq = tpInfo.selectOneMessageQueue();
+		        if (notBestBroker != null) {
+		            mq.setBrokerName(notBestBroker);
+		            mq.setQueueId(tpInfo.getSendWhichQueue().getAndIncrement() % writeQueueNums);
+		        }
+		        return mq;
+		    } else {
+		        latencyFaultTolerance.remove(notBestBroker);
+		    }
+		} catch (Exception e) {
+		    log.error("Error occurred when selecting message queue", e);
+		}
+		return tpInfo.selectOneMessageQueue();
     }
 
     public void updateFaultItem(final String brokerName, final long currentLatency, boolean isolation) {
-        if (this.sendLatencyFaultEnable) {
-            long duration = computeNotAvailableDuration(isolation ? 30000 : currentLatency);
-            this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration);
-        }
+        if (!(this.sendLatencyFaultEnable)) {
+			return;
+		}
+		long duration = computeNotAvailableDuration(isolation ? 30000 : currentLatency);
+		this.latencyFaultTolerance.updateFaultItem(brokerName, currentLatency, duration);
     }
 
     private long computeNotAvailableDuration(final long currentLatency) {
         for (int i = latencyMax.length - 1; i >= 0; i--) {
-            if (currentLatency >= latencyMax[i])
-                return this.notAvailableDuration[i];
+            if (currentLatency >= latencyMax[i]) {
+				return this.notAvailableDuration[i];
+			}
         }
 
         return 0;

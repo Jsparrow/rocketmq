@@ -234,7 +234,6 @@ class CallSnapshot {
     private final long value;
 
     public CallSnapshot(long timestamp, long times, long value) {
-        super();
         this.timestamp = timestamp;
         this.times = times;
         this.value = value;

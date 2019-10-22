@@ -43,6 +43,7 @@ import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
+import org.apache.commons.lang3.StringUtils;
 
 public class ScheduleMessageService extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
@@ -53,10 +54,10 @@ public class ScheduleMessageService extends ConfigManager {
     private static final long DELAY_FOR_A_PERIOD = 10000L;
 
     private final ConcurrentMap<Integer /* level */, Long/* delay timeMillis */> delayLevelTable =
-        new ConcurrentHashMap<Integer, Long>(32);
+        new ConcurrentHashMap<>(32);
 
     private final ConcurrentMap<Integer /* level */, Long/* offset */> offsetTable =
-        new ConcurrentHashMap<Integer, Long>(32);
+        new ConcurrentHashMap<>(32);
     private final DefaultMessageStore defaultMessageStore;
     private final AtomicBoolean started = new AtomicBoolean(false);
     private Timer timer;
@@ -111,40 +112,42 @@ public class ScheduleMessageService extends ConfigManager {
     }
 
     public void start() {
-        if (started.compareAndSet(false, true)) {
-            this.timer = new Timer("ScheduleMessageTimerThread", true);
-            for (Map.Entry<Integer, Long> entry : this.delayLevelTable.entrySet()) {
-                Integer level = entry.getKey();
-                Long timeDelay = entry.getValue();
-                Long offset = this.offsetTable.get(level);
-                if (null == offset) {
-                    offset = 0L;
-                }
+        if (!started.compareAndSet(false, true)) {
+			return;
+		}
+		this.timer = new Timer("ScheduleMessageTimerThread", true);
+		this.delayLevelTable.entrySet().forEach(entry -> {
+		    Integer level = entry.getKey();
+		    Long timeDelay = entry.getValue();
+		    Long offset = this.offsetTable.get(level);
+		    if (null == offset) {
+		        offset = 0L;
+		    }
 
-                if (timeDelay != null) {
-                    this.timer.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME);
-                }
-            }
+		    if (timeDelay != null) {
+		        this.timer.schedule(new DeliverDelayedMessageTimerTask(level, offset), FIRST_DELAY_TIME);
+		    }
+		});
+		this.timer.scheduleAtFixedRate(new TimerTask() {
 
-            this.timer.scheduleAtFixedRate(new TimerTask() {
-
-                @Override
-                public void run() {
-                    try {
-                        if (started.get()) ScheduleMessageService.this.persist();
-                    } catch (Throwable e) {
-                        log.error("scheduleAtFixedRate flush exception", e);
-                    }
-                }
-            }, 10000, this.defaultMessageStore.getMessageStoreConfig().getFlushDelayOffsetInterval());
-        }
+		    @Override
+		    public void run() {
+		        try {
+		            if (started.get()) {
+						ScheduleMessageService.this.persist();
+					}
+		        } catch (Throwable e) {
+		            log.error("scheduleAtFixedRate flush exception", e);
+		        }
+		    }
+		}, 10000, this.defaultMessageStore.getMessageStoreConfig().getFlushDelayOffsetInterval());
     }
 
     public void shutdown() {
-        if (this.started.compareAndSet(true, false)) {
-            if (null != this.timer)
-                this.timer.cancel();
-        }
+        boolean condition = this.started.compareAndSet(true, false) && null != this.timer;
+		if (condition) {
+			this.timer.cancel();
+		}
 
     }
 
@@ -156,11 +159,13 @@ public class ScheduleMessageService extends ConfigManager {
         return maxDelayLevel;
     }
 
-    public String encode() {
+    @Override
+	public String encode() {
         return this.encode(false);
     }
 
-    public boolean load() {
+    @Override
+	public boolean load() {
         boolean result = super.load();
         result = result && this.parseDelayLevel();
         return result;
@@ -174,23 +179,25 @@ public class ScheduleMessageService extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
-                DelayOffsetSerializeWrapper.fromJson(jsonString, DelayOffsetSerializeWrapper.class);
-            if (delayOffsetSerializeWrapper != null) {
-                this.offsetTable.putAll(delayOffsetSerializeWrapper.getOffsetTable());
-            }
-        }
+        if (jsonString == null) {
+			return;
+		}
+		DelayOffsetSerializeWrapper delayOffsetSerializeWrapper =
+		    DelayOffsetSerializeWrapper.fromJson(jsonString, DelayOffsetSerializeWrapper.class);
+		if (delayOffsetSerializeWrapper != null) {
+		    this.offsetTable.putAll(delayOffsetSerializeWrapper.getOffsetTable());
+		}
     }
 
-    public String encode(final boolean prettyFormat) {
+    @Override
+	public String encode(final boolean prettyFormat) {
         DelayOffsetSerializeWrapper delayOffsetSerializeWrapper = new DelayOffsetSerializeWrapper();
         delayOffsetSerializeWrapper.setOffsetTable(this.offsetTable);
         return delayOffsetSerializeWrapper.toJson(prettyFormat);
     }
 
     public boolean parseDelayLevel() {
-        HashMap<String, Long> timeUnitTable = new HashMap<String, Long>();
+        HashMap<String, Long> timeUnitTable = new HashMap<>();
         timeUnitTable.put("s", 1000L);
         timeUnitTable.put("m", 1000L * 60);
         timeUnitTable.put("h", 1000L * 60 * 60);
@@ -201,14 +208,14 @@ public class ScheduleMessageService extends ConfigManager {
             String[] levelArray = levelString.split(" ");
             for (int i = 0; i < levelArray.length; i++) {
                 String value = levelArray[i];
-                String ch = value.substring(value.length() - 1);
+                String ch = StringUtils.substring(value, value.length() - 1);
                 Long tu = timeUnitTable.get(ch);
 
                 int level = i + 1;
                 if (level > this.maxDelayLevel) {
                     this.maxDelayLevel = level;
                 }
-                long num = Long.parseLong(value.substring(0, value.length() - 1));
+                long num = Long.parseLong(StringUtils.substring(value, 0, value.length() - 1));
                 long delayTimeMillis = tu * num;
                 this.delayLevelTable.put(level, delayTimeMillis);
             }
@@ -332,9 +339,8 @@ public class ScheduleMessageService extends ConfigManager {
 
                                          */
                                         log.error(
-                                            "ScheduleMessageService, messageTimeup execute error, drop it. msgExt="
-                                                + msgExt + ", nextOffset=" + nextOffset + ",offsetPy="
-                                                + offsetPy + ",sizePy=" + sizePy, e);
+                                            new StringBuilder().append("ScheduleMessageService, messageTimeup execute error, drop it. msgExt=").append(msgExt).append(", nextOffset=").append(nextOffset)
+													.append(",offsetPy=").append(offsetPy).append(",sizePy=").append(sizePy).toString(), e);
                                     }
                                 }
                             } else {
@@ -361,8 +367,8 @@ public class ScheduleMessageService extends ConfigManager {
                     long cqMinOffset = cq.getMinOffsetInQueue();
                     if (offset < cqMinOffset) {
                         failScheduleOffset = cqMinOffset;
-                        log.error("schedule CQ offset invalid. offset=" + offset + ", cqMinOffset="
-                            + cqMinOffset + ", queueId=" + cq.getQueueId());
+                        log.error(new StringBuilder().append("schedule CQ offset invalid. offset=").append(offset).append(", cqMinOffset=").append(cqMinOffset).append(", queueId=")
+								.append(cq.getQueueId()).toString());
                     }
                 }
             } // end of if (cq != null)

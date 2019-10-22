@@ -22,10 +22,14 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StoreStatsServiceTest {
 
-    @Test
+    private static final Logger logger = LoggerFactory.getLogger(StoreStatsServiceTest.class);
+
+	@Test
     public void getSinglePutMessageTopicSizeTotal() throws Exception {
         final StoreStatsService storeStatsService = new StoreStatsService();
         int num = Runtime.getRuntime().availableProcessors() * 2;
@@ -34,23 +38,20 @@ public class StoreStatsServiceTest {
             final CountDownLatch latch = new CountDownLatch(num);
             final CyclicBarrier barrier = new CyclicBarrier(num);
             for (int i = 0; i < num; i++) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            barrier.await();
-                            AtomicLong atomicLong = storeStatsService.getSinglePutMessageTopicSizeTotal("test");
-                            if (reference.compareAndSet(null, atomicLong)) {
-                            } else if (reference.get() != atomicLong) {
-                                throw new RuntimeException("Reference should be same!");
-                            }
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
-                        } finally {
-                            latch.countDown();
-                        }
-                    }
-                }).start();
+                new Thread(() -> {
+				    try {
+				        barrier.await();
+				        AtomicLong atomicLong = storeStatsService.getSinglePutMessageTopicSizeTotal("test");
+				        if (reference.compareAndSet(null, atomicLong)) {
+				        } else if (reference.get() != atomicLong) {
+				            throw new RuntimeException("Reference should be same!");
+				        }
+				    } catch (InterruptedException | BrokenBarrierException e) {
+				        logger.error(e.getMessage(), e);
+				    } finally {
+				        latch.countDown();
+				    }
+				}).start();
             }
             latch.await();
         }
@@ -65,23 +66,20 @@ public class StoreStatsServiceTest {
             final CountDownLatch latch = new CountDownLatch(num);
             final CyclicBarrier barrier = new CyclicBarrier(num);
             for (int i = 0; i < num; i++) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            barrier.await();
-                            AtomicLong atomicLong = storeStatsService.getSinglePutMessageTopicTimesTotal("test");
-                            if (reference.compareAndSet(null, atomicLong)) {
-                            } else if (reference.get() != atomicLong) {
-                                throw new RuntimeException("Reference should be same!");
-                            }
-                        } catch (InterruptedException | BrokenBarrierException e) {
-                            e.printStackTrace();
-                        } finally {
-                            latch.countDown();
-                        }
-                    }
-                }).start();
+                new Thread(() -> {
+				    try {
+				        barrier.await();
+				        AtomicLong atomicLong = storeStatsService.getSinglePutMessageTopicTimesTotal("test");
+				        if (reference.compareAndSet(null, atomicLong)) {
+				        } else if (reference.get() != atomicLong) {
+				            throw new RuntimeException("Reference should be same!");
+				        }
+				    } catch (InterruptedException | BrokenBarrierException e) {
+				        logger.error(e.getMessage(), e);
+				    } finally {
+				        latch.countDown();
+				    }
+				}).start();
             }
             latch.await();
         }

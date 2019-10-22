@@ -38,7 +38,7 @@ public class ConsumerOffsetManager extends ConfigManager {
     private static final String TOPIC_GROUP_SEPARATOR = "@";
 
     private ConcurrentMap<String/* topic@group */, ConcurrentMap<Integer, Long>> offsetTable =
-        new ConcurrentHashMap<String, ConcurrentMap<Integer, Long>>(512);
+        new ConcurrentHashMap<>(512);
 
     private transient BrokerController brokerController;
 
@@ -83,36 +83,34 @@ public class ConsumerOffsetManager extends ConfigManager {
     }
 
     public Set<String> whichTopicByConsumer(final String group) {
-        Set<String> topics = new HashSet<String>();
+        Set<String> topics = new HashSet<>();
 
         Iterator<Entry<String, ConcurrentMap<Integer, Long>>> it = this.offsetTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
             String topicAtGroup = next.getKey();
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
-            if (arrays.length == 2) {
-                if (group.equals(arrays[1])) {
-                    topics.add(arrays[0]);
-                }
-            }
+            boolean condition = arrays.length == 2 && group.equals(arrays[1]);
+			if (condition) {
+			    topics.add(arrays[0]);
+			}
         }
 
         return topics;
     }
 
     public Set<String> whichGroupByTopic(final String topic) {
-        Set<String> groups = new HashSet<String>();
+        Set<String> groups = new HashSet<>();
 
         Iterator<Entry<String, ConcurrentMap<Integer, Long>>> it = this.offsetTable.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, ConcurrentMap<Integer, Long>> next = it.next();
             String topicAtGroup = next.getKey();
             String[] arrays = topicAtGroup.split(TOPIC_GROUP_SEPARATOR);
-            if (arrays.length == 2) {
-                if (topic.equals(arrays[0])) {
-                    groups.add(arrays[1]);
-                }
-            }
+            boolean condition = arrays.length == 2 && topic.equals(arrays[0]);
+			if (condition) {
+			    groups.add(arrays[1]);
+			}
         }
 
         return groups;
@@ -121,14 +119,14 @@ public class ConsumerOffsetManager extends ConfigManager {
     public void commitOffset(final String clientHost, final String group, final String topic, final int queueId,
         final long offset) {
         // topic@group
-        String key = topic + TOPIC_GROUP_SEPARATOR + group;
+        String key = new StringBuilder().append(topic).append(TOPIC_GROUP_SEPARATOR).append(group).toString();
         this.commitOffset(clientHost, key, queueId, offset);
     }
 
     private void commitOffset(final String clientHost, final String key, final int queueId, final long offset) {
         ConcurrentMap<Integer, Long> map = this.offsetTable.get(key);
         if (null == map) {
-            map = new ConcurrentHashMap<Integer, Long>(32);
+            map = new ConcurrentHashMap<>(32);
             map.put(queueId, offset);
             this.offsetTable.put(key, map);
         } else {
@@ -141,18 +139,20 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     public long queryOffset(final String group, final String topic, final int queueId) {
         // topic@group
-        String key = topic + TOPIC_GROUP_SEPARATOR + group;
+        String key = new StringBuilder().append(topic).append(TOPIC_GROUP_SEPARATOR).append(group).toString();
         ConcurrentMap<Integer, Long> map = this.offsetTable.get(key);
         if (null != map) {
             Long offset = map.get(queueId);
-            if (offset != null)
-                return offset;
+            if (offset != null) {
+				return offset;
+			}
         }
 
         return -1;
     }
 
-    public String encode() {
+    @Override
+	public String encode() {
         return this.encode(false);
     }
 
@@ -163,15 +163,17 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            ConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOffsetManager.class);
-            if (obj != null) {
-                this.offsetTable = obj.offsetTable;
-            }
-        }
+        if (jsonString == null) {
+			return;
+		}
+		ConsumerOffsetManager obj = RemotingSerializable.fromJson(jsonString, ConsumerOffsetManager.class);
+		if (obj != null) {
+		    this.offsetTable = obj.offsetTable;
+		}
     }
 
-    public String encode(final boolean prettyFormat) {
+    @Override
+	public String encode(final boolean prettyFormat) {
         return RemotingSerializable.toJson(this, prettyFormat);
     }
 
@@ -185,7 +187,7 @@ public class ConsumerOffsetManager extends ConfigManager {
 
     public Map<Integer, Long> queryMinOffsetInAllGroup(final String topic, final String filterGroups) {
 
-        Map<Integer, Long> queueMinOffset = new HashMap<Integer, Long>();
+        Map<Integer, Long> queueMinOffset = new HashMap<>();
         Set<String> topicGroups = this.offsetTable.keySet();
         if (!UtilAll.isBlank(filterGroups)) {
             for (String group : filterGroups.split(",")) {
@@ -198,11 +200,11 @@ public class ConsumerOffsetManager extends ConfigManager {
             }
         }
 
-        for (Map.Entry<String, ConcurrentMap<Integer, Long>> offSetEntry : this.offsetTable.entrySet()) {
+        this.offsetTable.entrySet().forEach(offSetEntry -> {
             String topicGroup = offSetEntry.getKey();
             String[] topicGroupArr = topicGroup.split(TOPIC_GROUP_SEPARATOR);
             if (topic.equals(topicGroupArr[0])) {
-                for (Entry<Integer, Long> entry : offSetEntry.getValue().entrySet()) {
+                offSetEntry.getValue().entrySet().forEach(entry -> {
                     long minOffset = this.brokerController.getMessageStore().getMinOffsetInQueue(topic, entry.getKey());
                     if (entry.getValue() >= minOffset) {
                         Long offset = queueMinOffset.get(entry.getKey());
@@ -212,23 +214,23 @@ public class ConsumerOffsetManager extends ConfigManager {
                             queueMinOffset.put(entry.getKey(), Math.min(entry.getValue(), offset));
                         }
                     }
-                }
+                });
             }
 
-        }
+        });
         return queueMinOffset;
     }
 
     public Map<Integer, Long> queryOffset(final String group, final String topic) {
         // topic@group
-        String key = topic + TOPIC_GROUP_SEPARATOR + group;
+        String key = new StringBuilder().append(topic).append(TOPIC_GROUP_SEPARATOR).append(group).toString();
         return this.offsetTable.get(key);
     }
 
     public void cloneOffset(final String srcGroup, final String destGroup, final String topic) {
-        ConcurrentMap<Integer, Long> offsets = this.offsetTable.get(topic + TOPIC_GROUP_SEPARATOR + srcGroup);
+        ConcurrentMap<Integer, Long> offsets = this.offsetTable.get(new StringBuilder().append(topic).append(TOPIC_GROUP_SEPARATOR).append(srcGroup).toString());
         if (offsets != null) {
-            this.offsetTable.put(topic + TOPIC_GROUP_SEPARATOR + destGroup, new ConcurrentHashMap<Integer, Long>(offsets));
+            this.offsetTable.put(new StringBuilder().append(topic).append(TOPIC_GROUP_SEPARATOR).append(destGroup).toString(), new ConcurrentHashMap<>(offsets));
         }
     }
 

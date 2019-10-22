@@ -26,10 +26,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class QueryMsgByKeySubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(QueryMsgByKeySubCommand.class);
+
+	@Override
     public String commandName() {
         return "queryMsgByKey";
     }
@@ -59,8 +64,8 @@ public class QueryMsgByKeySubCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
 
         try {
-            final String topic = commandLine.getOptionValue('t').trim();
-            final String key = commandLine.getOptionValue('k').trim();
+            final String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+            final String key = StringUtils.trim(commandLine.getOptionValue('k'));
 
             this.queryByKey(defaultMQAdminExt, topic, key);
         } catch (Exception e) {
@@ -75,12 +80,7 @@ public class QueryMsgByKeySubCommand implements SubCommand {
         admin.start();
 
         QueryResult queryResult = admin.queryMessage(topic, key, 64, 0, Long.MAX_VALUE);
-        System.out.printf("%-50s %4s %40s%n",
-            "#Message ID",
-            "#QID",
-            "#Offset");
-        for (MessageExt msg : queryResult.getMessageList()) {
-            System.out.printf("%-50s %4d %40d%n", msg.getMsgId(), msg.getQueueId(), msg.getQueueOffset());
-        }
+        logger.info("%-50s %4s %40s%n", "#Message ID", "#QID", "#Offset");
+        queryResult.getMessageList().forEach(msg -> logger.info("%-50s %4d %40d%n", msg.getMsgId(), msg.getQueueId(), msg.getQueueOffset()));
     }
 }

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class FilterAPITest {
     private String topic = "FooBar";
@@ -39,7 +40,7 @@ public class FilterAPITest {
         String[] tags = subString.split("\\|\\|");
         Set<String> tagSet = new HashSet<String>();
         for (String tag : tags) {
-            tagSet.add(tag.trim());
+            tagSet.add(StringUtils.trim(tag));
         }
         assertThat(subscriptionData.getTagsSet()).isEqualTo(tagSet);
     }

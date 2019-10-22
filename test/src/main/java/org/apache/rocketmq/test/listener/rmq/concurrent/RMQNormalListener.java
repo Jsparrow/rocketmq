@@ -24,13 +24,13 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.test.listener.AbstractListener;
+import org.apache.commons.lang3.StringUtils;
 
 public class RMQNormalListener extends AbstractListener implements MessageListenerConcurrently {
     private ConsumeConcurrentlyStatus consumeStatus = ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     private AtomicInteger msgIndex = new AtomicInteger(0);
 
     public RMQNormalListener() {
-        super();
     }
 
     public RMQNormalListener(String listenerName) {
@@ -38,7 +38,6 @@ public class RMQNormalListener extends AbstractListener implements MessageListen
     }
 
     public RMQNormalListener(ConsumeConcurrentlyStatus consumeStatus) {
-        super();
         this.consumeStatus = consumeStatus;
     }
 
@@ -46,16 +45,17 @@ public class RMQNormalListener extends AbstractListener implements MessageListen
         super(originMsgCollector, msgBodyCollector);
     }
 
-    public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+    @Override
+	public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
         ConsumeConcurrentlyContext consumeConcurrentlyContext) {
-        for (MessageExt msg : msgs) {
+        msgs.forEach(msg -> {
             msgIndex.getAndIncrement();
             if (isDebug) {
-                if (listenerName != null && !listenerName.isEmpty()) {
-                    logger.info(listenerName + ":" + msgIndex.get() + ":"
-                        + String.format("msgid:%s broker:%s queueId:%s offset:%s",
-                        msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(),
-                        msg.getQueueOffset()));
+                if (listenerName != null && !StringUtils.isEmpty(listenerName)) {
+                    logger.info(new StringBuilder().append(listenerName).append(":").append(msgIndex.get()).append(":").append(String.format("msgid:%s broker:%s queueId:%s offset:%s",
+					msg.getMsgId(), msg.getStoreHost(), msg.getQueueId(),
+					msg.getQueueOffset()))
+							.toString());
                 } else {
                     logger.info(msg);
                 }
@@ -66,7 +66,7 @@ public class RMQNormalListener extends AbstractListener implements MessageListen
             if (originMsgIndex != null) {
                 originMsgIndex.put(new String(msg.getBody()), msg);
             }
-        }
+        });
         return consumeStatus;
     }
 }

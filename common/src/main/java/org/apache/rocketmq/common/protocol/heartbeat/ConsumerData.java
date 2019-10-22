@@ -82,8 +82,7 @@ public class ConsumerData {
 
     @Override
     public String toString() {
-        return "ConsumerData [groupName=" + groupName + ", consumeType=" + consumeType + ", messageModel="
-            + messageModel + ", consumeFromWhere=" + consumeFromWhere + ", unitMode=" + unitMode
-            + ", subscriptionDataSet=" + subscriptionDataSet + "]";
+        return new StringBuilder().append("ConsumerData [groupName=").append(groupName).append(", consumeType=").append(consumeType).append(", messageModel=").append(messageModel).append(", consumeFromWhere=")
+				.append(consumeFromWhere).append(", unitMode=").append(unitMode).append(", subscriptionDataSet=").append(subscriptionDataSet).append("]").toString();
     }
 }

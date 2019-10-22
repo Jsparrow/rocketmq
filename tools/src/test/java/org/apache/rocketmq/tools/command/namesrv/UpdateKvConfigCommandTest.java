@@ -71,7 +71,7 @@ public class UpdateKvConfigCommandTest {
         Options options = ServerUtil.buildCommandlineOptions(new Options());
         String[] subargs = new String[]{"-s namespace", "-k topicname", "-v unit_test"};
         final CommandLine commandLine =
-                ServerUtil.parseCmdLine("mqadmin " + cmd.commandName() + cmd.commandDesc(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
+                ServerUtil.parseCmdLine(new StringBuilder().append("mqadmin ").append(cmd.commandName()).append(cmd.commandDesc()).toString(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
         cmd.execute(commandLine, options, null);
     }
 }

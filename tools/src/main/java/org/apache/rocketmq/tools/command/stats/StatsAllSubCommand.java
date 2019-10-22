@@ -36,9 +36,14 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class StatsAllSubCommand implements SubCommand {
-    public static void printTopicDetail(final DefaultMQAdminExt admin, final String topic, final boolean activeTopic)
+    private static final Logger logger = LoggerFactory.getLogger(StatsAllSubCommand.class);
+
+	public static void printTopicDetail(final DefaultMQAdminExt admin, final String topic, final boolean activeTopic)
         throws RemotingException, MQClientException, InterruptedException, MQBrokerException {
         TopicRouteData topicRouteData = admin.examineTopicRouteInfo(topic);
 
@@ -56,6 +61,7 @@ public class StatsAllSubCommand implements SubCommand {
                     inTPS += bsd.getStatsMinute().getTps();
                     inMsgCntToday += compute24HourSum(bsd);
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -75,6 +81,7 @@ public class StatsAllSubCommand implements SubCommand {
                             outTPS += bsd.getStatsMinute().getTps();
                             outMsgCntToday += compute24HourSum(bsd);
                         } catch (Exception e) {
+							logger.error(e.getMessage(), e);
                         }
                     }
                 }
@@ -89,33 +96,20 @@ public class StatsAllSubCommand implements SubCommand {
                         }
                     }
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                 }
 
                 if (!activeTopic || (inMsgCntToday > 0) ||
                     (outMsgCntToday > 0)) {
 
-                    System.out.printf("%-32s  %-32s %12d %11.2f %11.2f %14d %14d%n",
-                        UtilAll.frontStringAtLeast(topic, 32),
-                        UtilAll.frontStringAtLeast(group, 32),
-                        accumulate,
-                        inTPS,
-                        outTPS,
-                        inMsgCntToday,
-                        outMsgCntToday
+                    logger.info("%-32s  %-32s %12d %11.2f %11.2f %14d %14d%n", UtilAll.frontStringAtLeast(topic, 32), UtilAll.frontStringAtLeast(group, 32), accumulate, inTPS, outTPS, inMsgCntToday, outMsgCntToday
                     );
                 }
             }
         } else {
             if (!activeTopic || (inMsgCntToday > 0)) {
 
-                System.out.printf("%-32s  %-32s %12d %11.2f %11s %14d %14s%n",
-                    UtilAll.frontStringAtLeast(topic, 32),
-                    "",
-                    0,
-                    inTPS,
-                    "",
-                    inMsgCntToday,
-                    "NO_CONSUMER"
+                logger.info("%-32s  %-32s %12d %11.2f %11s %14d %14s%n", UtilAll.frontStringAtLeast(topic, 32), "", 0, inTPS, "", inMsgCntToday, "NO_CONSUMER"
                 );
             }
         }
@@ -171,31 +165,25 @@ public class StatsAllSubCommand implements SubCommand {
 
             TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
 
-            System.out.printf("%-32s  %-32s %12s %11s %11s %14s %14s%n",
-                "#Topic",
-                "#Consumer Group",
-                "#Accumulation",
-                "#InTPS",
-                "#OutTPS",
-                "#InMsg24Hour",
-                "#OutMsg24Hour"
+            logger.info("%-32s  %-32s %12s %11s %11s %14s %14s%n", "#Topic", "#Consumer Group", "#Accumulation", "#InTPS", "#OutTPS", "#InMsg24Hour", "#OutMsg24Hour"
             );
 
             boolean activeTopic = commandLine.hasOption('a');
             String selectTopic = commandLine.getOptionValue('t');
 
             for (String topic : topicList.getTopicList()) {
-                if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX) || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX) || StringUtils.startsWith(topic, MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
                     continue;
                 }
 
-                if (selectTopic != null && !selectTopic.isEmpty() && !topic.equals(selectTopic)) {
+                if (selectTopic != null && !StringUtils.isEmpty(selectTopic) && !topic.equals(selectTopic)) {
                     continue;
                 }
 
                 try {
                     printTopicDetail(defaultMQAdminExt, topic, activeTopic);
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                 }
             }
         } catch (Exception e) {

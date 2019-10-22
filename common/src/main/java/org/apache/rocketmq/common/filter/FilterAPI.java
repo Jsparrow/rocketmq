@@ -18,6 +18,7 @@ package org.apache.rocketmq.common.filter;
 
 import java.net.URL;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
+import org.apache.commons.lang3.StringUtils;
 
 public class FilterAPI {
     public static URL classFile(final String className) {
@@ -30,7 +31,7 @@ public class FilterAPI {
         String simple = className;
         int index = className.lastIndexOf(".");
         if (index >= 0) {
-            simple = className.substring(index + 1);
+            simple = StringUtils.substring(className, index + 1);
         }
 
         return simple;
@@ -42,14 +43,14 @@ public class FilterAPI {
         subscriptionData.setTopic(topic);
         subscriptionData.setSubString(subString);
 
-        if (null == subString || subString.equals(SubscriptionData.SUB_ALL) || subString.length() == 0) {
+        if (null == subString || subString.equals(SubscriptionData.SUB_ALL) || subString.isEmpty()) {
             subscriptionData.setSubString(SubscriptionData.SUB_ALL);
         } else {
             String[] tags = subString.split("\\|\\|");
             if (tags.length > 0) {
                 for (String tag : tags) {
                     if (tag.length() > 0) {
-                        String trimString = tag.trim();
+                        String trimString = StringUtils.trim(tag);
                         if (trimString.length() > 0) {
                             subscriptionData.getTagsSet().add(trimString);
                             subscriptionData.getCodeSet().add(trimString.hashCode());

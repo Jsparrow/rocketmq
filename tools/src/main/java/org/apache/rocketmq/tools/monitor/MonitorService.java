@@ -51,9 +51,13 @@ import org.apache.rocketmq.common.protocol.topic.OffsetMovedEvent;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class MonitorService {
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(MonitorService.class);
+	private final InternalLogger log = ClientLogger.getLog();
     private final ScheduledExecutorService scheduledExecutorService = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactoryImpl("MonitorService"));
 
@@ -84,27 +88,24 @@ public class MonitorService {
             this.defaultMQPushConsumer.setConsumeThreadMin(1);
             this.defaultMQPushConsumer.setConsumeThreadMax(1);
             this.defaultMQPushConsumer.subscribe(MixAll.OFFSET_MOVED_EVENT, "*");
-            this.defaultMQPushConsumer.registerMessageListener(new MessageListenerConcurrently() {
+            this.defaultMQPushConsumer.registerMessageListener((List<MessageExt> msgs, ConsumeConcurrentlyContext context) -> {
+			try {
+			    OffsetMovedEvent ome =
+			        OffsetMovedEvent.decode(msgs.get(0).getBody(), OffsetMovedEvent.class);
 
-                @Override
-                public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                    ConsumeConcurrentlyContext context) {
-                    try {
-                        OffsetMovedEvent ome =
-                            OffsetMovedEvent.decode(msgs.get(0).getBody(), OffsetMovedEvent.class);
+			    DeleteMsgsEvent deleteMsgsEvent = new DeleteMsgsEvent();
+			    deleteMsgsEvent.setOffsetMovedEvent(ome);
+			    deleteMsgsEvent.setEventTimestamp(msgs.get(0).getStoreTimestamp());
 
-                        DeleteMsgsEvent deleteMsgsEvent = new DeleteMsgsEvent();
-                        deleteMsgsEvent.setOffsetMovedEvent(ome);
-                        deleteMsgsEvent.setEventTimestamp(msgs.get(0).getStoreTimestamp());
+			    MonitorService.this.monitorListener.reportDeleteMsgsEvent(deleteMsgsEvent);
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
 
-                        MonitorService.this.monitorListener.reportDeleteMsgsEvent(deleteMsgsEvent);
-                    } catch (Exception e) {
-                    }
-
-                    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                }
+			return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             });
         } catch (MQClientException e) {
+			logger.error(e.getMessage(), e);
         }
     }
 
@@ -153,16 +154,13 @@ public class MonitorService {
     }
 
     private void startScheduleTask() {
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    MonitorService.this.doMonitorWork();
-                } catch (Exception e) {
-                    log.error("doMonitorWork Exception", e);
-                }
-            }
-        }, 1000 * 20, this.monitorConfig.getRoundInterval(), TimeUnit.MILLISECONDS);
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+		    try {
+		        MonitorService.this.doMonitorWork();
+		    } catch (Exception e) {
+		        log.error("doMonitorWork Exception", e);
+		    }
+		}, 1000 * 20, this.monitorConfig.getRoundInterval(), TimeUnit.MILLISECONDS);
     }
 
     public void doMonitorWork() throws RemotingException, MQClientException, InterruptedException {
@@ -171,18 +169,20 @@ public class MonitorService {
 
         TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
         for (String topic : topicList.getTopicList()) {
-            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+            if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                String consumerGroup = StringUtils.substring(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
 
                 try {
                     this.reportUndoneMsgs(consumerGroup);
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                     // log.error("reportUndoneMsgs Exception", e);
                 }
 
                 try {
                     this.reportConsumerRunningInfo(consumerGroup);
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                     // log.error("reportConsumerRunningInfo Exception", e);
                 }
             }
@@ -197,54 +197,55 @@ public class MonitorService {
         try {
             cs = defaultMQAdminExt.examineConsumeStats(consumerGroup);
         } catch (Exception e) {
-            return;
+            logger.error(e.getMessage(), e);
+			return;
         }
 
         ConsumerConnection cc = null;
         try {
             cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
         } catch (Exception e) {
-            return;
+            logger.error(e.getMessage(), e);
+			return;
         }
 
-        if (cs != null) {
+        if (cs == null) {
+			return;
+		}
+		HashMap<String/* Topic */, ConsumeStats> csByTopic = new HashMap<>();
+		{
+		    Iterator<Entry<MessageQueue, OffsetWrapper>> it = cs.getOffsetTable().entrySet().iterator();
+		    while (it.hasNext()) {
+		        Entry<MessageQueue, OffsetWrapper> next = it.next();
+		        MessageQueue mq = next.getKey();
+		        OffsetWrapper ow = next.getValue();
+		        ConsumeStats csTmp = csByTopic.get(mq.getTopic());
+		        if (null == csTmp) {
+		            csTmp = new ConsumeStats();
+		            csByTopic.put(mq.getTopic(), csTmp);
+		        }
 
-            HashMap<String/* Topic */, ConsumeStats> csByTopic = new HashMap<String, ConsumeStats>();
-            {
-                Iterator<Entry<MessageQueue, OffsetWrapper>> it = cs.getOffsetTable().entrySet().iterator();
-                while (it.hasNext()) {
-                    Entry<MessageQueue, OffsetWrapper> next = it.next();
-                    MessageQueue mq = next.getKey();
-                    OffsetWrapper ow = next.getValue();
-                    ConsumeStats csTmp = csByTopic.get(mq.getTopic());
-                    if (null == csTmp) {
-                        csTmp = new ConsumeStats();
-                        csByTopic.put(mq.getTopic(), csTmp);
-                    }
-
-                    csTmp.getOffsetTable().put(mq, ow);
-                }
-            }
-
-            {
-                Iterator<Entry<String, ConsumeStats>> it = csByTopic.entrySet().iterator();
-                while (it.hasNext()) {
-                    Entry<String, ConsumeStats> next = it.next();
-                    UndoneMsgs undoneMsgs = new UndoneMsgs();
-                    undoneMsgs.setConsumerGroup(consumerGroup);
-                    undoneMsgs.setTopic(next.getKey());
-                    this.computeUndoneMsgs(undoneMsgs, next.getValue());
-                    this.monitorListener.reportUndoneMsgs(undoneMsgs);
-                    this.reportFailedMsgs(consumerGroup, next.getKey());
-                }
-            }
-        }
+		        csTmp.getOffsetTable().put(mq, ow);
+		    }
+		}
+		{
+		    Iterator<Entry<String, ConsumeStats>> it = csByTopic.entrySet().iterator();
+		    while (it.hasNext()) {
+		        Entry<String, ConsumeStats> next = it.next();
+		        UndoneMsgs undoneMsgs = new UndoneMsgs();
+		        undoneMsgs.setConsumerGroup(consumerGroup);
+		        undoneMsgs.setTopic(next.getKey());
+		        this.computeUndoneMsgs(undoneMsgs, next.getValue());
+		        this.monitorListener.reportUndoneMsgs(undoneMsgs);
+		        this.reportFailedMsgs();
+		    }
+		}
     }
 
     public void reportConsumerRunningInfo(final String consumerGroup) throws InterruptedException,
         MQBrokerException, RemotingException, MQClientException {
         ConsumerConnection cc = defaultMQAdminExt.examineConsumerConnectionInfo(consumerGroup);
-        TreeMap<String, ConsumerRunningInfo> infoMap = new TreeMap<String, ConsumerRunningInfo>();
+        TreeMap<String, ConsumerRunningInfo> infoMap = new TreeMap<>();
         for (Connection c : cc.getConnectionSet()) {
             String clientId = c.getClientId();
 
@@ -257,6 +258,7 @@ public class MonitorService {
                     defaultMQAdminExt.getConsumerRunningInfo(consumerGroup, clientId, false);
                 infoMap.put(clientId, info);
             } catch (Exception e) {
+				logger.error(e.getMessage(), e);
             }
         }
 
@@ -307,6 +309,7 @@ public class MonitorService {
                         }
                     }
                 } catch (Exception e) {
+					logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -316,7 +319,7 @@ public class MonitorService {
         undoneMsgs.setUndoneMsgsDelayTimeMills(delayMax);
     }
 
-    private void reportFailedMsgs(final String consumerGroup, final String topic) {
+    private void reportFailedMsgs() {
 
     }
 }

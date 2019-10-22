@@ -42,6 +42,7 @@ import java.lang.reflect.Field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.apache.commons.lang3.StringUtils;
 
 public class SendMessageCommandTest {
 
@@ -85,6 +86,6 @@ public class SendMessageCommandTest {
         sendMessageCommand.execute(commandLine, options, null);
         System.setOut(out);
         String s = new String(bos.toByteArray());
-        Assert.assertTrue(s.contains("SEND_OK"));
+        Assert.assertTrue(StringUtils.contains(s, "SEND_OK"));
     }
 }

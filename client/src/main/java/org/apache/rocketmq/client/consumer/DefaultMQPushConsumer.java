@@ -44,6 +44,8 @@ import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * In most scenarios, this is the mostly recommended class to consume messages.
@@ -62,7 +64,9 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
  */
 public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsumer {
 
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQPushConsumer.class);
+
+	private final InternalLogger log = ClientLogger.getLog();
 
     /**
      * Internal implementation. Most of the functions herein are delegated to it.
@@ -394,7 +398,8 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
                 this.getDefaultMQPushConsumerImpl().registerConsumeMessageHook(
                     new ConsumeMessageTraceHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                logger.error(e.getMessage(), e);
+				log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
             }
         }
     }
@@ -484,6 +489,7 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
             MessageDecoder.decodeMessageId(msgId);
             return this.viewMessage(msgId);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
             // Ignore
         }
         return this.defaultMQPushConsumerImpl.queryMessageByUniqKey(withNamespace(topic), msgId);
@@ -846,11 +852,13 @@ public class DefaultMQPushConsumer extends ClientConfig implements MQPushConsume
         this.postSubscriptionWhenPull = postSubscriptionWhenPull;
     }
 
-    public boolean isUnitMode() {
+    @Override
+	public boolean isUnitMode() {
         return unitMode;
     }
 
-    public void setUnitMode(boolean isUnitMode) {
+    @Override
+	public void setUnitMode(boolean isUnitMode) {
         this.unitMode = isUnitMode;
     }
 

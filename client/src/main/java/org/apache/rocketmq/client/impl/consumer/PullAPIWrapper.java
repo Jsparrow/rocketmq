@@ -48,9 +48,12 @@ import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.common.protocol.route.TopicRouteData;
 import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullAPIWrapper {
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(PullAPIWrapper.class);
+	private final InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String consumerGroup;
     private final boolean unitMode;
@@ -80,11 +83,10 @@ public class PullAPIWrapper {
             if (!subscriptionData.getTagsSet().isEmpty() && !subscriptionData.isClassFilterMode()) {
                 msgListFilterAgain = new ArrayList<MessageExt>(msgList.size());
                 for (MessageExt msg : msgList) {
-                    if (msg.getTags() != null) {
-                        if (subscriptionData.getTagsSet().contains(msg.getTags())) {
-                            msgListFilterAgain.add(msg);
-                        }
-                    }
+                    boolean condition = msg.getTags() != null && subscriptionData.getTagsSet().contains(msg.getTags());
+					if (condition) {
+					    msgListFilterAgain.add(msg);
+					}
                 }
             }
 
@@ -133,7 +135,8 @@ public class PullAPIWrapper {
                 try {
                     hook.filterMessage(context);
                 } catch (Throwable e) {
-                    log.error("execute hook error. hookName={}", hook.hookName());
+                    logger.error(e.getMessage(), e);
+					log.error("execute hook error. hookName={}", hook.hookName());
                 }
             }
         }
@@ -168,8 +171,8 @@ public class PullAPIWrapper {
                 // check version
                 if (!ExpressionType.isTagType(expressionType)
                     && findBrokerResult.getBrokerVersion() < MQVersion.Version.V4_1_0_SNAPSHOT.ordinal()) {
-                    throw new MQClientException("The broker[" + mq.getBrokerName() + ", "
-                        + findBrokerResult.getBrokerVersion() + "] does not upgrade to support for filter message by " + expressionType, null);
+                    throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append(", ").append(findBrokerResult.getBrokerVersion()).append("] does not upgrade to support for filter message by ")
+							.append(expressionType).toString(), null);
                 }
             }
             int sysFlagInner = sysFlag;
@@ -206,7 +209,7 @@ public class PullAPIWrapper {
             return pullResult;
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public long recalculatePullFromWhichNode(final MessageQueue mq) {
@@ -234,8 +237,7 @@ public class PullAPIWrapper {
             }
         }
 
-        throw new MQClientException("Find Filter Server Failed, Broker Addr: " + brokerAddr + " topic: "
-            + topic, null);
+        throw new MQClientException(new StringBuilder().append("Find Filter Server Failed, Broker Addr: ").append(brokerAddr).append(" topic: ").append(topic).toString(), null);
     }
 
     public boolean isConnectBrokerByUser() {
@@ -251,8 +253,9 @@ public class PullAPIWrapper {
         int value = random.nextInt();
         if (value < 0) {
             value = Math.abs(value);
-            if (value < 0)
-                value = 0;
+            if (value < 0) {
+				value = 0;
+			}
         }
         return value;
     }

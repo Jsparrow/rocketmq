@@ -24,10 +24,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class TopicRouteSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(TopicRouteSubCommand.class);
+
+	@Override
     public String commandName() {
         return "topicRoute";
     }
@@ -56,10 +61,10 @@ public class TopicRouteSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            String topic = commandLine.getOptionValue('t').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
             TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
             String json = topicRouteData.toJson(true);
-            System.out.printf("%s%n", json);
+            logger.info("%s%n", json);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

@@ -26,7 +26,7 @@ import org.apache.rocketmq.test.util.data.collect.DataCollector;
 
 public class ListDataCollectorImpl implements DataCollector {
 
-    private List<Object> datas = new ArrayList<Object>();
+    private List<Object> datas = new ArrayList<>();
     private boolean lock = false;
 
     public ListDataCollectorImpl() {
@@ -34,44 +34,50 @@ public class ListDataCollectorImpl implements DataCollector {
     }
 
     public ListDataCollectorImpl(Collection<Object> datas) {
-        for (Object data : datas) {
-            addData(data);
-        }
+        datas.forEach(this::addData);
     }
 
-    public Collection<Object> getAllData() {
+    @Override
+	public Collection<Object> getAllData() {
         return datas;
     }
 
-    public void resetData() {
+    @Override
+	public void resetData() {
         datas.clear();
         unlockIncrement();
     }
 
-    public long getDataSizeWithoutDuplicate() {
+    @Override
+	public long getDataSizeWithoutDuplicate() {
         return getAllDataWithoutDuplicate().size();
     }
 
-    public synchronized void addData(Object data) {
+    @Override
+	public synchronized void addData(Object data) {
         if (lock) {
             return;
         }
         datas.add(data);
     }
 
-    public long getDataSize() {
+    @Override
+	public long getDataSize() {
         return datas.size();
     }
 
-    public boolean isRepeatedData(Object data) {
+    @Override
+	public boolean isRepeatedData(Object data) {
         return Collections.frequency(datas, data) == 1;
     }
 
-    public Collection<Object> getAllDataWithoutDuplicate() {
-        return new HashSet<Object>(datas);
+    @Override
+	public Collection<Object> getAllDataWithoutDuplicate() {
+        return new HashSet<>(datas);
     }
 
-    public int getRepeatedTimeForData(Object data) {
+    @Override
+	public int getRepeatedTimeForData(Object data) {
         int res = 0;
         for (Object obj : datas) {
             if (obj.equals(data)) {
@@ -81,15 +87,18 @@ public class ListDataCollectorImpl implements DataCollector {
         return res;
     }
 
-    public void removeData(Object data) {
+    @Override
+	public void removeData(Object data) {
         datas.remove(data);
     }
 
-    public void lockIncrement() {
+    @Override
+	public void lockIncrement() {
         lock = true;
     }
 
-    public void unlockIncrement() {
+    @Override
+	public void unlockIncrement() {
         lock = false;
     }
 }

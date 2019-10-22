@@ -43,10 +43,10 @@ public class ParserTest {
 
     @Test
     public void testParse_valid() {
-        for (String expr : Arrays.asList(
+        Arrays.asList(
             andExpression, orExpression, inExpression, notInExpression, betweenExpression,
             equalNullExpression, notEqualNullExpression, nowExpression
-        )) {
+        ).forEach(expr -> {
 
             try {
                 Expression expression = SelectorParser.parse(expr);
@@ -56,7 +56,7 @@ public class ParserTest {
                 assertThat(Boolean.FALSE).isTrue();
             }
 
-        }
+        });
     }
 
     @Test
@@ -84,7 +84,7 @@ public class ParserTest {
     @Test
     public void testParse_floatOverFlow() {
         try {
-            StringBuffer sb = new StringBuffer(210000);
+            StringBuilder sb = new StringBuilder(210000);
             sb.append("1");
             for (int i = 0; i < 2048; i ++) {
                 sb.append("111111111111111111111111111111111111111111111111111");

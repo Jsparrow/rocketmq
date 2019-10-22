@@ -29,16 +29,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class MessageDecoder {
-    public final static int MSG_ID_LENGTH = 8 + 8;
+    public static final int MSG_ID_LENGTH = 8 + 8;
 
-    public final static Charset CHARSET_UTF8 = Charset.forName("UTF-8");
-    public final static int MESSAGE_MAGIC_CODE_POSTION = 4;
-    public final static int MESSAGE_FLAG_POSTION = 16;
-    public final static int MESSAGE_PHYSIC_OFFSET_POSTION = 28;
-    public final static int MESSAGE_STORE_TIMESTAMP_POSTION = 56;
-    public final static int MESSAGE_MAGIC_CODE = -626843481;
+    public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+    public static final int MESSAGE_MAGIC_CODE_POSTION = 4;
+    public static final int MESSAGE_FLAG_POSTION = 16;
+    public static final int MESSAGE_PHYSIC_OFFSET_POSTION = 28;
+    public static final int MESSAGE_STORE_TIMESTAMP_POSTION = 56;
+    public static final int MESSAGE_MAGIC_CODE = -626843481;
     public static final char NAME_VALUE_SEPARATOR = 1;
     public static final char PROPERTY_SEPARATOR = 2;
     public static final int PHY_POS_POSITION =  4 + 4 + 4 + 4 + 4 + 8;
@@ -81,14 +82,14 @@ public class MessageDecoder {
         SocketAddress address;
         long offset;
 
-        byte[] ip = UtilAll.string2bytes(msgId.substring(0, 8));
-        byte[] port = UtilAll.string2bytes(msgId.substring(8, 16));
+        byte[] ip = UtilAll.string2bytes(StringUtils.substring(msgId, 0, 8));
+        byte[] port = UtilAll.string2bytes(StringUtils.substring(msgId, 8, 16));
         ByteBuffer bb = ByteBuffer.wrap(port);
         int portInt = bb.getInt(0);
         address = new InetSocketAddress(InetAddress.getByAddress(ip), portInt);
 
         // offset
-        byte[] data = UtilAll.string2bytes(msgId.substring(16, 32));
+        byte[] data = UtilAll.string2bytes(StringUtils.substring(msgId, 16, 32));
         bb = ByteBuffer.wrap(data);
         offset = bb.getLong(0);
 
@@ -109,14 +110,14 @@ public class MessageDecoder {
 
         byteBuffer.position(topicLengthPosition + 1 + topicLength + 2);
 
-        if (propertiesLength > 0) {
-            byte[] properties = new byte[propertiesLength];
-            byteBuffer.get(properties);
-            String propertiesString = new String(properties, CHARSET_UTF8);
-            Map<String, String> map = string2messageProperties(propertiesString);
-            return map;
-        }
-        return null;
+        if (propertiesLength <= 0) {
+			return null;
+		}
+		byte[] properties = new byte[propertiesLength];
+		byteBuffer.get(properties);
+		String propertiesString = new String(properties, CHARSET_UTF8);
+		Map<String, String> map = string2messageProperties(propertiesString);
+		return map;
     }
 
     public static MessageExt decode(java.nio.ByteBuffer byteBuffer) {

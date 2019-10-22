@@ -72,10 +72,10 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
                 return this.getConsumeStatus(ctx, request);
 
             case RequestCode.GET_CONSUMER_RUNNING_INFO:
-                return this.getConsumerRunningInfo(ctx, request);
+                return this.getConsumerRunningInfo(request);
 
             case RequestCode.CONSUME_MESSAGE_DIRECTLY:
-                return this.consumeMessageDirectly(ctx, request);
+                return this.consumeMessageDirectly(request);
             default:
                 break;
         }
@@ -167,8 +167,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         return response;
     }
 
-    private RemotingCommand getConsumerRunningInfo(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    private RemotingCommand getConsumerRunningInfo(RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final GetConsumerRunningInfoRequestHeader requestHeader =
             (GetConsumerRunningInfoRequestHeader) request.decodeCommandCustomHeader(GetConsumerRunningInfoRequestHeader.class);
@@ -191,8 +190,7 @@ public class ClientRemotingProcessor implements NettyRequestProcessor {
         return response;
     }
 
-    private RemotingCommand consumeMessageDirectly(ChannelHandlerContext ctx,
-        RemotingCommand request) throws RemotingCommandException {
+    private RemotingCommand consumeMessageDirectly(RemotingCommand request) throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final ConsumeMessageDirectlyResultRequestHeader requestHeader =
             (ConsumeMessageDirectlyResultRequestHeader) request

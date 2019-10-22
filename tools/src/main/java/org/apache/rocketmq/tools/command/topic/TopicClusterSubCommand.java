@@ -24,10 +24,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class TopicClusterSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(TopicClusterSubCommand.class);
+
+	@Override
     public String commandName() {
         return "topicClusterList";
     }
@@ -50,13 +55,11 @@ public class TopicClusterSubCommand implements SubCommand {
         RPCHook rpcHook) throws SubCommandException {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
-        String topic = commandLine.getOptionValue('t').trim();
+        String topic = StringUtils.trim(commandLine.getOptionValue('t'));
         try {
             defaultMQAdminExt.start();
             Set<String> clusters = defaultMQAdminExt.getTopicClusterList(topic);
-            for (String value : clusters) {
-                System.out.printf("%s%n", value);
-            }
+            clusters.forEach(value -> logger.info("%s%n", value));
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

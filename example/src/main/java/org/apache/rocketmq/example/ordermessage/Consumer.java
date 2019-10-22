@@ -25,10 +25,14 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Consumer {
 
-    public static void main(String[] args) throws MQClientException {
+    private static final Logger logger = LoggerFactory.getLogger(Consumer.class);
+
+	public static void main(String[] args) throws MQClientException {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer("please_rename_unique_group_name_3");
 
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
@@ -41,7 +45,7 @@ public class Consumer {
             @Override
             public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
                 context.setAutoCommit(true);
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+                logger.info("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
                 this.consumeTimes.incrementAndGet();
                 if ((this.consumeTimes.get() % 2) == 0) {
                     return ConsumeOrderlyStatus.SUCCESS;
@@ -59,7 +63,7 @@ public class Consumer {
         });
 
         consumer.start();
-        System.out.printf("Consumer Started.%n");
+        logger.info("Consumer Started.%n");
     }
 
 }

@@ -27,10 +27,13 @@ import org.apache.rocketmq.common.message.MessageExt;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultMQPushConsumerImplTest {
 
-    @Rule
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQPushConsumerImplTest.class);
+	@Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
@@ -48,9 +51,10 @@ public class DefaultMQPushConsumerImplTest {
         consumer.setConsumeThreadMax(9);
 
         consumer.registerMessageListener(new MessageListenerConcurrently() {
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+            @Override
+			public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
                 ConsumeConcurrentlyContext context) {
-                System.out.println(" Receive New Messages: " + msgs);
+                logger.info(" Receive New Messages: " + msgs);
                 return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
             }
         });

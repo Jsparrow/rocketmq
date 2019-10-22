@@ -27,7 +27,7 @@ public class TagMessage {
     private List<String> tags = null;
     private String topic = null;
     private int msgSize = 0;
-    private Map<String, List<Object>> rmqMsgs = new HashMap<String, List<Object>>();
+    private Map<String, List<Object>> rmqMsgs = new HashMap<>();
 
     public TagMessage(String tag, String topic, int msgSize) {
         String[] tags = {tag};
@@ -51,22 +51,22 @@ public class TagMessage {
     }
 
     private void init() {
-        for (String tag : tags) {
+        tags.forEach(tag -> {
             List<Object> tagMsgs = MQMessageFactory.getRMQMessage(tag, topic, msgSize);
             rmqMsgs.put(tag, tagMsgs);
-        }
+        });
     }
 
     public List<Object> getMessageByTag(String tag) {
         if (tags.contains(tag)) {
             return rmqMsgs.get(tag);
         } else {
-            return new ArrayList<Object>();
+            return new ArrayList<>();
         }
     }
 
     public List<Object> getMixedTagMessages() {
-        List<Object> mixedMsgs = new ArrayList<Object>();
+        List<Object> mixedMsgs = new ArrayList<>();
         for (int i = 0; i < msgSize; i++) {
             for (String tag : tags) {
                 mixedMsgs.add(rmqMsgs.get(tag).get(i));
@@ -80,7 +80,7 @@ public class TagMessage {
         if (tags.contains(tag)) {
             return MQMessageFactory.getMessageBody(rmqMsgs.get(tag));
         } else {
-            return new ArrayList<Object>();
+            return new ArrayList<>();
         }
     }
 
@@ -89,18 +89,14 @@ public class TagMessage {
     }
 
     public List<Object> getMessageBodyByTag(List<String> tags) {
-        List<Object> msgBodys = new ArrayList<Object>();
-        for (String tag : tags) {
-            msgBodys.addAll(MQMessageFactory.getMessageBody(rmqMsgs.get(tag)));
-        }
+        List<Object> msgBodys = new ArrayList<>();
+        tags.forEach(tag -> msgBodys.addAll(MQMessageFactory.getMessageBody(rmqMsgs.get(tag))));
         return msgBodys;
     }
 
     public List<Object> getAllTagMessageBody() {
-        List<Object> msgs = new ArrayList<Object>();
-        for (String tag : tags) {
-            msgs.addAll(MQMessageFactory.getMessageBody(rmqMsgs.get(tag)));
-        }
+        List<Object> msgs = new ArrayList<>();
+        tags.forEach(tag -> msgs.addAll(MQMessageFactory.getMessageBody(rmqMsgs.get(tag))));
 
         return msgs;
     }

@@ -21,16 +21,20 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Properties;
 import org.apache.rocketmq.common.MixAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class SessionCredentials {
-    public static final Charset CHARSET = Charset.forName("UTF-8");
+    private static final Logger logger = LoggerFactory.getLogger(SessionCredentials.class);
+	public static final Charset CHARSET = Charset.forName("UTF-8");
     public static final String ACCESS_KEY = "AccessKey";
     public static final String SECRET_KEY = "SecretKey";
     public static final String SIGNATURE = "Signature";
     public static final String SECURITY_TOKEN = "SecurityToken";
 
     public static final String KEY_FILE = System.getProperty("rocketmq.client.keyFile",
-        System.getProperty("user.home") + File.separator + "key");
+        new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("key").toString());
 
     private String accessKey;
     private String secretKey;
@@ -42,6 +46,7 @@ public class SessionCredentials {
         try {
             keyContent = MixAll.file2String(KEY_FILE);
         } catch (IOException ignore) {
+			logger.error(ignore.getMessage(), ignore);
         }
         if (keyContent != null) {
             Properties prop = MixAll.string2Properties(keyContent);
@@ -65,19 +70,19 @@ public class SessionCredentials {
         {
             String value = prop.getProperty(ACCESS_KEY);
             if (value != null) {
-                this.accessKey = value.trim();
+                this.accessKey = StringUtils.trim(value);
             }
         }
         {
             String value = prop.getProperty(SECRET_KEY);
             if (value != null) {
-                this.secretKey = value.trim();
+                this.secretKey = StringUtils.trim(value);
             }
         }
         {
             String value = prop.getProperty(SECURITY_TOKEN);
             if (value != null) {
-                this.securityToken = value.trim();
+                this.securityToken = StringUtils.trim(value);
             }
         }
     }
@@ -126,38 +131,47 @@ public class SessionCredentials {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) {
+			return true;
+		}
+        if (obj == null) {
+			return false;
+		}
+        if (getClass() != obj.getClass()) {
+			return false;
+		}
 
         SessionCredentials other = (SessionCredentials) obj;
         if (accessKey == null) {
-            if (other.accessKey != null)
-                return false;
-        } else if (!accessKey.equals(other.accessKey))
-            return false;
+            if (other.accessKey != null) {
+				return false;
+			}
+        } else if (!accessKey.equals(other.accessKey)) {
+			return false;
+		}
 
         if (secretKey == null) {
-            if (other.secretKey != null)
-                return false;
-        } else if (!secretKey.equals(other.secretKey))
-            return false;
+            if (other.secretKey != null) {
+				return false;
+			}
+        } else if (!secretKey.equals(other.secretKey)) {
+			return false;
+		}
 
         if (signature == null) {
-            if (other.signature != null)
-                return false;
-        } else if (!signature.equals(other.signature))
-            return false;
+            if (other.signature != null) {
+				return false;
+			}
+        } else if (!signature.equals(other.signature)) {
+			return false;
+		}
 
         return true;
     }
 
     @Override
     public String toString() {
-        return "SessionCredentials [accessKey=" + accessKey + ", secretKey=" + secretKey + ", signature="
-            + signature + ", SecurityToken=" + securityToken + "]";
+        return new StringBuilder().append("SessionCredentials [accessKey=").append(accessKey).append(", secretKey=").append(secretKey).append(", signature=").append(signature).append(", SecurityToken=")
+				.append(securityToken).append("]").toString();
     }
 }

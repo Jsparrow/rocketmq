@@ -27,10 +27,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class GetNamesrvConfigCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(GetNamesrvConfigCommand.class);
+
+	@Override
     public String commandName() {
         return "getNamesrvConfig";
     }
@@ -55,7 +60,7 @@ public class GetNamesrvConfigCommand implements SubCommand {
             String servers = commandLine.getOptionValue('n');
             List<String> serverList = null;
             if (servers != null && servers.length() > 0) {
-                String[] serverArray = servers.trim().split(";");
+                String[] serverArray = StringUtils.trim(servers).split(";");
 
                 if (serverArray.length > 0) {
                     serverList = Arrays.asList(serverArray);
@@ -66,13 +71,10 @@ public class GetNamesrvConfigCommand implements SubCommand {
 
             Map<String, Properties> nameServerConfigs = defaultMQAdminExt.getNameServerConfig(serverList);
 
-            for (String server : nameServerConfigs.keySet()) {
-                System.out.printf("============%s============\n",
-                    server);
-                for (Object key : nameServerConfigs.get(server).keySet()) {
-                    System.out.printf("%-50s=  %s\n", key, nameServerConfigs.get(server).get(key));
-                }
-            }
+            nameServerConfigs.keySet().forEach(server -> {
+                logger.info("============%s============\n", server);
+                nameServerConfigs.get(server).keySet().forEach(key -> logger.info("%-50s=  %s\n", key, nameServerConfigs.get(server).get(key)));
+            });
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

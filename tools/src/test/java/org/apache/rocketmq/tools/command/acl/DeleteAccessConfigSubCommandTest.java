@@ -23,6 +23,7 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeleteAccessConfigSubCommandTest {
 
@@ -33,7 +34,7 @@ public class DeleteAccessConfigSubCommandTest {
         String[] subargs = new String[] {"-a unit-test", "-c default-cluster"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('a').trim()).isEqualTo("unit-test");
-        assertThat(commandLine.getOptionValue('c').trim()).isEqualTo("default-cluster");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('a'))).isEqualTo("unit-test");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('c'))).isEqualTo("default-cluster");
     }
 }

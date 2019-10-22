@@ -116,7 +116,7 @@ public class Broker2Client {
             return response;
         }
 
-        Map<MessageQueue, Long> offsetTable = new HashMap<MessageQueue, Long>();
+        Map<MessageQueue, Long> offsetTable = new HashMap<>();
 
         for (int i = 0; i < topicConfig.getWriteQueueNums(); i++) {
             MessageQueue mq = new MessageQueue();
@@ -217,12 +217,12 @@ public class Broker2Client {
 
     private List<MessageQueueForC> convertOffsetTable2OffsetList(Map<MessageQueue, Long> table) {
         List<MessageQueueForC> list = new ArrayList<>();
-        for (Entry<MessageQueue, Long> entry : table.entrySet()) {
+        table.entrySet().forEach(entry -> {
             MessageQueue mq = entry.getKey();
             MessageQueueForC tmp =
                 new MessageQueueForC(mq.getTopic(), mq.getBrokerName(), mq.getQueueId(), entry.getValue());
             list.add(tmp);
-        }
+        });
         return list;
     }
 
@@ -237,7 +237,7 @@ public class Broker2Client {
                 requestHeader);
 
         Map<String, Map<MessageQueue, Long>> consumerStatusTable =
-            new HashMap<String, Map<MessageQueue, Long>>();
+            new HashMap<>();
         ConcurrentMap<Channel, ClientChannelInfo> channelInfoTable =
             this.brokerController.getConsumerManager().getConsumerGroupInfo(group).getChannelInfoTable();
         if (null == channelInfoTable || channelInfoTable.isEmpty()) {

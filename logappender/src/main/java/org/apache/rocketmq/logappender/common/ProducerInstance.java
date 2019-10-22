@@ -40,19 +40,19 @@ public class ProducerInstance {
 
     public static final String DEFAULT_GROUP = "rocketmq_appender";
 
-    private ConcurrentHashMap<String, MQProducer> producerMap = new ConcurrentHashMap<String, MQProducer>();
+	private static ProducerInstance instance = new ProducerInstance();
 
-    private static ProducerInstance instance = new ProducerInstance();
+	private ConcurrentHashMap<String, MQProducer> producerMap = new ConcurrentHashMap<>();
 
-    public static ProducerInstance getProducerInstance() {
+	public static ProducerInstance getProducerInstance() {
         return instance;
     }
 
-    private String genKey(String nameServerAddress, String group) {
-        return nameServerAddress + "_" + group;
+	private String genKey(String nameServerAddress, String group) {
+        return new StringBuilder().append(nameServerAddress).append("_").append(group).toString();
     }
 
-    public MQProducer getInstance(String nameServerAddress, String group) throws MQClientException {
+	public MQProducer getInstance(String nameServerAddress, String group) throws MQClientException {
         if (StringUtils.isBlank(group)) {
             group = DEFAULT_GROUP;
         }
@@ -74,7 +74,7 @@ public class ProducerInstance {
         return defaultMQProducer;
     }
 
-    public void removeAndClose(String nameServerAddress, String group) {
+	public void removeAndClose(String nameServerAddress, String group) {
         if (group == null) {
             group = DEFAULT_GROUP;
         }
@@ -86,12 +86,12 @@ public class ProducerInstance {
         }
     }
 
-    public void closeAll() {
+	public void closeAll() {
         Set<Map.Entry<String, MQProducer>> entries = getProducerInstance().producerMap.entrySet();
-        for (Map.Entry<String, MQProducer> entry : entries) {
+        entries.forEach(entry -> {
             getProducerInstance().producerMap.remove(entry.getKey());
             entry.getValue().shutdown();
-        }
+        });
     }
 
 }

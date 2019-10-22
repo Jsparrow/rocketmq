@@ -123,7 +123,8 @@ public class BrokerOuterAPITest {
         assertEquals(2, booleanList.size());
         boolean success = Iterables.any(booleanList,
             new Predicate<Boolean>() {
-                public boolean apply(Boolean input) {
+                @Override
+				public boolean apply(Boolean input) {
                     return input ? true : false;
                 }
             });

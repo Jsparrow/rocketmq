@@ -55,7 +55,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
             case RequestCode.UPDATE_CONSUMER_OFFSET:
                 return this.updateConsumerOffset(ctx, request);
             case RequestCode.QUERY_CONSUMER_OFFSET:
-                return this.queryConsumerOffset(ctx, request);
+                return this.queryConsumerOffset(request);
             default:
                 break;
         }
@@ -115,7 +115,7 @@ public class ConsumerManageProcessor implements NettyRequestProcessor {
         return response;
     }
 
-    private RemotingCommand queryConsumerOffset(ChannelHandlerContext ctx, RemotingCommand request)
+    private RemotingCommand queryConsumerOffset(RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response =
             RemotingCommand.createResponseCommand(QueryConsumerOffsetResponseHeader.class);

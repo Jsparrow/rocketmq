@@ -25,10 +25,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TestUtil {
 
-    private TestUtil() {
+    private static final Logger logger = LoggerFactory.getLogger(TestUtil.class);
+
+	private TestUtil() {
     }
 
     public static Long parseStringToLong(String s, Long defval) {
@@ -36,7 +40,8 @@ public final class TestUtil {
         try {
             val = Long.parseLong(s);
         } catch (NumberFormatException e) {
-            val = defval;
+            logger.error(e.getMessage(), e);
+			val = defval;
         }
         return val;
     }
@@ -46,7 +51,8 @@ public final class TestUtil {
         try {
             val = Integer.parseInt(s);
         } catch (NumberFormatException e) {
-            val = defval;
+            logger.error(e.getMessage(), e);
+			val = defval;
         }
         return val;
     }
@@ -61,7 +67,7 @@ public final class TestUtil {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -69,7 +75,7 @@ public final class TestUtil {
         try {
             TimeUnit.SECONDS.sleep(time);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -77,7 +83,7 @@ public final class TestUtil {
         try {
             TimeUnit.MINUTES.sleep(time);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -100,22 +106,21 @@ public final class TestUtil {
                 s = new String(b, 0, n - 1);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
     public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new LinkedList<Map.Entry<K, V>>(map.entrySet());
-        Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
-            public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
+        List<Map.Entry<K, V>> list = new LinkedList<>(map.entrySet());
+        list.sort(new Comparator<Map.Entry<K, V>>() {
+            @Override
+			public int compare(Map.Entry<K, V> o1, Map.Entry<K, V> o2) {
                 return (o1.getValue()).compareTo(o2.getValue());
             }
         });
 
-        Map<K, V> result = new LinkedHashMap<K, V>();
-        for (Map.Entry<K, V> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
+        Map<K, V> result = new LinkedHashMap<>();
+        list.forEach(entry -> result.put(entry.getKey(), entry.getValue()));
         return result;
     }
 

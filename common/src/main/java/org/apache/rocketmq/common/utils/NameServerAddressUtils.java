@@ -20,8 +20,8 @@ public class NameServerAddressUtils {
     public static final String INSTANCE_PREFIX = "MQ_INST_";
     public static final String INSTANCE_REGEX = INSTANCE_PREFIX + "\\w+_\\w+";
     public static final String ENDPOINT_PREFIX = "http://";
-    public static final Pattern NAMESRV_ENDPOINT_PATTERN = Pattern.compile("^" + ENDPOINT_PREFIX + ".*");
-    public static final Pattern INST_ENDPOINT_PATTERN = Pattern.compile("^" + ENDPOINT_PREFIX + INSTANCE_REGEX + "\\..*");
+    public static final Pattern NAMESRV_ENDPOINT_PATTERN = Pattern.compile(new StringBuilder().append("^").append(ENDPOINT_PREFIX).append(".*").toString());
+    public static final Pattern INST_ENDPOINT_PATTERN = Pattern.compile(new StringBuilder().append("^").append(ENDPOINT_PREFIX).append(INSTANCE_REGEX).append("\\..*").toString());
 
     public static String getNameServerAddresses() {
         return System.getProperty(MixAll.NAMESRV_ADDR_PROPERTY, System.getenv(MixAll.NAMESRV_ADDR_ENV));
@@ -35,6 +35,6 @@ public class NameServerAddressUtils {
         if (StringUtils.isEmpty(endpoint)) {
             return null;
         }
-        return endpoint.substring(ENDPOINT_PREFIX.length(), endpoint.indexOf('.'));
+        return StringUtils.substring(endpoint, ENDPOINT_PREFIX.length(), StringUtils.indexOf(endpoint, '.'));
     }
 }

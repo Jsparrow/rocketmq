@@ -23,9 +23,12 @@ import java.util.Set;
 import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullConsumerWithNamespace {
-    private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<MessageQueue, Long>();
+    private static final Logger logger = LoggerFactory.getLogger(PullConsumerWithNamespace.class);
+	private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
         DefaultMQPullConsumer pullConsumer = new DefaultMQPullConsumer("InstanceTest", "cidTest");
@@ -34,13 +37,13 @@ public class PullConsumerWithNamespace {
 
         Set<MessageQueue> mqs = pullConsumer.fetchSubscribeMessageQueues("topicTest");
         for (MessageQueue mq : mqs) {
-            System.out.printf("Consume from the topic: %s, queue: %s%n", mq.getTopic(), mq);
+            logger.info("Consume from the topic: %s, queue: %s%n", mq.getTopic(), mq);
             SINGLE_MQ:
             while (true) {
                 try {
                     PullResult pullResult =
                         pullConsumer.pullBlockIfNotFound(mq, null, getMessageQueueOffset(mq), 32);
-                    System.out.printf("%s%n", pullResult);
+                    logger.info("%s%n", pullResult);
 
                     putMessageQueueOffset(mq, pullResult.getNextBeginOffset());
                     switch (pullResult.getPullStatus()) {
@@ -57,7 +60,7 @@ public class PullConsumerWithNamespace {
                             break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -79,7 +82,7 @@ public class PullConsumerWithNamespace {
             return;
         }
         pullResult.getMsgFoundList().stream().forEach(
-            (msg) -> System.out.printf("Topic is:%s, msgId is:%s%n" , msg.getTopic(), msg.getMsgId()));
+            (msg) -> logger.info("Topic is:%s, msgId is:%s%n", msg.getTopic(), msg.getMsgId()));
     }
 
     private static void putMessageQueueOffset(MessageQueue mq, long offset) {

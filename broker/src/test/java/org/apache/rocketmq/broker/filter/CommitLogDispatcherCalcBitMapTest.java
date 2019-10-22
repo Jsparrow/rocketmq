@@ -29,10 +29,14 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CommitLogDispatcherCalcBitMapTest {
 
-    @Test
+    private static final Logger logger = LoggerFactory.getLogger(CommitLogDispatcherCalcBitMapTest.class);
+
+	@Test
     public void testDispatch_filterDataIllegal() {
         BrokerConfig brokerConfig = new BrokerConfig();
         brokerConfig.setEnableCalcFilterBitMap(true);
@@ -55,7 +59,7 @@ public class CommitLogDispatcherCalcBitMapTest {
             filterManager);
 
         for (int i = 0; i < 1; i++) {
-            Map<String, String> properties = new HashMap<String, String>(4);
+            Map<String, String> properties = new HashMap<>(4);
             properties.put("a", String.valueOf(i * 10 + 5));
 
             String topic = "topic" + i;
@@ -99,7 +103,7 @@ public class CommitLogDispatcherCalcBitMapTest {
             filterManager);
 
         for (int i = 0; i < 10; i++) {
-            Map<String, String> properties = new HashMap<String, String>(4);
+            Map<String, String> properties = new HashMap<>(4);
             properties.put("a", String.valueOf(i * 10 + 5));
 
             String topic = "topic" + i;
@@ -136,7 +140,7 @@ public class CommitLogDispatcherCalcBitMapTest {
             filterManager);
 
         for (int i = 0; i < 10; i++) {
-            Map<String, String> properties = new HashMap<String, String>(4);
+            Map<String, String> properties = new HashMap<>(4);
             properties.put("a", String.valueOf(i * 10 + 5));
 
             String topic = "topic" + i;
@@ -164,7 +168,7 @@ public class CommitLogDispatcherCalcBitMapTest {
 
             Collection<ConsumerFilterData> filterDatas = filterManager.get(topic);
 
-            for (ConsumerFilterData filterData : filterDatas) {
+            filterDatas.forEach(filterData -> {
 
                 if (filterManager.getBloomFilter().isHit(filterData.getBloomFilterData(), bits)) {
                     try {
@@ -172,7 +176,7 @@ public class CommitLogDispatcherCalcBitMapTest {
                             new MessageEvaluationContext(properties)
                         )).isTrue();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                         assertThat(true).isFalse();
                     }
                 } else {
@@ -181,11 +185,11 @@ public class CommitLogDispatcherCalcBitMapTest {
                             new MessageEvaluationContext(properties)
                         )).isFalse();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                         assertThat(true).isFalse();
                     }
                 }
-            }
+            });
         }
     }
 }

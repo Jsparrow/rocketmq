@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class Message implements Serializable {
     private static final long serialVersionUID = 8445773977080406428L;
@@ -43,11 +44,13 @@ public class Message implements Serializable {
         this.flag = flag;
         this.body = body;
 
-        if (tags != null && tags.length() > 0)
-            this.setTags(tags);
+        if (tags != null && tags.length() > 0) {
+			this.setTags(tags);
+		}
 
-        if (keys != null && keys.length() > 0)
-            this.setKeys(keys);
+        if (keys != null && keys.length() > 0) {
+			this.setKeys(keys);
+		}
 
         this.setWaitStoreMsgOK(waitStoreMsgOK);
     }
@@ -84,8 +87,8 @@ public class Message implements Serializable {
                 "The Property<%s> is used by system, input another please", name));
         }
 
-        if (value == null || value.trim().isEmpty()
-            || name == null || name.trim().isEmpty()) {
+        if (value == null || StringUtils.isEmpty(value.trim())
+            || name == null || StringUtils.isEmpty(name.trim())) {
             throw new IllegalArgumentException(
                 "The name or value of property can not be null or blank string!"
             );
@@ -127,13 +130,13 @@ public class Message implements Serializable {
     }
 
     public void setKeys(Collection<String> keys) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String k : keys) {
             sb.append(k);
             sb.append(MessageConst.KEY_SEPARATOR);
         }
 
-        this.setKeys(sb.toString().trim());
+        this.setKeys(StringUtils.trim(sb.toString()));
     }
 
     public int getDelayTimeLevel() {
@@ -151,8 +154,9 @@ public class Message implements Serializable {
 
     public boolean isWaitStoreMsgOK() {
         String result = this.getProperty(MessageConst.PROPERTY_WAIT_STORE_MSG_OK);
-        if (null == result)
-            return true;
+        if (null == result) {
+			return true;
+		}
 
         return Boolean.parseBoolean(result);
     }
@@ -207,12 +211,8 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
-        return "Message{" +
-            "topic='" + topic + '\'' +
-            ", flag=" + flag +
-            ", properties=" + properties +
-            ", body=" + Arrays.toString(body) +
-            ", transactionId='" + transactionId + '\'' +
-            '}';
+        return new StringBuilder().append("Message{").append("topic='").append(topic).append('\'').append(", flag=").append(flag).append(", properties=")
+				.append(properties).append(", body=").append(Arrays.toString(body)).append(", transactionId='").append(transactionId).append('\'').append('}')
+				.toString();
     }
 }

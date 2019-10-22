@@ -317,11 +317,11 @@ public class PlainAccessValidatorTest {
         plainAccessConfig.setSecretKey("1234567890");
         plainAccessConfig.setDefaultGroupPerm("PUB");
         plainAccessConfig.setDefaultTopicPerm("SUB");
-        List<String> topicPerms = new ArrayList<String>();
+        List<String> topicPerms = new ArrayList<>();
         topicPerms.add("topicC=PUB|SUB");
         topicPerms.add("topicB=PUB");
         plainAccessConfig.setTopicPerms(topicPerms);
-        List<String> groupPerms = new ArrayList<String>();
+        List<String> groupPerms = new ArrayList<>();
         groupPerms.add("groupB=PUB|SUB");
         groupPerms.add("groupC=DENY");
         plainAccessConfig.setGroupPerms(groupPerms);
@@ -332,13 +332,7 @@ public class PlainAccessValidatorTest {
 
         Map<String, Object> readableMap = AclUtils.getYamlDataObject(targetFileName, Map.class);
         List<Map<String, Object>> accounts =  (List<Map<String, Object>>)readableMap.get("accounts");
-        Map<String, Object> verifyMap = null;
-        for (Map<String, Object> account : accounts) {
-            if (account.get("accessKey").equals(plainAccessConfig.getAccessKey())) {
-                verifyMap = account;
-                break;
-            }
-        }
+        Map<String, Object> verifyMap = accounts.stream().filter(account -> account.get("accessKey").equals(plainAccessConfig.getAccessKey())).findFirst().orElse(null);
 
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_SECRET_KEY),"1234567890");
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_DEFAULT_TOPIC_PERM),"SUB");
@@ -374,13 +368,7 @@ public class PlainAccessValidatorTest {
 
         Map<String, Object> readableMap = AclUtils.getYamlDataObject(targetFileName, Map.class);
         List<Map<String, Object>> accounts =  (List<Map<String, Object>>)readableMap.get(AclConstants.CONFIG_ACCOUNTS);
-        Map<String, Object> verifyMap = null;
-        for (Map<String, Object> account : accounts) {
-            if (account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig.getAccessKey())) {
-                verifyMap = account;
-                break;
-            }
-        }
+        Map<String, Object> verifyMap = accounts.stream().filter(account -> account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig.getAccessKey())).findFirst().orElse(null);
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_SECRET_KEY),"123456789111");
 
         // Restore the backup file and flush to yaml file
@@ -401,11 +389,11 @@ public class PlainAccessValidatorTest {
         plainAccessConfig.setSecretKey("123456789111");
         plainAccessConfig.setDefaultGroupPerm("PUB");
         plainAccessConfig.setDefaultTopicPerm("DENY");
-        List<String> topicPerms = new ArrayList<String>();
+        List<String> topicPerms = new ArrayList<>();
         topicPerms.add("topicC=PUB|SUB");
         topicPerms.add("topicB=PUB");
         plainAccessConfig.setTopicPerms(topicPerms);
-        List<String> groupPerms = new ArrayList<String>();
+        List<String> groupPerms = new ArrayList<>();
         groupPerms.add("groupB=PUB|SUB");
         groupPerms.add("groupC=DENY");
         plainAccessConfig.setGroupPerms(groupPerms);
@@ -416,13 +404,7 @@ public class PlainAccessValidatorTest {
 
         Map<String, Object> readableMap = AclUtils.getYamlDataObject(targetFileName, Map.class);
         List<Map<String, Object>> accounts =  (List<Map<String, Object>>)readableMap.get(AclConstants.CONFIG_ACCOUNTS);
-        Map<String, Object> verifyMap = null;
-        for (Map<String, Object> account : accounts) {
-            if (account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig.getAccessKey())) {
-                verifyMap = account;
-                break;
-            }
-        }
+        Map<String, Object> verifyMap = accounts.stream().filter(account -> account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig.getAccessKey())).findFirst().orElse(null);
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_SECRET_KEY),"123456789111");
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_DEFAULT_TOPIC_PERM),"DENY");
         Assert.assertEquals(verifyMap.get(AclConstants.CONFIG_DEFAULT_GROUP_PERM),"PUB");
@@ -447,13 +429,7 @@ public class PlainAccessValidatorTest {
 
         Map<String, Object> readableMap2 = AclUtils.getYamlDataObject(targetFileName, Map.class);
         List<Map<String, Object>> accounts2 =  (List<Map<String, Object>>)readableMap2.get(AclConstants.CONFIG_ACCOUNTS);
-        Map<String, Object> verifyMap2 = null;
-        for (Map<String, Object> account : accounts2) {
-            if (account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig2.getAccessKey())) {
-                verifyMap2 = account;
-                break;
-            }
-        }
+        Map<String, Object> verifyMap2 = accounts2.stream().filter(account -> account.get(AclConstants.CONFIG_ACCESS_KEY).equals(plainAccessConfig2.getAccessKey())).findFirst().orElse(null);
 
         // Verify the dateversion element after updating is correct or not
         List<Map<String, Object>> dataVersions2 = (List<Map<String, Object>>) readableMap2.get(AclConstants.CONFIG_DATA_VERSION);
@@ -494,13 +470,7 @@ public class PlainAccessValidatorTest {
 
         Map<String, Object> readableMap = AclUtils.getYamlDataObject(targetFileName, Map.class);
         List<Map<String, Object>> accounts =  (List<Map<String, Object>>)readableMap.get(AclConstants.CONFIG_ACCOUNTS);
-        Map<String, Object> verifyMap = null;
-        for (Map<String, Object> account : accounts) {
-            if (account.get(AclConstants.CONFIG_ACCESS_KEY).equals(accessKey)) {
-                verifyMap = account;
-                break;
-            }
-        }
+        Map<String, Object> verifyMap = accounts.stream().filter(account -> account.get(AclConstants.CONFIG_ACCESS_KEY).equals(accessKey)).findFirst().orElse(null);
 
         // Verify the specified element is removed or not
         Assert.assertEquals(verifyMap,null);
@@ -540,7 +510,7 @@ public class PlainAccessValidatorTest {
         PlainAccessValidator plainAccessValidator = new PlainAccessValidator();
         // Update global white remote addr value list in the acl access yaml config file
 
-        List<String> globalWhiteAddrsList = new ArrayList<String>();
+        List<String> globalWhiteAddrsList = new ArrayList<>();
         globalWhiteAddrsList.add("10.10.154.1");
         globalWhiteAddrsList.add("10.10.154.2");
         globalWhiteAddrsList.add("10.10.154.3");

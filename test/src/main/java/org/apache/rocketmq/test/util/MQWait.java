@@ -32,7 +32,7 @@ public class MQWait {
         AbstractListener... listeners) {
         boolean recvAll = false;
         long startTime = System.currentTimeMillis();
-        Collection<Object> noDupMsgs = new ArrayList<Object>();
+        Collection<Object> noDupMsgs = new ArrayList<>();
         while (!recvAll) {
             if ((System.currentTimeMillis() - startTime) < timeoutMills) {
                 noDupMsgs.clear();
@@ -82,7 +82,8 @@ public class MQWait {
         MQWait.setCondition(new Condition() {
             int i = 0;
 
-            public boolean meetCondition() {
+            @Override
+			public boolean meetCondition() {
                 i++;
                 return i == 100;
             }

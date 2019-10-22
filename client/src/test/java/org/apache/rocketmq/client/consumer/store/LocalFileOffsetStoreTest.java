@@ -43,8 +43,8 @@ public class LocalFileOffsetStoreTest {
 
     @Before
     public void init() {
-        System.setProperty("rocketmq.client.localOffsetStoreDir", System.getProperty("java.io.tmpdir") + File.separator + ".rocketmq_offsets");
-        String clientId = new ClientConfig().buildMQClientId() + "#TestNamespace" + System.currentTimeMillis();
+        System.setProperty("rocketmq.client.localOffsetStoreDir", new StringBuilder().append(System.getProperty("java.io.tmpdir")).append(File.separator).append(".rocketmq_offsets").toString());
+        String clientId = new StringBuilder().append(new ClientConfig().buildMQClientId()).append("#TestNamespace").append(System.currentTimeMillis()).toString();
         when(mQClientFactory.getClientId()).thenReturn(clientId);
     }
 

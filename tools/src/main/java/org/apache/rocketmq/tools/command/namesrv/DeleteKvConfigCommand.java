@@ -23,9 +23,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeleteKvConfigCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(DeleteKvConfigCommand.class);
+
+	@Override
     public String commandName() {
         return "deleteKvConfig";
     }
@@ -53,13 +58,13 @@ public class DeleteKvConfigCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
             // namespace
-            String namespace = commandLine.getOptionValue('s').trim();
+            String namespace = StringUtils.trim(commandLine.getOptionValue('s'));
             // key name
-            String key = commandLine.getOptionValue('k').trim();
+            String key = StringUtils.trim(commandLine.getOptionValue('k'));
 
             defaultMQAdminExt.start();
             defaultMQAdminExt.deleteKvConfig(namespace, key);
-            System.out.printf("delete kv config from namespace success.%n");
+            logger.info("delete kv config from namespace success.%n");
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

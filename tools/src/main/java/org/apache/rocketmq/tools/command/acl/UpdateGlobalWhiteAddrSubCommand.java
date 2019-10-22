@@ -27,10 +27,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateGlobalWhiteAddrSubCommand implements SubCommand {
 
-    @Override public String commandName() {
+    private static final Logger logger = LoggerFactory.getLogger(UpdateGlobalWhiteAddrSubCommand.class);
+
+	@Override public String commandName() {
         return "updateGlobalWhiteAddr";
     }
 
@@ -66,27 +71,27 @@ public class UpdateGlobalWhiteAddrSubCommand implements SubCommand {
 
         try {
             // GlobalWhiteRemoteAddresses list value
-            String globalWhiteRemoteAddresses = commandLine.getOptionValue('g').trim();
+            String globalWhiteRemoteAddresses = StringUtils.trim(commandLine.getOptionValue('g'));
 
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
 
                 defaultMQAdminExt.start();
                 defaultMQAdminExt.updateGlobalWhiteAddrConfig(addr, globalWhiteRemoteAddresses);
 
-                System.out.printf("update global white remote addresses to %s success.%n", addr);
+                logger.info("update global white remote addresses to %s success.%n", addr);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
                 Set<String> masterSet =
                     CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.updateGlobalWhiteAddrConfig(addr, globalWhiteRemoteAddresses);
-                    System.out.printf("update global white remote addresses to %s success.%n", addr);
+                    logger.info("update global white remote addresses to %s success.%n", addr);
                 }
                 return;
             }

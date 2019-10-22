@@ -86,6 +86,7 @@ import org.apache.rocketmq.remoting.exception.RemotingConnectException;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.remoting.exception.RemotingTooMuchRequestException;
+import org.apache.commons.lang3.StringUtils;
 
 public class DefaultMQProducerImpl implements MQProducerInner {
     private final InternalLogger log = ClientLogger.getLog();
@@ -185,8 +186,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 boolean registerOK = mQClientFactory.registerProducer(this.defaultMQProducer.getProducerGroup(), this);
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
-                    throw new MQClientException("The producer group[" + this.defaultMQProducer.getProducerGroup()
-                        + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+                    throw new MQClientException(new StringBuilder().append("The producer group[").append(this.defaultMQProducer.getProducerGroup()).append("] has been created before, specify another name please.").append(FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL)).toString(),
                         null);
                 }
 
@@ -203,9 +203,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             case RUNNING:
             case START_FAILED:
             case SHUTDOWN_ALREADY:
-                throw new MQClientException("The producer service state not OK, maybe started once, "
-                    + this.serviceState
-                    + FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK),
+                throw new MQClientException(new StringBuilder().append("The producer service state not OK, maybe started once, ").append(this.serviceState).append(FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK)).toString(),
                     null);
             default:
                 break;
@@ -222,7 +220,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         }
 
         if (this.defaultMQProducer.getProducerGroup().equals(MixAll.DEFAULT_PRODUCER_GROUP)) {
-            throw new MQClientException("producerGroup can not equal " + MixAll.DEFAULT_PRODUCER_GROUP + ", please specify another one.",
+            throw new MQClientException(new StringBuilder().append("producerGroup can not equal ").append(MixAll.DEFAULT_PRODUCER_GROUP).append(", please specify another one.").toString(),
                 null);
         }
     }
@@ -276,21 +274,20 @@ public class DefaultMQProducerImpl implements MQProducerInner {
     @Override
     @Deprecated
     public TransactionCheckListener checkListener() {
-        if (this.defaultMQProducer instanceof TransactionMQProducer) {
-            TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
-            return producer.getTransactionCheckListener();
-        }
-
-        return null;
+        if (!(this.defaultMQProducer instanceof TransactionMQProducer)) {
+			return null;
+		}
+		TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
+		return producer.getTransactionCheckListener();
     }
 
     @Override
     public TransactionListener getCheckListener() {
-        if (this.defaultMQProducer instanceof TransactionMQProducer) {
-            TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
-            return producer.getTransactionListener();
-        }
-        return null;
+        if (!(this.defaultMQProducer instanceof TransactionMQProducer)) {
+			return null;
+		}
+		TransactionMQProducer producer = (TransactionMQProducer) defaultMQProducer;
+		return producer.getTransactionListener();
     }
 
     @Override
@@ -383,12 +380,13 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     @Override
     public void updateTopicPublishInfo(final String topic, final TopicPublishInfo info) {
-        if (info != null && topic != null) {
-            TopicPublishInfo prev = this.topicPublishInfoTable.put(topic, info);
-            if (prev != null) {
-                log.info("updateTopicPublishInfo prev is not null, " + prev.toString());
-            }
-        }
+        if (!(info != null && topic != null)) {
+			return;
+		}
+		TopicPublishInfo prev = this.topicPublishInfoTable.put(topic, info);
+		if (prev != null) {
+		    log.info("updateTopicPublishInfo prev is not null, " + prev.toString());
+		}
     }
 
     @Override
@@ -409,9 +407,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 
     private void makeSureStateOK() throws MQClientException {
         if (this.serviceState != ServiceState.RUNNING) {
-            throw new MQClientException("The producer service state not OK, "
-                + this.serviceState
-                + FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK),
+            throw new MQClientException(new StringBuilder().append("The producer service state not OK, ").append(this.serviceState).append(FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK)).toString(),
                 null);
         }
     }
@@ -659,7 +655,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 "No name server address, please set it." + FAQUrl.suggestTodo(FAQUrl.NAME_SERVER_ADDR_NOT_EXIST_URL), null).setResponseCode(ClientErrorCode.NO_NAME_SERVER_EXCEPTION);
         }
 
-        throw new MQClientException("No route info of this topic, " + msg.getTopic() + FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO),
+        throw new MQClientException(new StringBuilder().append("No route info of this topic, ").append(msg.getTopic()).append(FAQUrl.suggestTodo(FAQUrl.NO_TOPIC_ROUTE_INFO)).toString(),
             null).setResponseCode(ClientErrorCode.NOT_FOUND_TOPIC_EXCEPTION);
     }
 
@@ -745,7 +741,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                     context.setMq(mq);
                     context.setNamespace(this.defaultMQProducer.getNamespace());
                     String isTrans = msg.getProperty(MessageConst.PROPERTY_TRANSACTION_PREPARED);
-                    if (isTrans != null && isTrans.equals("true")) {
+                    if (isTrans != null && "true".equals(isTrans)) {
                         context.setMsgType(MessageType.Trans_Msg_Half);
                     }
 
@@ -768,7 +764,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
                 requestHeader.setReconsumeTimes(0);
                 requestHeader.setUnitMode(this.isUnitMode());
                 requestHeader.setBatch(msg instanceof MessageBatch);
-                if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (StringUtils.startsWith(requestHeader.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                     String reconsumeTimes = MessageAccessor.getReconsumeTime(msg);
                     if (reconsumeTimes != null) {
                         requestHeader.setReconsumeTimes(Integer.valueOf(reconsumeTimes));
@@ -873,7 +869,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             }
         }
 
-        throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+        throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
     }
 
     public MQClientInstance getmQClientFactory() {
@@ -886,20 +882,19 @@ public class DefaultMQProducerImpl implements MQProducerInner {
             return false;
         }
         byte[] body = msg.getBody();
-        if (body != null) {
-            if (body.length >= this.defaultMQProducer.getCompressMsgBodyOverHowmuch()) {
-                try {
-                    byte[] data = UtilAll.compress(body, zipCompressLevel);
-                    if (data != null) {
-                        msg.setBody(data);
-                        return true;
-                    }
-                } catch (IOException e) {
-                    log.error("tryToCompressMessage exception", e);
-                    log.warn(msg.toString());
-                }
-            }
-        }
+        boolean condition = body != null && body.length >= this.defaultMQProducer.getCompressMsgBodyOverHowmuch();
+		if (condition) {
+		    try {
+		        byte[] data = UtilAll.compress(body, zipCompressLevel);
+		        if (data != null) {
+		            msg.setBody(data);
+		            return true;
+		        }
+		    } catch (IOException e) {
+		        log.error("tryToCompressMessage exception", e);
+		        log.warn(msg.toString());
+		    }
+		}
 
         return false;
     }
@@ -1235,7 +1230,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
         try {
             this.endTransaction(sendResult, localTransactionState, localException);
         } catch (Exception e) {
-            log.warn("local transaction execute " + localTransactionState + ", but end broker transaction failed", e);
+            log.warn(new StringBuilder().append("local transaction execute ").append(localTransactionState).append(", but end broker transaction failed").toString(), e);
         }
 
         TransactionSendResult transactionSendResult = new TransactionSendResult();

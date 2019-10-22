@@ -42,14 +42,14 @@ public class ProducerManager {
     private static final int GET_AVALIABLE_CHANNEL_RETRY_COUNT = 3;
     private final Lock groupChannelLock = new ReentrantLock();
     private final HashMap<String /* group name */, HashMap<Channel, ClientChannelInfo>> groupChannelTable =
-        new HashMap<String, HashMap<Channel, ClientChannelInfo>>();
+        new HashMap<>();
     private PositiveAtomicCounter positiveAtomicCounter = new PositiveAtomicCounter();
     public ProducerManager() {
     }
 
     public HashMap<String, HashMap<Channel, ClientChannelInfo>> getGroupChannelTable() {
         HashMap<String /* group name */, HashMap<Channel, ClientChannelInfo>> newGroupChannelTable =
-            new HashMap<String, HashMap<Channel, ClientChannelInfo>>();
+            new HashMap<>();
         try {
             if (this.groupChannelLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
@@ -68,27 +68,27 @@ public class ProducerManager {
         try {
             if (this.groupChannelLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
-                    for (final Map.Entry<String, HashMap<Channel, ClientChannelInfo>> entry : this.groupChannelTable
-                        .entrySet()) {
-                        final String group = entry.getKey();
-                        final HashMap<Channel, ClientChannelInfo> chlMap = entry.getValue();
+                    this.groupChannelTable
+                        .entrySet().forEach((final Map.Entry<String, HashMap<Channel, ClientChannelInfo>> entry) -> {
+					final String group = entry.getKey();
+					final HashMap<Channel, ClientChannelInfo> chlMap = entry.getValue();
 
-                        Iterator<Entry<Channel, ClientChannelInfo>> it = chlMap.entrySet().iterator();
-                        while (it.hasNext()) {
-                            Entry<Channel, ClientChannelInfo> item = it.next();
-                            // final Integer id = item.getKey();
-                            final ClientChannelInfo info = item.getValue();
+					Iterator<Entry<Channel, ClientChannelInfo>> it = chlMap.entrySet().iterator();
+					while (it.hasNext()) {
+					    Entry<Channel, ClientChannelInfo> item = it.next();
+					    // final Integer id = item.getKey();
+					    final ClientChannelInfo info = item.getValue();
 
-                            long diff = System.currentTimeMillis() - info.getLastUpdateTimestamp();
-                            if (diff > CHANNEL_EXPIRED_TIMEOUT) {
-                                it.remove();
-                                log.warn(
-                                    "SCAN: remove expired channel[{}] from ProducerManager groupChannelTable, producer group name: {}",
-                                    RemotingHelper.parseChannelRemoteAddr(info.getChannel()), group);
-                                RemotingUtil.closeChannel(info.getChannel());
-                            }
-                        }
-                    }
+					    long diff = System.currentTimeMillis() - info.getLastUpdateTimestamp();
+					    if (diff > CHANNEL_EXPIRED_TIMEOUT) {
+					        it.remove();
+					        log.warn(
+					            "SCAN: remove expired channel[{}] from ProducerManager groupChannelTable, producer group name: {}",
+					            RemotingHelper.parseChannelRemoteAddr(info.getChannel()), group);
+					        RemotingUtil.closeChannel(info.getChannel());
+					    }
+					}
+               });
                 } finally {
                     this.groupChannelLock.unlock();
                 }
@@ -105,20 +105,20 @@ public class ProducerManager {
             try {
                 if (this.groupChannelLock.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                     try {
-                        for (final Map.Entry<String, HashMap<Channel, ClientChannelInfo>> entry : this.groupChannelTable
-                            .entrySet()) {
-                            final String group = entry.getKey();
-                            final HashMap<Channel, ClientChannelInfo> clientChannelInfoTable =
-                                entry.getValue();
-                            final ClientChannelInfo clientChannelInfo =
-                                clientChannelInfoTable.remove(channel);
-                            if (clientChannelInfo != null) {
-                                log.info(
-                                    "NETTY EVENT: remove channel[{}][{}] from ProducerManager groupChannelTable, producer group: {}",
-                                    clientChannelInfo.toString(), remoteAddr, group);
-                            }
+                        this.groupChannelTable
+                            .entrySet().forEach((final Map.Entry<String, HashMap<Channel, ClientChannelInfo>> entry) -> {
+						final String group = entry.getKey();
+						final HashMap<Channel, ClientChannelInfo> clientChannelInfoTable =
+						    entry.getValue();
+						final ClientChannelInfo clientChannelInfo =
+						    clientChannelInfoTable.remove(channel);
+						if (clientChannelInfo != null) {
+						    log.info(
+						        "NETTY EVENT: remove channel[{}][{}] from ProducerManager groupChannelTable, producer group: {}",
+						        clientChannelInfo.toString(), remoteAddr, group);
+						}
 
-                        }
+                  });
                     } finally {
                         this.groupChannelLock.unlock();
                     }
@@ -194,11 +194,9 @@ public class ProducerManager {
 
     public Channel getAvaliableChannel(String groupId) {
         HashMap<Channel, ClientChannelInfo> channelClientChannelInfoHashMap = groupChannelTable.get(groupId);
-        List<Channel> channelList = new ArrayList<Channel>();
+        List<Channel> channelList = new ArrayList<>();
         if (channelClientChannelInfoHashMap != null) {
-            for (Channel channel : channelClientChannelInfoHashMap.keySet()) {
-                channelList.add(channel);
-            }
+            channelClientChannelInfoHashMap.keySet().forEach(channelList::add);
             int size = channelList.size();
             if (0 == size) {
                 log.warn("Channel list is empty. groupId={}", groupId);

@@ -40,6 +40,6 @@ public class ResumeCheckHalfMessageRequestHeader implements CommandCustomHeader 
 
     @Override
     public String toString() {
-        return "ResumeCheckHalfMessageRequestHeader [msgId=" + msgId + "]";
+        return new StringBuilder().append("ResumeCheckHalfMessageRequestHeader [msgId=").append(msgId).append("]").toString();
     }
 }

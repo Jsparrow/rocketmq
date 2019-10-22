@@ -48,7 +48,7 @@ public class FailedMsgs {
 
     @Override
     public String toString() {
-        return "FailedMsgs [consumerGroup=" + consumerGroup + ", topic=" + topic
-            + ", failedMsgsTotalRecently=" + failedMsgsTotalRecently + "]";
+        return new StringBuilder().append("FailedMsgs [consumerGroup=").append(consumerGroup).append(", topic=").append(topic).append(", failedMsgsTotalRecently=").append(failedMsgsTotalRecently).append("]")
+				.toString();
     }
 }

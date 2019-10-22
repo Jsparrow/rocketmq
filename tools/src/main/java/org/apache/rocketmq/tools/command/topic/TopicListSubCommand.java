@@ -35,10 +35,15 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class TopicListSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(TopicListSubCommand.class);
+
+	@Override
     public String commandName() {
         return "topicList";
     }
@@ -67,16 +72,13 @@ public class TopicListSubCommand implements SubCommand {
             if (commandLine.hasOption('c')) {
                 ClusterInfo clusterInfo = defaultMQAdminExt.examineBrokerClusterInfo();
 
-                System.out.printf("%-20s  %-48s  %-48s%n",
-                    "#Cluster Name",
-                    "#Topic",
-                    "#Consumer Group"
+                logger.info("%-20s  %-48s  %-48s%n", "#Cluster Name", "#Topic", "#Consumer Group"
                 );
 
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
-                    if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)
-                        || topic.startsWith(MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
+                    if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)
+                        || StringUtils.startsWith(topic, MixAll.DLQ_GROUP_TOPIC_PREFIX)) {
                         continue;
                     }
 
@@ -88,6 +90,7 @@ public class TopicListSubCommand implements SubCommand {
                             this.findTopicBelongToWhichCluster(topic, clusterInfo, defaultMQAdminExt);
                         groupList = defaultMQAdminExt.queryTopicConsumeByWho(topic);
                     } catch (Exception e) {
+						logger.error(e.getMessage(), e);
                     }
 
                     if (null == groupList || groupList.getGroupList().isEmpty()) {
@@ -96,18 +99,13 @@ public class TopicListSubCommand implements SubCommand {
                     }
 
                     for (String group : groupList.getGroupList()) {
-                        System.out.printf("%-20s  %-48s  %-48s%n",
-                            UtilAll.frontStringAtLeast(clusterName, 20),
-                            UtilAll.frontStringAtLeast(topic, 48),
-                            UtilAll.frontStringAtLeast(group, 48)
+                        logger.info("%-20s  %-48s  %-48s%n", UtilAll.frontStringAtLeast(clusterName, 20), UtilAll.frontStringAtLeast(topic, 48), UtilAll.frontStringAtLeast(group, 48)
                         );
                     }
                 }
             } else {
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
-                for (String topic : topicList.getTopicList()) {
-                    System.out.printf("%s%n", topic);
-                }
+                topicList.getTopicList().forEach(topic -> logger.info("%s%n", topic));
             }
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

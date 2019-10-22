@@ -73,8 +73,9 @@ public class TopicPublishInfo {
             int index = this.sendWhichQueue.getAndIncrement();
             for (int i = 0; i < this.messageQueueList.size(); i++) {
                 int pos = Math.abs(index++) % this.messageQueueList.size();
-                if (pos < 0)
-                    pos = 0;
+                if (pos < 0) {
+					pos = 0;
+				}
                 MessageQueue mq = this.messageQueueList.get(pos);
                 if (!mq.getBrokerName().equals(lastBrokerName)) {
                     return mq;
@@ -87,8 +88,9 @@ public class TopicPublishInfo {
     public MessageQueue selectOneMessageQueue() {
         int index = this.sendWhichQueue.getAndIncrement();
         int pos = Math.abs(index) % this.messageQueueList.size();
-        if (pos < 0)
-            pos = 0;
+        if (pos < 0) {
+			pos = 0;
+		}
         return this.messageQueueList.get(pos);
     }
 
@@ -105,8 +107,8 @@ public class TopicPublishInfo {
 
     @Override
     public String toString() {
-        return "TopicPublishInfo [orderTopic=" + orderTopic + ", messageQueueList=" + messageQueueList
-            + ", sendWhichQueue=" + sendWhichQueue + ", haveTopicRouterInfo=" + haveTopicRouterInfo + "]";
+        return new StringBuilder().append("TopicPublishInfo [orderTopic=").append(orderTopic).append(", messageQueueList=").append(messageQueueList).append(", sendWhichQueue=").append(sendWhichQueue).append(", haveTopicRouterInfo=")
+				.append(haveTopicRouterInfo).append("]").toString();
     }
 
     public TopicRouteData getTopicRouteData() {

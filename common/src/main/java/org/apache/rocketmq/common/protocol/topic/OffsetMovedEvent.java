@@ -60,7 +60,7 @@ public class OffsetMovedEvent extends RemotingSerializable {
 
     @Override
     public String toString() {
-        return "OffsetMovedEvent [consumerGroup=" + consumerGroup + ", messageQueue=" + messageQueue
-            + ", offsetRequest=" + offsetRequest + ", offsetNew=" + offsetNew + "]";
+        return new StringBuilder().append("OffsetMovedEvent [consumerGroup=").append(consumerGroup).append(", messageQueue=").append(messageQueue).append(", offsetRequest=").append(offsetRequest).append(", offsetNew=")
+				.append(offsetNew).append("]").toString();
     }
 }

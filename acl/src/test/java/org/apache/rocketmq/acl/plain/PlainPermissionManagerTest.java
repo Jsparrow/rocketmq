@@ -45,7 +45,7 @@ public class PlainPermissionManagerTest {
     Set<Integer> adminCode = new HashSet<>();
 
     @Before
-    public void init() throws NoSuchFieldException, SecurityException, IOException {
+    public void init() throws NoSuchFieldException, IOException {
         // UPDATE_AND_CREATE_TOPIC
         adminCode.add(17);
         // UPDATE_BROKER_CONFIG
@@ -73,7 +73,7 @@ public class PlainPermissionManagerTest {
         PlainAccessResource painAccessResource = new PlainAccessResource();
         painAccessResource.setAccessKey("RocketMQ");
         painAccessResource.setSecretKey("12345678");
-        painAccessResource.setWhiteRemoteAddress("127.0." + perm + ".*");
+        painAccessResource.setWhiteRemoteAddress(new StringBuilder().append("127.0.").append(perm).append(".*").toString());
         painAccessResource.setDefaultGroupPerm(perm);
         painAccessResource.setDefaultTopicPerm(perm);
         painAccessResource.addResourceAndPerm(PlainAccessResource.getRetryTopic("groupA"), Permission.PUB);
@@ -107,7 +107,7 @@ public class PlainPermissionManagerTest {
         plainAccessResource = plainPermissionManager.buildPlainAccessResource(plainAccess);
         Assert.assertEquals(plainAccessResource.isAdmin(), true);
 
-        List<String> groups = new ArrayList<String>();
+        List<String> groups = new ArrayList<>();
         groups.add("groupA=DENY");
         groups.add("groupB=PUB|SUB");
         groups.add("groupC=PUB");
@@ -120,7 +120,7 @@ public class PlainPermissionManagerTest {
         Assert.assertEquals(resourcePermMap.get(PlainAccessResource.getRetryTopic("groupB")).byteValue(), Permission.PUB|Permission.SUB);
         Assert.assertEquals(resourcePermMap.get(PlainAccessResource.getRetryTopic("groupC")).byteValue(), Permission.PUB);
 
-        List<String> topics = new ArrayList<String>();
+        List<String> topics = new ArrayList<>();
         topics.add("topicA=DENY");
         topics.add("topicB=PUB|SUB");
         topics.add("topicC=PUB");

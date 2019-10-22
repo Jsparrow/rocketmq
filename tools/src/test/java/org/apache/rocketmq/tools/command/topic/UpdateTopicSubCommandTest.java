@@ -23,6 +23,7 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateTopicSubCommandTest {
     @Test
@@ -40,13 +41,13 @@ public class UpdateTopicSubCommandTest {
             "-s false"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('b').trim()).isEqualTo("127.0.0.1:10911");
-        assertThat(commandLine.getOptionValue('r').trim()).isEqualTo("8");
-        assertThat(commandLine.getOptionValue('w').trim()).isEqualTo("8");
-        assertThat(commandLine.getOptionValue('t').trim()).isEqualTo("unit-test");
-        assertThat(commandLine.getOptionValue('p').trim()).isEqualTo("6");
-        assertThat(commandLine.getOptionValue('o').trim()).isEqualTo("false");
-        assertThat(commandLine.getOptionValue('u').trim()).isEqualTo("false");
-        assertThat(commandLine.getOptionValue('s').trim()).isEqualTo("false");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('b'))).isEqualTo("127.0.0.1:10911");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('r'))).isEqualTo("8");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('w'))).isEqualTo("8");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('t'))).isEqualTo("unit-test");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('p'))).isEqualTo("6");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('o'))).isEqualTo("false");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('u'))).isEqualTo("false");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('s'))).isEqualTo("false");
     }
 }

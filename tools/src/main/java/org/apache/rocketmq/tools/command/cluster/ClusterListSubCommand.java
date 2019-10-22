@@ -34,10 +34,14 @@ import org.apache.rocketmq.remoting.exception.RemotingTimeoutException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClusterListSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(ClusterListSubCommand.class);
+
+	@Override
     public String commandName() {
         return "clusterList";
     }
@@ -101,20 +105,14 @@ public class ClusterListSubCommand implements SubCommand {
 
         ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
 
-        System.out.printf("%-16s  %-32s %14s %14s %14s %14s%n",
-            "#Cluster Name",
-            "#Broker Name",
-            "#InTotalYest",
-            "#OutTotalYest",
-            "#InTotalToday",
-            "#OutTotalToday"
+        logger.info("%-16s  %-32s %14s %14s %14s %14s%n", "#Cluster Name", "#Broker Name", "#InTotalYest", "#OutTotalYest", "#InTotalToday", "#OutTotalToday"
         );
 
         Iterator<Map.Entry<String, Set<String>>> itCluster = clusterInfoSerializeWrapper.getClusterAddrTable().entrySet().iterator();
         while (itCluster.hasNext()) {
             Map.Entry<String, Set<String>> next = itCluster.next();
             String clusterName = next.getKey();
-            TreeSet<String> brokerNameSet = new TreeSet<String>();
+            TreeSet<String> brokerNameSet = new TreeSet<>();
             brokerNameSet.addAll(next.getValue());
 
             for (String brokerName : brokerNameSet) {
@@ -145,22 +143,17 @@ public class ClusterListSubCommand implements SubCommand {
                             outTotalToday = Long.parseLong(msgGetTotalTodayNow) - Long.parseLong(msgGetTotalTodayMorning);
 
                         } catch (Exception e) {
+							logger.error(e.getMessage(), e);
                         }
 
-                        System.out.printf("%-16s  %-32s %14d %14d %14d %14d%n",
-                            clusterName,
-                            brokerName,
-                            inTotalYest,
-                            outTotalYest,
-                            inTotalToday,
-                            outTotalToday
+                        logger.info("%-16s  %-32s %14d %14d %14d %14d%n", clusterName, brokerName, inTotalYest, outTotalYest, inTotalToday, outTotalToday
                         );
                     }
                 }
             }
 
             if (itCluster.hasNext()) {
-                System.out.printf("");
+                logger.info("");
             }
         }
     }
@@ -171,24 +164,14 @@ public class ClusterListSubCommand implements SubCommand {
 
         ClusterInfo clusterInfoSerializeWrapper = defaultMQAdminExt.examineBrokerClusterInfo();
 
-        System.out.printf("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s %5s %6s%n",
-            "#Cluster Name",
-            "#Broker Name",
-            "#BID",
-            "#Addr",
-            "#Version",
-            "#InTPS(LOAD)",
-            "#OutTPS(LOAD)",
-            "#PCWait(ms)",
-            "#Hour",
-            "#SPACE"
+        logger.info("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s %5s %6s%n", "#Cluster Name", "#Broker Name", "#BID", "#Addr", "#Version", "#InTPS(LOAD)", "#OutTPS(LOAD)", "#PCWait(ms)", "#Hour", "#SPACE"
         );
 
         Iterator<Map.Entry<String, Set<String>>> itCluster = clusterInfoSerializeWrapper.getClusterAddrTable().entrySet().iterator();
         while (itCluster.hasNext()) {
             Map.Entry<String, Set<String>> next = itCluster.next();
             String clusterName = next.getKey();
-            TreeSet<String> brokerNameSet = new TreeSet<String>();
+            TreeSet<String> brokerNameSet = new TreeSet<>();
             brokerNameSet.addAll(next.getValue());
 
             for (String brokerName : brokerNameSet) {
@@ -239,7 +222,7 @@ public class ClusterListSubCommand implements SubCommand {
                                 }
                             }
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(), e);
                         }
 
                         double hour = 0.0;
@@ -254,24 +237,16 @@ public class ClusterListSubCommand implements SubCommand {
                             space = Double.valueOf(commitLogDiskRatio);
                         }
 
-                        System.out.printf("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s %5s %6s%n",
-                            clusterName,
-                            brokerName,
-                            next1.getKey(),
-                            next1.getValue(),
-                            version,
-                            String.format("%9.2f(%s,%sms)", in, sendThreadPoolQueueSize, sendThreadPoolQueueHeadWaitTimeMills),
-                            String.format("%9.2f(%s,%sms)", out, pullThreadPoolQueueSize, pullThreadPoolQueueHeadWaitTimeMills),
-                            pageCacheLockTimeMills,
-                            String.format("%2.2f", hour),
-                            String.format("%.4f", space)
+                        logger.info("%-16s  %-22s  %-4s  %-22s %-16s %19s %19s %10s %5s %6s%n", clusterName, brokerName, next1.getKey(), next1.getValue(), version, String.format("%9.2f(%s,%sms)", in, sendThreadPoolQueueSize,
+									sendThreadPoolQueueHeadWaitTimeMills), String.format("%9.2f(%s,%sms)", out, pullThreadPoolQueueSize,
+									pullThreadPoolQueueHeadWaitTimeMills), pageCacheLockTimeMills, String.format("%2.2f", hour), String.format("%.4f", space)
                         );
                     }
                 }
             }
 
             if (itCluster.hasNext()) {
-                System.out.printf("");
+                logger.info("");
             }
         }
     }

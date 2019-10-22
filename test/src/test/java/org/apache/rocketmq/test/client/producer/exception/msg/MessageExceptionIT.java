@@ -30,9 +30,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageExceptionIT extends BaseConf {
-    private static DefaultMQProducer producer = null;
+    private static final Logger logger = LoggerFactory.getLogger(MessageExceptionIT.class);
+	private static DefaultMQProducer producer = null;
     private static String topic = null;
 
     @Before
@@ -53,6 +56,7 @@ public class MessageExceptionIT extends BaseConf {
         try {
             sendResult = producer.send(msg);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         }
 
         assertThat(sendResult).isNotEqualTo(null);
@@ -111,6 +115,7 @@ public class MessageExceptionIT extends BaseConf {
         try {
             sendResult = producer.send(msg);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         }
         assertThat(sendResult.getSendStatus()).isEqualTo(SendStatus.SEND_OK);
     }
@@ -123,6 +128,7 @@ public class MessageExceptionIT extends BaseConf {
         try {
             sendResult = producer.send(msg);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         }
         assertThat(sendResult.getSendStatus()).isEqualTo(SendStatus.SEND_OK);
     }

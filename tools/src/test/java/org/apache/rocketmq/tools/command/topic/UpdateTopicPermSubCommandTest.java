@@ -23,6 +23,7 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateTopicPermSubCommandTest {
     @Test
@@ -32,10 +33,10 @@ public class UpdateTopicPermSubCommandTest {
         String[] subargs = new String[] {"-b 127.0.0.1:10911", "-c default-cluster", "-t unit-test", "-p 6"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('b').trim()).isEqualTo("127.0.0.1:10911");
-        assertThat(commandLine.getOptionValue('c').trim()).isEqualTo("default-cluster");
-        assertThat(commandLine.getOptionValue('t').trim()).isEqualTo("unit-test");
-        assertThat(commandLine.getOptionValue('p').trim()).isEqualTo("6");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('b'))).isEqualTo("127.0.0.1:10911");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('c'))).isEqualTo("default-cluster");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('t'))).isEqualTo("unit-test");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('p'))).isEqualTo("6");
 
     }
 }

@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 import java.lang.reflect.Field;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Basic test rocketmq broker and name server init
@@ -61,12 +62,11 @@ public class AbstractTestCase {
 
     protected int consumeMessages(int count, final String key, int timeout) {
         final AtomicInteger cc = new AtomicInteger(0);
-        for (Message message : messages) {
-            String body = new String(message.getBody());
-            if (body.contains(key)) {
+        messages.stream().map(message -> new String(message.getBody())).forEach(body -> {
+			if (StringUtils.contains(body, key)) {
                 cc.incrementAndGet();
             }
-        }
+		});
         return cc.get();
     }
 }

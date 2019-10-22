@@ -44,18 +44,18 @@ public class StoreStatsService extends ServiceThread {
     private final AtomicLong putMessageFailedTimes = new AtomicLong(0);
 
     private final ConcurrentMap<String, AtomicLong> putMessageTopicTimesTotal =
-        new ConcurrentHashMap<String, AtomicLong>(128);
+        new ConcurrentHashMap<>(128);
     private final ConcurrentMap<String, AtomicLong> putMessageTopicSizeTotal =
-        new ConcurrentHashMap<String, AtomicLong>(128);
+        new ConcurrentHashMap<>(128);
 
     private final AtomicLong getMessageTimesTotalFound = new AtomicLong(0);
     private final AtomicLong getMessageTransferedMsgCount = new AtomicLong(0);
     private final AtomicLong getMessageTimesTotalMiss = new AtomicLong(0);
-    private final LinkedList<CallSnapshot> putTimesList = new LinkedList<CallSnapshot>();
+    private final LinkedList<CallSnapshot> putTimesList = new LinkedList<>();
 
-    private final LinkedList<CallSnapshot> getTimesFoundList = new LinkedList<CallSnapshot>();
-    private final LinkedList<CallSnapshot> getTimesMissList = new LinkedList<CallSnapshot>();
-    private final LinkedList<CallSnapshot> transferedMsgCountList = new LinkedList<CallSnapshot>();
+    private final LinkedList<CallSnapshot> getTimesFoundList = new LinkedList<>();
+    private final LinkedList<CallSnapshot> getTimesMissList = new LinkedList<>();
+    private final LinkedList<CallSnapshot> transferedMsgCountList = new LinkedList<>();
     private volatile AtomicLong[] putMessageDistributeTime;
     private long messageStoreBootTimestamp = System.currentTimeMillis();
     private volatile long putMessageEntireTimeMax = 0;
@@ -94,8 +94,9 @@ public class StoreStatsService extends ServiceThread {
     public void setPutMessageEntireTimeMax(long value) {
         final AtomicLong[] times = this.putMessageDistributeTime;
 
-        if (null == times)
-            return;
+        if (null == times) {
+			return;
+		}
 
         // us
         if (value <= 0) {
@@ -136,12 +137,13 @@ public class StoreStatsService extends ServiceThread {
             times[12].incrementAndGet();
         }
 
-        if (value > this.putMessageEntireTimeMax) {
-            this.lockPut.lock();
-            this.putMessageEntireTimeMax =
-                value > this.putMessageEntireTimeMax ? value : this.putMessageEntireTimeMax;
-            this.lockPut.unlock();
-        }
+        if (value <= this.putMessageEntireTimeMax) {
+			return;
+		}
+		this.lockPut.lock();
+		this.putMessageEntireTimeMax =
+		    value > this.putMessageEntireTimeMax ? value : this.putMessageEntireTimeMax;
+		this.lockPut.unlock();
     }
 
     public long getGetMessageEntireTimeMax() {
@@ -149,12 +151,13 @@ public class StoreStatsService extends ServiceThread {
     }
 
     public void setGetMessageEntireTimeMax(long value) {
-        if (value > this.getMessageEntireTimeMax) {
-            this.lockGet.lock();
-            this.getMessageEntireTimeMax =
-                value > this.getMessageEntireTimeMax ? value : this.getMessageEntireTimeMax;
-            this.lockGet.unlock();
-        }
+        if (value <= this.getMessageEntireTimeMax) {
+			return;
+		}
+		this.lockGet.lock();
+		this.getMessageEntireTimeMax =
+		    value > this.getMessageEntireTimeMax ? value : this.getMessageEntireTimeMax;
+		this.lockGet.unlock();
     }
 
     public long getDispatchMaxBuffer() {
@@ -173,21 +176,19 @@ public class StoreStatsService extends ServiceThread {
             totalTimes = 1L;
         }
 
-        sb.append("\truntime: " + this.getFormatRuntime() + "\r\n");
-        sb.append("\tputMessageEntireTimeMax: " + this.putMessageEntireTimeMax + "\r\n");
-        sb.append("\tputMessageTimesTotal: " + totalTimes + "\r\n");
-        sb.append("\tputMessageSizeTotal: " + this.getPutMessageSizeTotal() + "\r\n");
-        sb.append("\tputMessageDistributeTime: " + this.getPutMessageDistributeTimeStringInfo(totalTimes)
-            + "\r\n");
-        sb.append("\tputMessageAverageSize: " + (this.getPutMessageSizeTotal() / totalTimes.doubleValue())
-            + "\r\n");
-        sb.append("\tdispatchMaxBuffer: " + this.dispatchMaxBuffer + "\r\n");
-        sb.append("\tgetMessageEntireTimeMax: " + this.getMessageEntireTimeMax + "\r\n");
-        sb.append("\tputTps: " + this.getPutTps() + "\r\n");
-        sb.append("\tgetFoundTps: " + this.getGetFoundTps() + "\r\n");
-        sb.append("\tgetMissTps: " + this.getGetMissTps() + "\r\n");
-        sb.append("\tgetTotalTps: " + this.getGetTotalTps() + "\r\n");
-        sb.append("\tgetTransferedTps: " + this.getGetTransferedTps() + "\r\n");
+        sb.append(new StringBuilder().append("\truntime: ").append(this.getFormatRuntime()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputMessageEntireTimeMax: ").append(this.putMessageEntireTimeMax).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputMessageTimesTotal: ").append(totalTimes).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputMessageSizeTotal: ").append(this.getPutMessageSizeTotal()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputMessageDistributeTime: ").append(this.getPutMessageDistributeTimeStringInfo()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputMessageAverageSize: ").append(this.getPutMessageSizeTotal() / totalTimes.doubleValue()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tdispatchMaxBuffer: ").append(this.dispatchMaxBuffer).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tgetMessageEntireTimeMax: ").append(this.getMessageEntireTimeMax).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tputTps: ").append(this.getPutTps()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tgetFoundTps: ").append(this.getGetFoundTps()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tgetMissTps: ").append(this.getGetMissTps()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tgetTotalTps: ").append(this.getGetTotalTps()).append("\r\n").toString());
+        sb.append(new StringBuilder().append("\tgetTransferedTps: ").append(this.getGetTransferedTps()).append("\r\n").toString());
         return sb.toString();
     }
 
@@ -223,7 +224,7 @@ public class StoreStatsService extends ServiceThread {
         return rs;
     }
 
-    private String getPutMessageDistributeTimeStringInfo(Long total) {
+    private String getPutMessageDistributeTimeStringInfo() {
         return this.putMessageDistributeTimeToString();
     }
 
@@ -299,8 +300,9 @@ public class StoreStatsService extends ServiceThread {
 
     private String putMessageDistributeTimeToString() {
         final AtomicLong[] times = this.putMessageDistributeTime;
-        if (null == times)
-            return null;
+        if (null == times) {
+			return null;
+		}
 
         final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < times.length; i++) {
@@ -417,7 +419,7 @@ public class StoreStatsService extends ServiceThread {
     }
 
     public HashMap<String, String> getRuntimeInfo() {
-        HashMap<String, String> result = new HashMap<String, String>(64);
+        HashMap<String, String> result = new HashMap<>(64);
 
         Long totalTimes = getPutMessageTimesTotal();
         if (0 == totalTimes) {
@@ -430,7 +432,7 @@ public class StoreStatsService extends ServiceThread {
         result.put("putMessageTimesTotal", String.valueOf(totalTimes));
         result.put("putMessageSizeTotal", String.valueOf(this.getPutMessageSizeTotal()));
         result.put("putMessageDistributeTime",
-            String.valueOf(this.getPutMessageDistributeTimeStringInfo(totalTimes)));
+            String.valueOf(this.getPutMessageDistributeTimeStringInfo()));
         result.put("putMessageAverageSize",
             String.valueOf(this.getPutMessageSizeTotal() / totalTimes.doubleValue()));
         result.put("dispatchMaxBuffer", String.valueOf(this.dispatchMaxBuffer));
@@ -444,7 +446,8 @@ public class StoreStatsService extends ServiceThread {
         return result;
     }
 
-    public void run() {
+    @Override
+	public void run() {
         log.info(this.getServiceName() + " service started");
 
         while (!this.isStopped()) {
@@ -499,31 +502,29 @@ public class StoreStatsService extends ServiceThread {
     }
 
     private void printTps() {
-        if (System.currentTimeMillis() > (this.lastPrintTimestamp + printTPSInterval * 1000)) {
-            this.lastPrintTimestamp = System.currentTimeMillis();
-
-            log.info("[STORETPS] put_tps {} get_found_tps {} get_miss_tps {} get_transfered_tps {}",
-                this.getPutTps(printTPSInterval),
-                this.getGetFoundTps(printTPSInterval),
-                this.getGetMissTps(printTPSInterval),
-                this.getGetTransferedTps(printTPSInterval)
-            );
-
-            final AtomicLong[] times = this.initPutMessageDistributeTime();
-            if (null == times)
-                return;
-
-            final StringBuilder sb = new StringBuilder();
-            long totalPut = 0;
-            for (int i = 0; i < times.length; i++) {
-                long value = times[i].get();
-                totalPut += value;
-                sb.append(String.format("%s:%d", PUT_MESSAGE_ENTIRE_TIME_MAX_DESC[i], value));
-                sb.append(" ");
-            }
-
-            log.info("[PAGECACHERT] TotalPut {}, PutMessageDistributeTime {}", totalPut, sb.toString());
-        }
+        if (!(System.currentTimeMillis() > (this.lastPrintTimestamp + printTPSInterval * 1000))) {
+			return;
+		}
+		this.lastPrintTimestamp = System.currentTimeMillis();
+		log.info("[STORETPS] put_tps {} get_found_tps {} get_miss_tps {} get_transfered_tps {}",
+		    this.getPutTps(printTPSInterval),
+		    this.getGetFoundTps(printTPSInterval),
+		    this.getGetMissTps(printTPSInterval),
+		    this.getGetTransferedTps(printTPSInterval)
+		);
+		final AtomicLong[] times = this.initPutMessageDistributeTime();
+		if (null == times) {
+			return;
+		}
+		final StringBuilder sb = new StringBuilder();
+		long totalPut = 0;
+		for (int i = 0; i < times.length; i++) {
+		    long value = times[i].get();
+		    totalPut += value;
+		    sb.append(String.format("%s:%d", PUT_MESSAGE_ENTIRE_TIME_MAX_DESC[i], value));
+		    sb.append(" ");
+		}
+		log.info("[PAGECACHERT] TotalPut {}, PutMessageDistributeTime {}", totalPut, sb.toString());
     }
 
     public AtomicLong getGetMessageTimesTotalFound() {

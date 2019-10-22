@@ -101,7 +101,7 @@ public class PullMessageProcessorTest {
         RemotingCommand response = pullMessageProcessor.processRequest(handlerContext, request);
         assertThat(response).isNotNull();
         assertThat(response.getCode()).isEqualTo(ResponseCode.TOPIC_NOT_EXIST);
-        assertThat(response.getRemark()).contains("topic[" + topic + "] not exist");
+        assertThat(response.getRemark()).contains(new StringBuilder().append("topic[").append(topic).append("] not exist").toString());
     }
 
     @Test

@@ -47,6 +47,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConsumeMessageCommandTest {
     private static ConsumeMessageCommand consumeMessageCommand;
@@ -92,7 +93,7 @@ public class ConsumeMessageCommandTest {
 
         System.setOut(out);
         String s = new String(bos.toByteArray());
-        Assert.assertTrue(s.contains("Consume ok"));
+        Assert.assertTrue(StringUtils.contains(s, "Consume ok"));
     }
 
     @Test
@@ -107,7 +108,7 @@ public class ConsumeMessageCommandTest {
         consumeMessageCommand.execute(commandLine, options, null);
         System.setOut(out);
         String s = new String(bos.toByteArray());
-        Assert.assertTrue(s.contains("Consume ok"));
+        Assert.assertTrue(StringUtils.contains(s, "Consume ok"));
     }
 
     @Test
@@ -129,7 +130,7 @@ public class ConsumeMessageCommandTest {
 
         System.setOut(out);
         String s = new String(bos.toByteArray());
-        Assert.assertTrue(!s.contains("Consume ok"));
+        Assert.assertTrue(!StringUtils.contains(s, "Consume ok"));
     }
 
     @Test
@@ -151,6 +152,6 @@ public class ConsumeMessageCommandTest {
 
         System.setOut(out);
         String s = new String(bos.toByteArray());
-        Assert.assertTrue(!s.contains("Consume ok"));
+        Assert.assertTrue(!StringUtils.contains(s, "Consume ok"));
     }
 }

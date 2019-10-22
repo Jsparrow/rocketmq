@@ -41,7 +41,7 @@ public class OMSUtil {
      * @return a unique instance name
      */
     public static String buildInstanceName() {
-        return Integer.toString(UtilAll.getPid()) + "%OpenMessaging" + "%" + System.nanoTime();
+        return new StringBuilder().append(Integer.toString(UtilAll.getPid())).append("%OpenMessaging").append("%").append(System.nanoTime()).toString();
     }
 
     public static org.apache.rocketmq.common.message.Message msgConvert(BytesMessage omsMessage) {
@@ -61,14 +61,10 @@ public class OMSUtil {
             }
         }
 
-        for (String key : userHeaders.keySet()) {
-            MessageAccessor.putProperty(rmqMessage, key, userHeaders.getString(key));
-        }
+        userHeaders.keySet().forEach(key -> MessageAccessor.putProperty(rmqMessage, key, userHeaders.getString(key)));
 
         //System headers has a high priority
-        for (String key : sysHeaders.keySet()) {
-            MessageAccessor.putProperty(rmqMessage, key, sysHeaders.getString(key));
-        }
+		sysHeaders.keySet().forEach(key -> MessageAccessor.putProperty(rmqMessage, key, sysHeaders.getString(key)));
 
         return rmqMessage;
     }
@@ -82,13 +78,13 @@ public class OMSUtil {
 
         final Set<Map.Entry<String, String>> entries = rmqMsg.getProperties().entrySet();
 
-        for (final Map.Entry<String, String> entry : entries) {
+        entries.forEach((final Map.Entry<String, String> entry) -> {
             if (isOMSHeader(entry.getKey())) {
                 headers.put(entry.getKey(), entry.getValue());
             } else {
                 properties.put(entry.getKey(), entry.getValue());
             }
-        }
+        });
 
         omsMsg.putSysHeaders(BuiltinKeys.MESSAGE_ID, rmqMsg.getMsgId());
 
@@ -119,16 +115,14 @@ public class OMSUtil {
      * Convert a RocketMQ SEND_OK SendResult instance to a OMS SendResult.
      */
     public static SendResult sendResultConvert(org.apache.rocketmq.client.producer.SendResult rmqResult) {
-        assert rmqResult.getSendStatus().equals(SendStatus.SEND_OK);
+        assert rmqResult.getSendStatus() == SendStatus.SEND_OK;
         return new SendResultImpl(rmqResult.getMsgId(), OMS.newKeyValue());
     }
 
     public static KeyValue buildKeyValue(KeyValue... keyValues) {
         KeyValue keyValue = OMS.newKeyValue();
         for (KeyValue properties : keyValues) {
-            for (String key : properties.keySet()) {
-                keyValue.put(key, properties.getString(key));
-            }
+            properties.keySet().forEach(key -> keyValue.put(key, properties.getString(key)));
         }
         return keyValue;
     }

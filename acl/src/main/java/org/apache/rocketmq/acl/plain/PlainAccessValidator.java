@@ -37,6 +37,7 @@ import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 
 import static org.apache.rocketmq.acl.plain.PlainAccessResource.getRetryTopic;
+import org.apache.commons.lang3.StringUtils;
 
 public class PlainAccessValidator implements AccessValidator {
 
@@ -49,7 +50,7 @@ public class PlainAccessValidator implements AccessValidator {
     @Override
     public AccessResource parse(RemotingCommand request, String remoteAddr) {
         PlainAccessResource accessResource = new PlainAccessResource();
-        if (remoteAddr != null && remoteAddr.contains(":")) {
+        if (remoteAddr != null && StringUtils.contains(remoteAddr, ":")) {
             accessResource.setWhiteRemoteAddress(remoteAddr.split(":")[0]);
         } else {
             accessResource.setWhiteRemoteAddress(remoteAddr);
@@ -87,12 +88,10 @@ public class PlainAccessValidator implements AccessValidator {
                     break;
                 case RequestCode.HEART_BEAT:
                     HeartbeatData heartbeatData = HeartbeatData.decode(request.getBody(), HeartbeatData.class);
-                    for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
-                        accessResource.addResourceAndPerm(getRetryTopic(data.getGroupName()), Permission.SUB);
-                        for (SubscriptionData subscriptionData : data.getSubscriptionDataSet()) {
-                            accessResource.addResourceAndPerm(subscriptionData.getTopic(), Permission.SUB);
-                        }
-                    }
+				heartbeatData.getConsumerDataSet().forEach(data -> {
+				    accessResource.addResourceAndPerm(getRetryTopic(data.getGroupName()), Permission.SUB);
+				    data.getSubscriptionDataSet().forEach(subscriptionData -> accessResource.addResourceAndPerm(subscriptionData.getTopic(), Permission.SUB));
+				});
                     break;
                 case RequestCode.UNREGISTER_CLIENT:
                     final UnregisterClientRequestHeader unregisterClientRequestHeader =
@@ -122,12 +121,8 @@ public class PlainAccessValidator implements AccessValidator {
         }
 
         // Content
-        SortedMap<String, String> map = new TreeMap<String, String>();
-        for (Map.Entry<String, String> entry : request.getExtFields().entrySet()) {
-            if (!SessionCredentials.SIGNATURE.equals(entry.getKey())) {
-                map.put(entry.getKey(), entry.getValue());
-            }
-        }
+        SortedMap<String, String> map = new TreeMap<>();
+        request.getExtFields().entrySet().stream().filter(entry -> !SessionCredentials.SIGNATURE.equals(entry.getKey())).forEach(entry -> map.put(entry.getKey(), entry.getValue()));
         accessResource.setContent(AclUtils.combineRequestContent(request, map));
         return accessResource;
     }

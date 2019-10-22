@@ -65,9 +65,12 @@ import org.apache.rocketmq.store.MessageFilter;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.BrokerRole;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullMessageProcessor implements NettyRequestProcessor {
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(PullMessageProcessor.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final BrokerController brokerController;
     private List<ConsumeMessageHook> consumeMessageHookList;
 
@@ -133,7 +136,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
         if (!PermName.isReadable(topicConfig.getPerm())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the topic[" + requestHeader.getTopic() + "] pulling message is forbidden");
+            response.setRemark(new StringBuilder().append("the topic[").append(requestHeader.getTopic()).append("] pulling message is forbidden").toString());
             return response;
         }
 
@@ -161,7 +164,8 @@ public class PullMessageProcessor implements NettyRequestProcessor {
                     assert consumerFilterData != null;
                 }
             } catch (Exception e) {
-                log.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(),
+                logger.error(e.getMessage(), e);
+				log.warn("Parse the consumer's subscription[{}] failed, group: {}", requestHeader.getSubscription(),
                     requestHeader.getConsumerGroup());
                 response.setCode(ResponseCode.SUBSCRIPTION_PARSE_FAILED);
                 response.setRemark("parse the consumer's subscription failed");
@@ -180,7 +184,7 @@ public class PullMessageProcessor implements NettyRequestProcessor {
             if (!subscriptionGroupConfig.isConsumeBroadcastEnable()
                 && consumerGroupInfo.getMessageModel() == MessageModel.BROADCASTING) {
                 response.setCode(ResponseCode.NO_PERMISSION);
-                response.setRemark("the consumer group[" + requestHeader.getConsumerGroup() + "] can not consume by broadcast way");
+                response.setRemark(new StringBuilder().append("the consumer group[").append(requestHeader.getConsumerGroup()).append("] can not consume by broadcast way").toString());
                 return response;
             }
 
@@ -475,12 +479,13 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     public void executeConsumeMessageHookBefore(final ConsumeMessageContext context) {
         if (hasConsumeMessageHook()) {
-            for (ConsumeMessageHook hook : this.consumeMessageHookList) {
+            this.consumeMessageHookList.forEach(hook -> {
                 try {
                     hook.consumeMessageBefore(context);
                 } catch (Throwable e) {
+					logger.error(e.getMessage(), e);
                 }
-            }
+            });
         }
     }
 
@@ -532,38 +537,36 @@ public class PullMessageProcessor implements NettyRequestProcessor {
 
     public void executeRequestWhenWakeup(final Channel channel,
         final RemotingCommand request) throws RemotingCommandException {
-        Runnable run = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    final RemotingCommand response = PullMessageProcessor.this.processRequest(channel, request, false);
+        Runnable run = () -> {
+		    try {
+		        final RemotingCommand response = PullMessageProcessor.this.processRequest(channel, request, false);
 
-                    if (response != null) {
-                        response.setOpaque(request.getOpaque());
-                        response.markResponseType();
-                        try {
-                            channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
-                                @Override
-                                public void operationComplete(ChannelFuture future) throws Exception {
-                                    if (!future.isSuccess()) {
-                                        log.error("processRequestWrapper response to {} failed",
-                                            future.channel().remoteAddress(), future.cause());
-                                        log.error(request.toString());
-                                        log.error(response.toString());
-                                    }
-                                }
-                            });
-                        } catch (Throwable e) {
-                            log.error("processRequestWrapper process request over, but response failed", e);
-                            log.error(request.toString());
-                            log.error(response.toString());
-                        }
-                    }
-                } catch (RemotingCommandException e1) {
-                    log.error("excuteRequestWhenWakeup run", e1);
-                }
-            }
-        };
+		        if (response != null) {
+		            response.setOpaque(request.getOpaque());
+		            response.markResponseType();
+		            try {
+		                channel.writeAndFlush(response).addListener(new ChannelFutureListener() {
+		                    @Override
+		                    public void operationComplete(ChannelFuture future) throws Exception {
+		                        if (future.isSuccess()) {
+									return;
+								}
+								log.error("processRequestWrapper response to {} failed",
+								    future.channel().remoteAddress(), future.cause());
+								log.error(request.toString());
+								log.error(response.toString());
+		                    }
+		                });
+		            } catch (Throwable e) {
+		                log.error("processRequestWrapper process request over, but response failed", e);
+		                log.error(request.toString());
+		                log.error(response.toString());
+		            }
+		        }
+		    } catch (RemotingCommandException e1) {
+		        log.error("excuteRequestWhenWakeup run", e1);
+		    }
+		};
         this.brokerController.getPullMessageExecutor().submit(new RequestTask(run, channel, request));
     }
 

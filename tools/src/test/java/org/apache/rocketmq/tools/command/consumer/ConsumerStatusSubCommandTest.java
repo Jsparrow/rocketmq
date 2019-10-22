@@ -94,8 +94,8 @@ public class ConsumerStatusSubCommandTest {
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDatas.add(brokerData);
         topicRouteData.setBrokerDatas(brokerDatas);
-        topicRouteData.setQueueDatas(new ArrayList<QueueData>());
-        topicRouteData.setFilterServerTable(new HashMap<String, List<String>>());
+        topicRouteData.setQueueDatas(new ArrayList<>());
+        topicRouteData.setFilterServerTable(new HashMap<>());
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         ConsumerConnection consumerConnection = new ConsumerConnection();
@@ -104,15 +104,15 @@ public class ConsumerStatusSubCommandTest {
         HashSet<Connection> connections = new HashSet<>();
         connections.add(new Connection());
         consumerConnection.setConnectionSet(connections);
-        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<String, SubscriptionData>());
+        consumerConnection.setSubscriptionTable(new ConcurrentHashMap<>());
         consumerConnection.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
         when(mQClientAPIImpl.getConsumerConnectionList(anyString(), anyString(), anyLong())).thenReturn(consumerConnection);
 
         ConsumerRunningInfo consumerRunningInfo = new ConsumerRunningInfo();
         consumerRunningInfo.setJstack("test");
-        consumerRunningInfo.setMqTable(new TreeMap<MessageQueue, ProcessQueueInfo>());
-        consumerRunningInfo.setStatusTable(new TreeMap<String, ConsumeStatus>());
-        consumerRunningInfo.setSubscriptionSet(new TreeSet<SubscriptionData>());
+        consumerRunningInfo.setMqTable(new TreeMap<>());
+        consumerRunningInfo.setStatusTable(new TreeMap<>());
+        consumerRunningInfo.setSubscriptionSet(new TreeSet<>());
         when(mQClientAPIImpl.getConsumerRunningInfo(anyString(), anyString(), anyString(), anyBoolean(), anyLong())).thenReturn(consumerRunningInfo);
     }
 

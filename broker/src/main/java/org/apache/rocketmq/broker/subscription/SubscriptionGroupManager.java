@@ -35,7 +35,7 @@ public class SubscriptionGroupManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
 
     private final ConcurrentMap<String, SubscriptionGroupConfig> subscriptionGroupTable =
-        new ConcurrentHashMap<String, SubscriptionGroupConfig>(1024);
+        new ConcurrentHashMap<>(1024);
     private final DataVersion dataVersion = new DataVersion();
     private transient BrokerController brokerController;
 
@@ -111,26 +111,26 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     public void disableConsume(final String groupName) {
         SubscriptionGroupConfig old = this.subscriptionGroupTable.get(groupName);
-        if (old != null) {
-            old.setConsumeEnable(false);
-            this.dataVersion.nextVersion();
-        }
+        if (old == null) {
+			return;
+		}
+		old.setConsumeEnable(false);
+		this.dataVersion.nextVersion();
     }
 
     public SubscriptionGroupConfig findSubscriptionGroupConfig(final String group) {
         SubscriptionGroupConfig subscriptionGroupConfig = this.subscriptionGroupTable.get(group);
-        if (null == subscriptionGroupConfig) {
-            if (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroup(group)) {
-                subscriptionGroupConfig = new SubscriptionGroupConfig();
-                subscriptionGroupConfig.setGroupName(group);
-                SubscriptionGroupConfig preConfig = this.subscriptionGroupTable.putIfAbsent(group, subscriptionGroupConfig);
-                if (null == preConfig) {
-                    log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
-                }
-                this.dataVersion.nextVersion();
-                this.persist();
-            }
-        }
+        boolean condition = null == subscriptionGroupConfig && (brokerController.getBrokerConfig().isAutoCreateSubscriptionGroup() || MixAll.isSysConsumerGroup(group));
+		if (condition) {
+		    subscriptionGroupConfig = new SubscriptionGroupConfig();
+		    subscriptionGroupConfig.setGroupName(group);
+		    SubscriptionGroupConfig preConfig = this.subscriptionGroupTable.putIfAbsent(group, subscriptionGroupConfig);
+		    if (null == preConfig) {
+		        log.info("auto create a subscription group, {}", subscriptionGroupConfig.toString());
+		    }
+		    this.dataVersion.nextVersion();
+		    this.persist();
+		}
 
         return subscriptionGroupConfig;
     }
@@ -148,17 +148,19 @@ public class SubscriptionGroupManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            SubscriptionGroupManager obj = RemotingSerializable.fromJson(jsonString, SubscriptionGroupManager.class);
-            if (obj != null) {
-                this.subscriptionGroupTable.putAll(obj.subscriptionGroupTable);
-                this.dataVersion.assignNewOne(obj.dataVersion);
-                this.printLoadDataWhenFirstBoot(obj);
-            }
-        }
+        if (jsonString == null) {
+			return;
+		}
+		SubscriptionGroupManager obj = RemotingSerializable.fromJson(jsonString, SubscriptionGroupManager.class);
+		if (obj != null) {
+		    this.subscriptionGroupTable.putAll(obj.subscriptionGroupTable);
+		    this.dataVersion.assignNewOne(obj.dataVersion);
+		    this.printLoadDataWhenFirstBoot(obj);
+		}
     }
 
-    public String encode(final boolean prettyFormat) {
+    @Override
+	public String encode(final boolean prettyFormat) {
         return RemotingSerializable.toJson(this, prettyFormat);
     }
 

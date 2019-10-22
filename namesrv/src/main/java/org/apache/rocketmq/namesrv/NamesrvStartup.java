@@ -40,10 +40,12 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.srvutil.ServerUtil;
 import org.apache.rocketmq.srvutil.ShutdownHookThread;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 public class NamesrvStartup {
 
-    private static InternalLogger log;
+    private static final Logger logger = LoggerFactory.getLogger(NamesrvStartup.class);
+	private static InternalLogger log;
     private static Properties properties = null;
     private static CommandLine commandLine = null;
 
@@ -58,7 +60,7 @@ public class NamesrvStartup {
             start(controller);
             String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
             log.info(tip);
-            System.out.printf("%s%n", tip);
+            logger.info("%s%n", tip);
             return controller;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -93,7 +95,7 @@ public class NamesrvStartup {
 
                 namesrvConfig.setConfigStorePath(file);
 
-                System.out.printf("load config properties file OK, %s%n", file);
+                logger.info("load config properties file OK, %s%n", file);
                 in.close();
             }
         }
@@ -108,7 +110,7 @@ public class NamesrvStartup {
         MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
         if (null == namesrvConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
+            logger.info("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
             System.exit(-2);
         }
 
