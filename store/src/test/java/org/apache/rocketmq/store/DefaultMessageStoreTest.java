@@ -47,21 +47,24 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMessageStoreTest {
-    private final String StoreMessage = "Once, there was a chance for me!";
-    private int QUEUE_TOTAL = 100;
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMessageStoreTest.class);
+	private final String storeMessage = "Once, there was a chance for me!";
+    private int queueTotal = 100;
     private AtomicInteger QueueId = new AtomicInteger(0);
-    private SocketAddress BornHost;
-    private SocketAddress StoreHost;
+    private SocketAddress bornHost;
+    private SocketAddress storeHost;
     private byte[] MessageBody;
     private MessageStore messageStore;
 
     @Before
     public void init() throws Exception {
-        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
-        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+        storeHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+        bornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
 
         messageStore = buildMessageStore();
         boolean load = messageStore.load();
@@ -71,8 +74,8 @@ public class DefaultMessageStoreTest {
 
     @Test(expected = OverlappingFileLockException.class)
     public void test_repeat_restart() throws Exception {
-        QUEUE_TOTAL = 1;
-        MessageBody = StoreMessage.getBytes();
+        queueTotal = 1;
+        MessageBody = storeMessage.getBytes();
 
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setMappedFileSizeCommitLog(1024 * 8);
@@ -117,8 +120,8 @@ public class DefaultMessageStoreTest {
     @Test
     public void testWriteAndRead() {
         long totalMsgs = 10;
-        QUEUE_TOTAL = 1;
-        MessageBody = StoreMessage.getBytes();
+        queueTotal = 1;
+        MessageBody = storeMessage.getBytes();
         for (long i = 0; i < totalMsgs; i++) {
             messageStore.putMessage(buildMessage());
         }
@@ -145,8 +148,8 @@ public class DefaultMessageStoreTest {
         MessageExt messageExt = messageStore.lookMessageByOffset(firstResult.getWroteOffset());
         MessageExt messageExt1 = getDefaultMessageStore().lookMessageByOffset(firstResult.getWroteOffset(), firstResult.getWroteBytes());
 
-        assertThat(new String(messageExt.getBody())).isEqualTo(buildMessageBodyByOffset(StoreMessage, firstOffset));
-        assertThat(new String(messageExt1.getBody())).isEqualTo(buildMessageBodyByOffset(StoreMessage, firstOffset));
+        assertThat(new String(messageExt.getBody())).isEqualTo(buildMessageBodyByOffset(storeMessage, firstOffset));
+        assertThat(new String(messageExt1.getBody())).isEqualTo(buildMessageBodyByOffset(storeMessage, firstOffset));
     }
 
     @Test
@@ -160,7 +163,7 @@ public class DefaultMessageStoreTest {
 
         MessageExt messageExt = getDefaultMessageStore().lookMessageByOffset(lastResult.getWroteOffset(), lastResult.getWroteBytes());
 
-        assertThat(new String(messageExt.getBody())).isEqualTo(buildMessageBodyByOffset(StoreMessage, lastIndex));
+        assertThat(new String(messageExt.getBody())).isEqualTo(buildMessageBodyByOffset(storeMessage, lastIndex));
     }
 
     @Test
@@ -364,7 +367,7 @@ public class DefaultMessageStoreTest {
     private AppendMessageResult[] putMessages(int totalCount, String topic, int queueId, boolean interval) {
         AppendMessageResult[] appendMessageResultArray = new AppendMessageResult[totalCount];
         for (int i = 0; i < totalCount; i++) {
-            String messageBody = buildMessageBodyByOffset(StoreMessage, i);
+            String messageBody = buildMessageBodyByOffset(storeMessage, i);
             MessageExtBrokerInner msgInner = buildMessage(messageBody.getBytes(), topic);
             msgInner.setQueueId(queueId);
             PutMessageResult result = messageStore.putMessage(msgInner);
@@ -374,7 +377,8 @@ public class DefaultMessageStoreTest {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    throw  new RuntimeException("Thread sleep ERROR");
+                    logger.error(e.getMessage(), e);
+					throw  new RuntimeException("Thread sleep ERROR");
                 }
             }
         }
@@ -410,11 +414,11 @@ public class DefaultMessageStoreTest {
         msg.setKeys("Hello");
         msg.setBody(messageBody);
         msg.setKeys(String.valueOf(System.currentTimeMillis()));
-        msg.setQueueId(Math.abs(QueueId.getAndIncrement()) % QUEUE_TOTAL);
+        msg.setQueueId(Math.abs(QueueId.getAndIncrement()) % queueTotal);
         msg.setSysFlag(0);
         msg.setBornTimestamp(System.currentTimeMillis());
-        msg.setStoreHost(StoreHost);
-        msg.setBornHost(BornHost);
+        msg.setStoreHost(storeHost);
+        msg.setBornHost(bornHost);
         return msg;
     }
 
@@ -469,7 +473,7 @@ public class DefaultMessageStoreTest {
     @Test
     public void testRecover() throws Exception {
         String topic = "recoverTopic";
-        MessageBody = StoreMessage.getBytes();
+        MessageBody = storeMessage.getBytes();
         for (int i = 0; i < 100; i++) {
             MessageExtBrokerInner messageExtBrokerInner = buildMessage();
             messageExtBrokerInner.setTopic(topic);
@@ -566,7 +570,7 @@ public class DefaultMessageStoreTest {
 
     private void damageCommitlog(long offset) throws Exception {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
-        File file = new File(messageStoreConfig.getStorePathCommitLog() + File.separator + "00000000000000000000");
+        File file = new File(new StringBuilder().append(messageStoreConfig.getStorePathCommitLog()).append(File.separator).append("00000000000000000000").toString());
 
         FileChannel fileChannel = new RandomAccessFile(file, "rw").getChannel();
         MappedByteBuffer mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, 1024 * 1024 * 10);

@@ -44,18 +44,19 @@ public class RMQDelayListner extends AbstractListener implements MessageListener
         msgDelayTimes.resetData();
     }
 
-    public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+    @Override
+	public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
         ConsumeConcurrentlyContext consumeConcurrentlyContext) {
         long recvTime = System.currentTimeMillis();
-        for (MessageExt msg : msgs) {
+        msgs.forEach(msg -> {
             if (isDebug) {
-                logger.info(listenerName + ":" + msg);
+                logger.info(new StringBuilder().append(listenerName).append(":").append(msg).toString());
             }
 
             msgBodys.addData(new String(msg.getBody()));
             originMsgs.addData(msg);
             msgDelayTimes.addData(Math.abs(recvTime - msg.getBornTimestamp()));
-        }
+        });
         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     }
 }

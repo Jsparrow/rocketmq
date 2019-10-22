@@ -44,7 +44,7 @@ public class MessageFactory {
     }
 
     public static Collection<Message> getRandomMessageList(String topic, int size) {
-        List<Message> msgList = new ArrayList<Message>();
+        List<Message> msgList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             msgList.add(getRandomMessage(topic));
         }
@@ -52,7 +52,7 @@ public class MessageFactory {
     }
 
     public static Collection<Message> getRandomMessageListByTag(String topic, String tags, int size) {
-        List<Message> msgList = new ArrayList<Message>();
+        List<Message> msgList = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             msgList.add(getRandomMessageByTag(topic, tags));
         }

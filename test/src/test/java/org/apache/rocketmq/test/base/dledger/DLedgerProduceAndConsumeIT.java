@@ -55,7 +55,7 @@ public class DLedgerProduceAndConsumeIT {
         MessageStoreConfig storeConfig = new MessageStoreConfig();
         String baseDir =  IntegrationTestBase.createBaseDir();
         storeConfig.setStorePathRootDir(baseDir);
-        storeConfig.setStorePathCommitLog(baseDir + SEP + "commitlog");
+        storeConfig.setStorePathCommitLog(new StringBuilder().append(baseDir).append(SEP).append("commitlog").toString());
         storeConfig.setHaListenPort(nextPort());
         storeConfig.setMappedFileSizeCommitLog(10 * 1024 * 1024);
         storeConfig.setEnableDLegerCommitLog(true);

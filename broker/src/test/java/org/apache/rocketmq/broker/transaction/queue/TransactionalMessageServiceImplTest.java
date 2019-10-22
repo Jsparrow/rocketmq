@@ -115,13 +115,10 @@ public class TransactionalMessageServiceImplTest {
         long timeOut = this.brokerController.getBrokerConfig().getTransactionTimeOut();
         int checkMax = this.brokerController.getBrokerConfig().getTransactionCheckMax();
         final AtomicInteger checkMessage = new AtomicInteger(0);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                checkMessage.addAndGet(1);
-                return null;
-            }
-        }).when(listener).resolveDiscardMsg(any(MessageExt.class));
+        doAnswer((InvocationOnMock invocation) -> {
+		    checkMessage.addAndGet(1);
+		    return null;
+		}).when(listener).resolveDiscardMsg(any(MessageExt.class));
         queueTransactionMsgService.check(timeOut, checkMax, listener);
         assertThat(checkMessage.get()).isEqualTo(1);
     }
@@ -139,13 +136,10 @@ public class TransactionalMessageServiceImplTest {
         long timeOut = this.brokerController.getBrokerConfig().getTransactionTimeOut();
         final int checkMax = this.brokerController.getBrokerConfig().getTransactionCheckMax();
         final AtomicInteger checkMessage = new AtomicInteger(0);
-        doAnswer(new Answer() {
-            @Override
-            public Object answer(InvocationOnMock invocation) {
-                checkMessage.addAndGet(1);
-                return checkMessage;
-            }
-        }).when(listener).resolveHalfMsg(any(MessageExt.class));
+        doAnswer((InvocationOnMock invocation) -> {
+		    checkMessage.addAndGet(1);
+		    return checkMessage;
+		}).when(listener).resolveHalfMsg(any(MessageExt.class));
         queueTransactionMsgService.check(timeOut, checkMax, listener);
         assertThat(checkMessage.get()).isEqualTo(1);
     }
@@ -166,9 +160,7 @@ public class TransactionalMessageServiceImplTest {
     private PullResult createDiscardPullResult(String topic, long queueOffset, String body, int size) {
         PullResult result = createPullResult(topic, queueOffset, body, size);
         List<MessageExt> msgs = result.getMsgFoundList();
-        for (MessageExt msg : msgs) {
-            msg.putUserProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES, "100000");
-        }
+        msgs.forEach(msg -> msg.putUserProperty(MessageConst.PROPERTY_TRANSACTION_CHECK_TIMES, "100000"));
         return result;
     }
 
@@ -188,18 +180,14 @@ public class TransactionalMessageServiceImplTest {
     private PullResult createOpPulResult(String topic, long queueOffset, String body, int size) {
         PullResult result = createPullResult(topic, queueOffset, body, size);
         List<MessageExt> msgs = result.getMsgFoundList();
-        for (MessageExt msg : msgs) {
-            msg.setTags(TransactionalMessageUtil.REMOVETAG);
-        }
+        msgs.forEach(msg -> msg.setTags(TransactionalMessageUtil.REMOVETAG));
         return result;
     }
 
     private PullResult createImmunityPulResult(String topic, long queueOffset, String body, int size) {
         PullResult result = createPullResult(topic, queueOffset, body, size);
         List<MessageExt> msgs = result.getMsgFoundList();
-        for (MessageExt msg : msgs) {
-            msg.putUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS, "0");
-        }
+        msgs.forEach(msg -> msg.putUserProperty(MessageConst.PROPERTY_CHECK_IMMUNITY_TIME_IN_SECONDS, "0"));
         return result;
     }
 

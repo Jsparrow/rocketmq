@@ -49,12 +49,15 @@ import org.apache.rocketmq.store.PutMessageStatus;
 import org.apache.rocketmq.store.SelectMappedBufferResult;
 import org.apache.rocketmq.store.StoreStatsService;
 import org.apache.rocketmq.store.schedule.ScheduleMessageService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Store all metadata downtime for recovery, data protection reliability
  */
 public class DLedgerCommitLog extends CommitLog {
-    private final DLedgerServer dLedgerServer;
+    private static final Logger logger = LoggerFactory.getLogger(DLedgerCommitLog.class);
+	private final DLedgerServer dLedgerServer;
     private final DLedgerConfig dLedgerConfig;
     private final DLedgerMmapFileStore dLedgerFileStore;
     private final MmapFileList dLedgerFileList;
@@ -243,13 +246,12 @@ public class DLedgerCommitLog extends CommitLog {
         }
         int mappedFileSize = this.dLedgerServer.getdLedgerConfig().getMappedFileSizeForEntryData();
         MmapFile mappedFile = this.dLedgerFileList.findMappedFileByOffset(offset, returnFirstOnNotFound);
-        if (mappedFile != null) {
-            int pos = (int) (offset % mappedFileSize);
-            SelectMmapBufferResult sbr = mappedFile.selectMappedBuffer(pos);
-            return  convertSbr(truncate(sbr));
-        }
-
-        return null;
+        if (mappedFile == null) {
+			return null;
+		}
+		int pos = (int) (offset % mappedFileSize);
+		SelectMmapBufferResult sbr = mappedFile.selectMappedBuffer(pos);
+		return  convertSbr(truncate(sbr));
     }
 
     private void recover(long maxPhyOffsetOfConsumeQueue) {
@@ -348,6 +350,7 @@ public class DLedgerCommitLog extends CommitLog {
             }
             return dispatchRequest;
         } catch (Throwable ignored) {
+			logger.error(ignored.getMessage(), ignored);
         }
 
         return new DispatchRequest(-1, false /* success */);
@@ -379,26 +382,25 @@ public class DLedgerCommitLog extends CommitLog {
 
         //should be consistent with the old version
         final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
-        if (tranType == MessageSysFlag.TRANSACTION_NOT_TYPE
-            || tranType == MessageSysFlag.TRANSACTION_COMMIT_TYPE) {
-            // Delay Delivery
-            if (msg.getDelayTimeLevel() > 0) {
-                if (msg.getDelayTimeLevel() > this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel()) {
-                    msg.setDelayTimeLevel(this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel());
-                }
+        boolean condition = (tranType == MessageSysFlag.TRANSACTION_NOT_TYPE
+            || tranType == MessageSysFlag.TRANSACTION_COMMIT_TYPE) && msg.getDelayTimeLevel() > 0;
+		// Delay Delivery
+		if (condition) {
+		    if (msg.getDelayTimeLevel() > this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel()) {
+		        msg.setDelayTimeLevel(this.defaultMessageStore.getScheduleMessageService().getMaxDelayLevel());
+		    }
 
-                topic = ScheduleMessageService.SCHEDULE_TOPIC;
-                queueId = ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel());
+		    topic = ScheduleMessageService.SCHEDULE_TOPIC;
+		    queueId = ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel());
 
-                // Backup real topic, queueId
-                MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
-                MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
-                msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
+		    // Backup real topic, queueId
+		    MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_TOPIC, msg.getTopic());
+		    MessageAccessor.putProperty(msg, MessageConst.PROPERTY_REAL_QUEUE_ID, String.valueOf(msg.getQueueId()));
+		    msg.setPropertiesString(MessageDecoder.messageProperties2String(msg.getProperties()));
 
-                msg.setTopic(topic);
-                msg.setQueueId(queueId);
-            }
-        }
+		    msg.setTopic(topic);
+		    msg.setQueueId(queueId);
+		}
 
         // Back to Results
         AppendMessageResult appendResult;
@@ -500,11 +502,11 @@ public class DLedgerCommitLog extends CommitLog {
         }
         int mappedFileSize = this.dLedgerServer.getdLedgerConfig().getMappedFileSizeForEntryData();
         MmapFile mappedFile = this.dLedgerFileList.findMappedFileByOffset(offset, offset == 0);
-        if (mappedFile != null) {
-            int pos = (int) (offset % mappedFileSize);
-            return  convertSbr(mappedFile.selectMappedBuffer(pos, size));
-        }
-        return null;
+        if (mappedFile == null) {
+			return null;
+		}
+		int pos = (int) (offset % mappedFileSize);
+		return  convertSbr(mappedFile.selectMappedBuffer(pos, size));
     }
 
     @Override
@@ -555,7 +557,19 @@ public class DLedgerCommitLog extends CommitLog {
         return diff;
     }
 
-    class EncodeResult {
+    public DLedgerServer getdLedgerServer() {
+        return dLedgerServer;
+    }
+
+	public int getId() {
+        return id;
+    }
+
+	public long getDividedCommitlogOffset() {
+        return dividedCommitlogOffset;
+    }
+
+	class EncodeResult {
         private String queueOffsetKey;
         private byte[] data;
         private AppendMessageStatus status;
@@ -719,24 +733,13 @@ public class DLedgerCommitLog extends CommitLog {
             this.sbr = sbr;
         }
 
-        public synchronized void release() {
+        @Override
+		public synchronized void release() {
             super.release();
             if (sbr != null) {
                 sbr.release();
             }
         }
 
-    }
-
-    public DLedgerServer getdLedgerServer() {
-        return dLedgerServer;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public long getDividedCommitlogOffset() {
-        return dividedCommitlogOffset;
     }
 }

@@ -43,6 +43,7 @@ public class NettyEvent {
 
     @Override
     public String toString() {
-        return "NettyEvent [type=" + type + ", remoteAddr=" + remoteAddr + ", channel=" + channel + "]";
+        return new StringBuilder().append("NettyEvent [type=").append(type).append(", remoteAddr=").append(remoteAddr).append(", channel=").append(channel).append("]")
+				.toString();
     }
 }

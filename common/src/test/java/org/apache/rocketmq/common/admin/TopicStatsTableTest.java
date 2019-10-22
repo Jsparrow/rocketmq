@@ -28,21 +28,21 @@ import java.util.Map;
 
 public class TopicStatsTableTest {
 
-    private volatile TopicStatsTable topicStatsTable;
-
     private static final String TEST_TOPIC = "test_topic";
 
-    private static final String TEST_BROKER = "test_broker";
+	private static final String TEST_BROKER = "test_broker";
 
-    private static final int QUEUE_ID = 1;
+	private static final int QUEUE_ID = 1;
 
-    private static final long CURRENT_TIME_MILLIS = System.currentTimeMillis();
+	private static final long CURRENT_TIME_MILLIS = System.currentTimeMillis();
 
-    private static final long MAX_OFFSET = CURRENT_TIME_MILLIS + 100;
+	private static final long MAX_OFFSET = CURRENT_TIME_MILLIS + 100;
 
-    private static final long MIN_OFFSET = CURRENT_TIME_MILLIS - 100;
+	private static final long MIN_OFFSET = CURRENT_TIME_MILLIS - 100;
 
-    @Before
+	private volatile TopicStatsTable topicStatsTable;
+
+	@Before
     public void buildTopicStatsTable() {
         HashMap<MessageQueue, TopicOffset> offsetTableMap = new HashMap<MessageQueue, TopicOffset>();
 
@@ -59,12 +59,12 @@ public class TopicStatsTableTest {
         topicStatsTable.setOffsetTable(offsetTableMap);
     }
 
-    @Test
+	@Test
     public void testGetOffsetTable() throws Exception {
         validateTopicStatsTable(topicStatsTable);
     }
 
-    @Test
+	@Test
     public void testFromJson() throws Exception {
         String json = RemotingSerializable.toJson(topicStatsTable, true);
         TopicStatsTable fromJson = RemotingSerializable.fromJson(json, TopicStatsTable.class);
@@ -72,7 +72,7 @@ public class TopicStatsTableTest {
         validateTopicStatsTable(fromJson);
     }
 
-    private static void validateTopicStatsTable(TopicStatsTable topicStatsTable) throws Exception {
+	private static void validateTopicStatsTable(TopicStatsTable topicStatsTable) throws Exception {
         Map.Entry<MessageQueue, TopicOffset> savedTopicStatsTableMap = topicStatsTable.getOffsetTable().entrySet().iterator().next();
         MessageQueue savedMessageQueue = savedTopicStatsTableMap.getKey();
         TopicOffset savedTopicOffset = savedTopicStatsTableMap.getValue();

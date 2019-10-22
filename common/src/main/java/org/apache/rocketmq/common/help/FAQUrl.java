@@ -16,6 +16,8 @@
  */
 package org.apache.rocketmq.common.help;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class FAQUrl {
 
     public static final String APPLY_TOPIC_URL =
@@ -71,7 +73,7 @@ public class FAQUrl {
 
     public static String attachDefaultURL(final String errorMessage) {
         if (errorMessage != null) {
-            int index = errorMessage.indexOf(TIP_STRING_BEGIN);
+            int index = StringUtils.indexOf(errorMessage, TIP_STRING_BEGIN);
             if (-1 == index) {
                 StringBuilder sb = new StringBuilder();
                 sb.append(errorMessage);

@@ -162,10 +162,13 @@ import org.apache.rocketmq.remoting.netty.ResponseFuture;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.remoting.protocol.RemotingSerializable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MQClientAPIImpl {
 
-    private final static InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(MQClientAPIImpl.class);
+	private static final InternalLogger log = ClientLogger.getLog();
     private static boolean sendSmartMsg =
         Boolean.parseBoolean(System.getProperty("org.apache.rocketmq.client.sendSmartMsg", "true"));
 
@@ -212,14 +215,13 @@ public class MQClientAPIImpl {
     public String fetchNameServerAddr() {
         try {
             String addrs = this.topAddressing.fetchNSAddr();
-            if (addrs != null) {
-                if (!addrs.equals(this.nameSrvAddr)) {
-                    log.info("name server address changed, old=" + this.nameSrvAddr + ", new=" + addrs);
-                    this.updateNameServerAddressList(addrs);
-                    this.nameSrvAddr = addrs;
-                    return nameSrvAddr;
-                }
-            }
+            boolean condition = addrs != null && !addrs.equals(this.nameSrvAddr);
+			if (condition) {
+			    log.info(new StringBuilder().append("name server address changed, old=").append(this.nameSrvAddr).append(", new=").append(addrs).toString());
+			    this.updateNameServerAddressList(addrs);
+			    this.nameSrvAddr = addrs;
+			    return nameSrvAddr;
+			}
         } catch (Exception e) {
             log.error("fetchNameServerAddr Exception", e);
         }
@@ -494,6 +496,7 @@ public class MQClientAPIImpl {
                             context.getProducer().executeSendMessageHookAfter(context);
                         }
                     } catch (Throwable e) {
+						logger.error(e.getMessage(), e);
                     }
 
                     producer.updateFaultItem(brokerName, System.currentTimeMillis() - responseFuture.getBeginTimestamp(), false);
@@ -512,6 +515,7 @@ public class MQClientAPIImpl {
                         try {
                             sendCallback.onSuccess(sendResult);
                         } catch (Throwable e) {
+							logger.error(e.getMessage(), e);
                         }
 
                         producer.updateFaultItem(brokerName, System.currentTimeMillis() - responseFuture.getBeginTimestamp(), false);
@@ -527,7 +531,7 @@ public class MQClientAPIImpl {
                         onExceptionImpl(brokerName, msg, 0L, request, sendCallback, topicPublishInfo, instance,
                             retryTimesWhenSendFailed, times, ex, context, true, producer);
                     } else if (responseFuture.isTimeout()) {
-                        MQClientException ex = new MQClientException("wait response timeout " + responseFuture.getTimeoutMillis() + "ms",
+                        MQClientException ex = new MQClientException(new StringBuilder().append("wait response timeout ").append(responseFuture.getTimeoutMillis()).append("ms").toString(),
                             responseFuture.getCause());
                         onExceptionImpl(brokerName, msg, 0L, request, sendCallback, topicPublishInfo, instance,
                             retryTimesWhenSendFailed, times, ex, context, true, producer);
@@ -594,6 +598,7 @@ public class MQClientAPIImpl {
             try {
                 sendCallback.onException(e);
             } catch (Exception ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
     }
@@ -653,10 +658,10 @@ public class MQClientAPIImpl {
                 sendResult.setTransactionId(responseHeader.getTransactionId());
                 String regionId = response.getExtFields().get(MessageConst.PROPERTY_MSG_REGION);
                 String traceOn = response.getExtFields().get(MessageConst.PROPERTY_TRACE_SWITCH);
-                if (regionId == null || regionId.isEmpty()) {
+                if (regionId == null || StringUtils.isEmpty(regionId)) {
                     regionId = MixAll.DEFAULT_TRACE_REGION_ID;
                 }
-                if (traceOn != null && traceOn.equals("false")) {
+                if (traceOn != null && "false".equals(traceOn)) {
                     sendResult.setTraceOn(false);
                 } else {
                     sendResult.setTraceOn(true);
@@ -717,12 +722,14 @@ public class MQClientAPIImpl {
                     }
                 } else {
                     if (!responseFuture.isSendRequestOK()) {
-                        pullCallback.onException(new MQClientException("send request failed to " + addr + ". Request: " + request, responseFuture.getCause()));
+                        pullCallback.onException(new MQClientException(new StringBuilder().append("send request failed to ").append(addr).append(". Request: ").append(request).toString(), responseFuture.getCause()));
                     } else if (responseFuture.isTimeout()) {
-                        pullCallback.onException(new MQClientException("wait response from " + addr + " timeout :" + responseFuture.getTimeoutMillis() + "ms" + ". Request: " + request,
+                        pullCallback.onException(new MQClientException(new StringBuilder().append("wait response from ").append(addr).append(" timeout :").append(responseFuture.getTimeoutMillis()).append("ms")
+								.append(". Request: ").append(request).toString(),
                             responseFuture.getCause()));
                     } else {
-                        pullCallback.onException(new MQClientException("unknown reason. addr: " + addr + ", timeoutMillis: " + timeoutMillis + ". Request: " + request, responseFuture.getCause()));
+                        pullCallback.onException(new MQClientException(new StringBuilder().append("unknown reason. addr: ").append(addr).append(", timeoutMillis: ").append(timeoutMillis).append(". Request: ")
+								.append(request).toString(), responseFuture.getCause()));
                     }
                 }
             }
@@ -1257,20 +1264,20 @@ public class MQClientAPIImpl {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.UPDATE_BROKER_CONFIG, null);
 
         String str = MixAll.properties2String(properties);
-        if (str != null && str.length() > 0) {
-            request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
-            RemotingCommand response = this.remotingClient
-                .invokeSync(MixAll.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
-            switch (response.getCode()) {
-                case ResponseCode.SUCCESS: {
-                    return;
-                }
-                default:
-                    break;
-            }
-
-            throw new MQBrokerException(response.getCode(), response.getRemark());
-        }
+        if (!(str != null && str.length() > 0)) {
+			return;
+		}
+		request.setBody(str.getBytes(MixAll.DEFAULT_CHARSET));
+		RemotingCommand response = this.remotingClient
+		    .invokeSync(MixAll.brokerVIPChannel(this.clientConfig.isVipChannelEnabled(), addr), request, timeoutMillis);
+		switch (response.getCode()) {
+		    case ResponseCode.SUCCESS: {
+		        return;
+		    }
+		    default:
+		        break;
+		}
+		throw new MQBrokerException(response.getCode(), response.getRemark());
     }
 
     public Properties getBrokerConfig(final String addr, final long timeoutMillis)
@@ -1486,24 +1493,24 @@ public class MQClientAPIImpl {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.PUT_KV_CONFIG, requestHeader);
 
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null) {
-            RemotingCommand errResponse = null;
-            for (String namesrvAddr : nameServerAddressList) {
-                RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
-                assert response != null;
-                switch (response.getCode()) {
-                    case ResponseCode.SUCCESS: {
-                        break;
-                    }
-                    default:
-                        errResponse = response;
-                }
-            }
-
-            if (errResponse != null) {
-                throw new MQClientException(errResponse.getCode(), errResponse.getRemark());
-            }
-        }
+        if (nameServerAddressList == null) {
+			return;
+		}
+		RemotingCommand errResponse = null;
+		for (String namesrvAddr : nameServerAddressList) {
+		    RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
+		    assert response != null;
+		    switch (response.getCode()) {
+		        case ResponseCode.SUCCESS: {
+		            break;
+		        }
+		        default:
+		            errResponse = response;
+		    }
+		}
+		if (errResponse != null) {
+		    throw new MQClientException(errResponse.getCode(), errResponse.getRemark());
+		}
     }
 
     public void deleteKVConfigValue(final String namespace, final String key, final long timeoutMillis)
@@ -1515,23 +1522,24 @@ public class MQClientAPIImpl {
         RemotingCommand request = RemotingCommand.createRequestCommand(RequestCode.DELETE_KV_CONFIG, requestHeader);
 
         List<String> nameServerAddressList = this.remotingClient.getNameServerAddressList();
-        if (nameServerAddressList != null) {
-            RemotingCommand errResponse = null;
-            for (String namesrvAddr : nameServerAddressList) {
-                RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
-                assert response != null;
-                switch (response.getCode()) {
-                    case ResponseCode.SUCCESS: {
-                        break;
-                    }
-                    default:
-                        errResponse = response;
-                }
-            }
-            if (errResponse != null) {
-                throw new MQClientException(errResponse.getCode(), errResponse.getRemark());
-            }
-        }
+        if (nameServerAddressList == null) {
+			return;
+		}
+		RemotingCommand errResponse = null;
+		for (String namesrvAddr : nameServerAddressList) {
+		    RemotingCommand response = this.remotingClient.invokeSync(namesrvAddr, request, timeoutMillis);
+		    assert response != null;
+		    switch (response.getCode()) {
+		        case ResponseCode.SUCCESS: {
+		            break;
+		        }
+		        default:
+		            errResponse = response;
+		    }
+		}
+		if (errResponse != null) {
+		    throw new MQClientException(errResponse.getCode(), errResponse.getRemark());
+		}
     }
 
     public KVTable getKVListByNamespace(final String namespace, final long timeoutMillis)
@@ -1908,8 +1916,9 @@ public class MQClientAPIImpl {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX))
-                                it.remove();
+                            if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+								it.remove();
+							}
                         }
                     }
 
@@ -1938,8 +1947,9 @@ public class MQClientAPIImpl {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX))
-                                it.remove();
+                            if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+								it.remove();
+							}
                         }
                     }
                     return topicList;
@@ -1967,8 +1977,9 @@ public class MQClientAPIImpl {
                         Iterator<String> it = topicList.getTopicList().iterator();
                         while (it.hasNext()) {
                             String topic = it.next();
-                            if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX))
-                                it.remove();
+                            if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+								it.remove();
+							}
                         }
                     }
                     return topicList;

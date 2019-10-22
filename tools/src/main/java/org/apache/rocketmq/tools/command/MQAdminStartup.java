@@ -78,9 +78,13 @@ import org.apache.rocketmq.tools.command.topic.UpdateOrderConfCommand;
 import org.apache.rocketmq.tools.command.topic.UpdateTopicPermSubCommand;
 import org.apache.rocketmq.tools.command.topic.UpdateTopicSubCommand;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 
 public class MQAdminStartup {
-    protected static List<SubCommand> subCommandList = new ArrayList<SubCommand>();
+    private static final Logger logger = LoggerFactory.getLogger(MQAdminStartup.class);
+
+	protected static List<SubCommand> subCommandList = new ArrayList<>();
 
     private static String rocketmqHome = System.getProperty(MixAll.ROCKETMQ_HOME_PROPERTY,
         System.getenv(MixAll.ROCKETMQ_HOME_ENV));
@@ -103,7 +107,7 @@ public class MQAdminStartup {
                     printHelp();
                     break;
                 case 2:
-                    if (args[0].equals("help")) {
+                    if ("help".equals(args[0])) {
                         SubCommand cmd = findSubCommand(args[1]);
                         if (cmd != null) {
                             Options options = ServerUtil.buildCommandlineOptions(new Options());
@@ -112,7 +116,7 @@ public class MQAdminStartup {
                                 ServerUtil.printCommandLineHelp("mqadmin " + cmd.commandName(), options);
                             }
                         } else {
-                            System.out.printf("The sub command %s not exist.%n", args[1]);
+                            logger.info("The sub command %s not exist.%n", args[1]);
                         }
                         break;
                     }
@@ -137,12 +141,12 @@ public class MQAdminStartup {
 
                         cmd.execute(commandLine, options, AclUtils.getAclRPCHook(rocketmqHome + MixAll.ACL_CONF_TOOLS_FILE));
                     } else {
-                        System.out.printf("The sub command %s not exist.%n", args[0]);
+                        logger.info("The sub command %s not exist.%n", args[0]);
                     }
                     break;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -220,33 +224,25 @@ public class MQAdminStartup {
     }
 
     private static void printHelp() {
-        System.out.printf("The most commonly used mqadmin commands are:%n");
-        for (SubCommand cmd : subCommandList) {
-            System.out.printf("   %-20s %s%n", cmd.commandName(), cmd.commandDesc());
-        }
+        logger.info("The most commonly used mqadmin commands are:%n");
+        subCommandList.forEach(cmd -> logger.info("   %-20s %s%n", cmd.commandName(), cmd.commandDesc()));
 
-        System.out.printf("%nSee 'mqadmin help <command>' for more information on a specific command.%n");
+        logger.info("%nSee 'mqadmin help <command>' for more information on a specific command.%n");
     }
 
     private static SubCommand findSubCommand(final String name) {
-        for (SubCommand cmd : subCommandList) {
-            if (cmd.commandName().toUpperCase().equals(name.toUpperCase())) {
-                return cmd;
-            }
-        }
-
-        return null;
+        return subCommandList.stream().filter(cmd -> StringUtils.upperCase(cmd.commandName()).equals(StringUtils.upperCase(name))).findFirst().orElse(null);
     }
 
     private static String[] parseSubArgs(String[] args) {
-        if (args.length > 1) {
-            String[] result = new String[args.length - 1];
-            for (int i = 0; i < args.length - 1; i++) {
-                result[i] = args[i + 1];
-            }
-            return result;
-        }
-        return null;
+        if (args.length <= 1) {
+			return null;
+		}
+		String[] result = new String[args.length - 1];
+		for (int i = 0; i < args.length - 1; i++) {
+		    result[i] = args[i + 1];
+		}
+		return result;
     }
 
     public static void initCommand(SubCommand command) {

@@ -29,14 +29,14 @@ public class NamespaceUtilTest {
     private static final String TOPIC = "TOPIC_XXX";
     private static final String GROUP_ID = "GID_XXX";
     private static final String SYSTEM_TOPIC = "rmq_sys_topic";
-    private static final String GROUP_ID_WITH_NAMESPACE = INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
-    private static final String TOPIC_WITH_NAMESPACE = INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + TOPIC;
+    private static final String GROUP_ID_WITH_NAMESPACE = new StringBuilder().append(INSTANCE_ID).append(NamespaceUtil.NAMESPACE_SEPARATOR).append(GROUP_ID).toString();
+    private static final String TOPIC_WITH_NAMESPACE = new StringBuilder().append(INSTANCE_ID).append(NamespaceUtil.NAMESPACE_SEPARATOR).append(TOPIC).toString();
     private static final String RETRY_TOPIC = MixAll.RETRY_GROUP_TOPIC_PREFIX + GROUP_ID;
     private static final String RETRY_TOPIC_WITH_NAMESPACE =
-        MixAll.RETRY_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
+        new StringBuilder().append(MixAll.RETRY_GROUP_TOPIC_PREFIX).append(INSTANCE_ID).append(NamespaceUtil.NAMESPACE_SEPARATOR).append(GROUP_ID).toString();
     private static final String DLQ_TOPIC = MixAll.DLQ_GROUP_TOPIC_PREFIX + GROUP_ID;
     private static final String DLQ_TOPIC_WITH_NAMESPACE =
-        MixAll.DLQ_GROUP_TOPIC_PREFIX + INSTANCE_ID + NamespaceUtil.NAMESPACE_SEPARATOR + GROUP_ID;
+        new StringBuilder().append(MixAll.DLQ_GROUP_TOPIC_PREFIX).append(INSTANCE_ID).append(NamespaceUtil.NAMESPACE_SEPARATOR).append(GROUP_ID).toString();
 
     @Test
     public void testWithoutNamespace() {

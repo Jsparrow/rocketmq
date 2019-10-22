@@ -21,9 +21,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileUtil {
-    private static String lineSeperator = System.getProperty("line.separator");
+    private static final Logger logger = LoggerFactory.getLogger(FileUtil.class);
+
+	private static String lineSeperator = System.getProperty("line.separator");
 
     private String filePath = "";
     private String fileName = "";
@@ -44,7 +48,7 @@ public class FileUtil {
     }
 
     public void deleteFile() {
-        File file = new File(filePath + File.separator + fileName);
+        File file = new File(new StringBuilder().append(filePath).append(File.separator).append(fileName).toString());
         if (file.exists()) {
             file.delete();
         }
@@ -68,10 +72,7 @@ public class FileUtil {
 
     private String getPropertiesAsString(Properties properties) {
         StringBuilder sb = new StringBuilder();
-        for (Object key : properties.keySet()) {
-            sb.append(key).append("=").append(properties.getProperty((String) key))
-                .append(lineSeperator);
-        }
+        properties.keySet().forEach(key -> sb.append(key).append("=").append(properties.getProperty((String) key)).append(lineSeperator));
         return sb.toString();
     }
 
@@ -82,25 +83,25 @@ public class FileUtil {
             writer.write(content);
             writer.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         } finally {
             if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
     }
 
     private File openFile() {
-        File file = new File(filePath + File.separator + fileName);
+        File file = new File(new StringBuilder().append(filePath).append(File.separator).append(fileName).toString());
         if (!file.exists()) {
             try {
                 file.createNewFile();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         }
         return file;

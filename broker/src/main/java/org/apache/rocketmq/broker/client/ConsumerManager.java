@@ -37,7 +37,7 @@ public class ConsumerManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long CHANNEL_EXPIRED_TIMEOUT = 1000 * 120;
     private final ConcurrentMap<String/* Group */, ConsumerGroupInfo> consumerTable =
-        new ConcurrentHashMap<String, ConsumerGroupInfo>(1024);
+        new ConcurrentHashMap<>(1024);
     private final ConsumerIdsChangeListener consumerIdsChangeListener;
 
     public ConsumerManager(final ConsumerIdsChangeListener consumerIdsChangeListener) {
@@ -111,11 +111,10 @@ public class ConsumerManager {
                 consumeFromWhere);
         boolean r2 = consumerGroupInfo.updateSubscription(subList);
 
-        if (r1 || r2) {
-            if (isNotifyConsumerIdsChangedEnable) {
-                this.consumerIdsChangeListener.handle(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
-            }
-        }
+        boolean condition = (r1 || r2) && isNotifyConsumerIdsChangedEnable;
+		if (condition) {
+		    this.consumerIdsChangeListener.handle(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
+		}
 
         this.consumerIdsChangeListener.handle(ConsumerGroupEvent.REGISTER, group, subList);
 
@@ -125,20 +124,21 @@ public class ConsumerManager {
     public void unregisterConsumer(final String group, final ClientChannelInfo clientChannelInfo,
         boolean isNotifyConsumerIdsChangedEnable) {
         ConsumerGroupInfo consumerGroupInfo = this.consumerTable.get(group);
-        if (null != consumerGroupInfo) {
-            consumerGroupInfo.unregisterChannel(clientChannelInfo);
-            if (consumerGroupInfo.getChannelInfoTable().isEmpty()) {
-                ConsumerGroupInfo remove = this.consumerTable.remove(group);
-                if (remove != null) {
-                    log.info("unregister consumer ok, no any connection, and remove consumer group, {}", group);
+        if (null == consumerGroupInfo) {
+			return;
+		}
+		consumerGroupInfo.unregisterChannel(clientChannelInfo);
+		if (consumerGroupInfo.getChannelInfoTable().isEmpty()) {
+		    ConsumerGroupInfo remove = this.consumerTable.remove(group);
+		    if (remove != null) {
+		        log.info("unregister consumer ok, no any connection, and remove consumer group, {}", group);
 
-                    this.consumerIdsChangeListener.handle(ConsumerGroupEvent.UNREGISTER, group);
-                }
-            }
-            if (isNotifyConsumerIdsChangedEnable) {
-                this.consumerIdsChangeListener.handle(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
-            }
-        }
+		        this.consumerIdsChangeListener.handle(ConsumerGroupEvent.UNREGISTER, group);
+		    }
+		}
+		if (isNotifyConsumerIdsChangedEnable) {
+		    this.consumerIdsChangeListener.handle(ConsumerGroupEvent.CHANGE, group, consumerGroupInfo.getAllChannel());
+		}
     }
 
     public void scanNotActiveChannel() {

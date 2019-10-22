@@ -43,12 +43,12 @@ import org.apache.rocketmq.common.sysflag.TopicSysFlag;
 public class TopicConfigManager extends ConfigManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private static final long LOCK_TIMEOUT_MILLIS = 3000;
-    private transient final Lock lockTopicConfigTable = new ReentrantLock();
+    private final transient Lock lockTopicConfigTable = new ReentrantLock();
 
     private final ConcurrentMap<String, TopicConfig> topicConfigTable =
-        new ConcurrentHashMap<String, TopicConfig>(1024);
+        new ConcurrentHashMap<>(1024);
     private final DataVersion dataVersion = new DataVersion();
-    private final Set<String> systemTopicList = new HashSet<String>();
+    private final Set<String> systemTopicList = new HashSet<>();
     private transient BrokerController brokerController;
 
     public TopicConfigManager() {
@@ -161,16 +161,16 @@ public class TopicConfigManager extends ConfigManager {
             if (this.lockTopicConfigTable.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     topicConfig = this.topicConfigTable.get(topic);
-                    if (topicConfig != null)
-                        return topicConfig;
+                    if (topicConfig != null) {
+						return topicConfig;
+					}
 
                     TopicConfig defaultTopicConfig = this.topicConfigTable.get(defaultTopic);
                     if (defaultTopicConfig != null) {
-                        if (defaultTopic.equals(MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC)) {
-                            if (!this.brokerController.getBrokerConfig().isAutoCreateTopicEnable()) {
-                                defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
-                            }
-                        }
+                        boolean condition = defaultTopic.equals(MixAll.AUTO_CREATE_TOPIC_KEY_TOPIC) && !this.brokerController.getBrokerConfig().isAutoCreateTopicEnable();
+						if (condition) {
+						    defaultTopicConfig.setPerm(PermName.PERM_READ | PermName.PERM_WRITE);
+						}
 
                         if (PermName.isInherited(defaultTopicConfig.getPerm())) {
                             topicConfig = new TopicConfig(topic);
@@ -232,8 +232,9 @@ public class TopicConfigManager extends ConfigManager {
         final int perm,
         final int topicSysFlag) {
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
-        if (topicConfig != null)
-            return topicConfig;
+        if (topicConfig != null) {
+			return topicConfig;
+		}
 
         boolean createNew = false;
 
@@ -241,8 +242,9 @@ public class TopicConfigManager extends ConfigManager {
             if (this.lockTopicConfigTable.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     topicConfig = this.topicConfigTable.get(topic);
-                    if (topicConfig != null)
-                        return topicConfig;
+                    if (topicConfig != null) {
+						return topicConfig;
+					}
 
                     topicConfig = new TopicConfig(topic);
                     topicConfig.setReadQueueNums(clientDefaultTopicQueueNums);
@@ -272,8 +274,9 @@ public class TopicConfigManager extends ConfigManager {
 
     public TopicConfig createTopicOfTranCheckMaxTime(final int clientDefaultTopicQueueNums, final int perm) {
         TopicConfig topicConfig = this.topicConfigTable.get(MixAll.TRANS_CHECK_MAX_TIME_TOPIC);
-        if (topicConfig != null)
-            return topicConfig;
+        if (topicConfig != null) {
+			return topicConfig;
+		}
 
         boolean createNew = false;
 
@@ -281,8 +284,9 @@ public class TopicConfigManager extends ConfigManager {
             if (this.lockTopicConfigTable.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
                 try {
                     topicConfig = this.topicConfigTable.get(MixAll.TRANS_CHECK_MAX_TIME_TOPIC);
-                    if (topicConfig != null)
-                        return topicConfig;
+                    if (topicConfig != null) {
+						return topicConfig;
+					}
 
                     topicConfig = new TopicConfig(MixAll.TRANS_CHECK_MAX_TIME_TOPIC);
                     topicConfig.setReadQueueNums(clientDefaultTopicQueueNums);
@@ -313,44 +317,38 @@ public class TopicConfigManager extends ConfigManager {
     public void updateTopicUnitFlag(final String topic, final boolean unit) {
 
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
-        if (topicConfig != null) {
-            int oldTopicSysFlag = topicConfig.getTopicSysFlag();
-            if (unit) {
-                topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
-            } else {
-                topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
-            }
-
-            log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag", oldTopicSysFlag,
-                topicConfig.getTopicSysFlag());
-
-            this.topicConfigTable.put(topic, topicConfig);
-
-            this.dataVersion.nextVersion();
-
-            this.persist();
-            this.brokerController.registerBrokerAll(false, true, true);
-        }
+        if (topicConfig == null) {
+			return;
+		}
+		int oldTopicSysFlag = topicConfig.getTopicSysFlag();
+		if (unit) {
+		    topicConfig.setTopicSysFlag(TopicSysFlag.setUnitFlag(oldTopicSysFlag));
+		} else {
+		    topicConfig.setTopicSysFlag(TopicSysFlag.clearUnitFlag(oldTopicSysFlag));
+		}
+		log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag", oldTopicSysFlag,
+		    topicConfig.getTopicSysFlag());
+		this.topicConfigTable.put(topic, topicConfig);
+		this.dataVersion.nextVersion();
+		this.persist();
+		this.brokerController.registerBrokerAll(false, true, true);
     }
 
     public void updateTopicUnitSubFlag(final String topic, final boolean hasUnitSub) {
         TopicConfig topicConfig = this.topicConfigTable.get(topic);
-        if (topicConfig != null) {
-            int oldTopicSysFlag = topicConfig.getTopicSysFlag();
-            if (hasUnitSub) {
-                topicConfig.setTopicSysFlag(TopicSysFlag.setUnitSubFlag(oldTopicSysFlag));
-            }
-
-            log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag", oldTopicSysFlag,
-                topicConfig.getTopicSysFlag());
-
-            this.topicConfigTable.put(topic, topicConfig);
-
-            this.dataVersion.nextVersion();
-
-            this.persist();
-            this.brokerController.registerBrokerAll(false, true, true);
-        }
+        if (topicConfig == null) {
+			return;
+		}
+		int oldTopicSysFlag = topicConfig.getTopicSysFlag();
+		if (hasUnitSub) {
+		    topicConfig.setTopicSysFlag(TopicSysFlag.setUnitSubFlag(oldTopicSysFlag));
+		}
+		log.info("update topic sys flag. oldTopicSysFlag={}, newTopicSysFlag", oldTopicSysFlag,
+		    topicConfig.getTopicSysFlag());
+		this.topicConfigTable.put(topic, topicConfig);
+		this.dataVersion.nextVersion();
+		this.persist();
+		this.brokerController.registerBrokerAll(false, true, true);
     }
 
     public void updateTopicConfig(final TopicConfig topicConfig) {
@@ -368,35 +366,34 @@ public class TopicConfigManager extends ConfigManager {
 
     public void updateOrderTopicConfig(final KVTable orderKVTableFromNs) {
 
-        if (orderKVTableFromNs != null && orderKVTableFromNs.getTable() != null) {
-            boolean isChange = false;
-            Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();
-            for (String topic : orderTopics) {
-                TopicConfig topicConfig = this.topicConfigTable.get(topic);
-                if (topicConfig != null && !topicConfig.isOrder()) {
-                    topicConfig.setOrder(true);
-                    isChange = true;
-                    log.info("update order topic config, topic={}, order={}", topic, true);
-                }
-            }
-
-            for (Map.Entry<String, TopicConfig> entry : this.topicConfigTable.entrySet()) {
-                String topic = entry.getKey();
-                if (!orderTopics.contains(topic)) {
-                    TopicConfig topicConfig = entry.getValue();
-                    if (topicConfig.isOrder()) {
-                        topicConfig.setOrder(false);
-                        isChange = true;
-                        log.info("update order topic config, topic={}, order={}", topic, false);
-                    }
-                }
-            }
-
-            if (isChange) {
-                this.dataVersion.nextVersion();
-                this.persist();
-            }
-        }
+        if (!(orderKVTableFromNs != null && orderKVTableFromNs.getTable() != null)) {
+			return;
+		}
+		boolean isChange = false;
+		Set<String> orderTopics = orderKVTableFromNs.getTable().keySet();
+		for (String topic : orderTopics) {
+		    TopicConfig topicConfig = this.topicConfigTable.get(topic);
+		    if (topicConfig != null && !topicConfig.isOrder()) {
+		        topicConfig.setOrder(true);
+		        isChange = true;
+		        log.info("update order topic config, topic={}, order={}", topic, true);
+		    }
+		}
+		for (Map.Entry<String, TopicConfig> entry : this.topicConfigTable.entrySet()) {
+		    String topic = entry.getKey();
+		    if (!orderTopics.contains(topic)) {
+		        TopicConfig topicConfig = entry.getValue();
+		        if (topicConfig.isOrder()) {
+		            topicConfig.setOrder(false);
+		            isChange = true;
+		            log.info("update order topic config, topic={}, order={}", topic, false);
+		        }
+		    }
+		}
+		if (isChange) {
+		    this.dataVersion.nextVersion();
+		    this.persist();
+		}
     }
 
     public boolean isOrderTopic(final String topic) {
@@ -439,18 +436,20 @@ public class TopicConfigManager extends ConfigManager {
 
     @Override
     public void decode(String jsonString) {
-        if (jsonString != null) {
-            TopicConfigSerializeWrapper topicConfigSerializeWrapper =
-                TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
-            if (topicConfigSerializeWrapper != null) {
-                this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
-                this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
-                this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
-            }
-        }
+        if (jsonString == null) {
+			return;
+		}
+		TopicConfigSerializeWrapper topicConfigSerializeWrapper =
+		    TopicConfigSerializeWrapper.fromJson(jsonString, TopicConfigSerializeWrapper.class);
+		if (topicConfigSerializeWrapper != null) {
+		    this.topicConfigTable.putAll(topicConfigSerializeWrapper.getTopicConfigTable());
+		    this.dataVersion.assignNewOne(topicConfigSerializeWrapper.getDataVersion());
+		    this.printLoadDataWhenFirstBoot(topicConfigSerializeWrapper);
+		}
     }
 
-    public String encode(final boolean prettyFormat) {
+    @Override
+	public String encode(final boolean prettyFormat) {
         TopicConfigSerializeWrapper topicConfigSerializeWrapper = new TopicConfigSerializeWrapper();
         topicConfigSerializeWrapper.setTopicConfigTable(this.topicConfigTable);
         topicConfigSerializeWrapper.setDataVersion(this.dataVersion);

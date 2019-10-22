@@ -33,6 +33,6 @@ public class ProducerData {
 
     @Override
     public String toString() {
-        return "ProducerData [groupName=" + groupName + "]";
+        return new StringBuilder().append("ProducerData [groupName=").append(groupName).append("]").toString();
     }
 }

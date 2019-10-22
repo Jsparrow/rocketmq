@@ -32,15 +32,15 @@ public abstract class ConfigManager {
             fileName = this.configFilePath();
             String jsonString = MixAll.file2String(fileName);
 
-            if (null == jsonString || jsonString.length() == 0) {
+            if (null == jsonString || jsonString.isEmpty()) {
                 return this.loadBak();
             } else {
                 this.decode(jsonString);
-                log.info("load " + fileName + " OK");
+                log.info(new StringBuilder().append("load ").append(fileName).append(" OK").toString());
                 return true;
             }
         } catch (Exception e) {
-            log.error("load " + fileName + " failed, and try to load backup file", e);
+            log.error(new StringBuilder().append("load ").append(fileName).append(" failed, and try to load backup file").toString(), e);
             return this.loadBak();
         }
     }
@@ -54,11 +54,11 @@ public abstract class ConfigManager {
             String jsonString = MixAll.file2String(fileName + ".bak");
             if (jsonString != null && jsonString.length() > 0) {
                 this.decode(jsonString);
-                log.info("load " + fileName + " OK");
+                log.info(new StringBuilder().append("load ").append(fileName).append(" OK").toString());
                 return true;
             }
         } catch (Exception e) {
-            log.error("load " + fileName + " Failed", e);
+            log.error(new StringBuilder().append("load ").append(fileName).append(" Failed").toString(), e);
             return false;
         }
 
@@ -69,14 +69,15 @@ public abstract class ConfigManager {
 
     public synchronized void persist() {
         String jsonString = this.encode(true);
-        if (jsonString != null) {
-            String fileName = this.configFilePath();
-            try {
-                MixAll.string2File(jsonString, fileName);
-            } catch (IOException e) {
-                log.error("persist file " + fileName + " exception", e);
-            }
-        }
+        if (jsonString == null) {
+			return;
+		}
+		String fileName = this.configFilePath();
+		try {
+		    MixAll.string2File(jsonString, fileName);
+		} catch (IOException e) {
+		    log.error(new StringBuilder().append("persist file ").append(fileName).append(" exception").toString(), e);
+		}
     }
 
     public abstract String encode(final boolean prettyFormat);

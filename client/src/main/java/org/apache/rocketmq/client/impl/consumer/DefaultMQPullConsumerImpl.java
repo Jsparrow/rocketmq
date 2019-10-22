@@ -65,9 +65,12 @@ import org.apache.rocketmq.common.sysflag.PullSysFlag;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultMQPullConsumerImpl implements MQConsumerInner {
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQPullConsumerImpl.class);
+	private final InternalLogger log = ClientLogger.getLog();
     private final DefaultMQPullConsumer defaultMQPullConsumer;
     private final long consumerStartTimestamp = System.currentTimeMillis();
     private final RPCHook rpcHook;
@@ -100,9 +103,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
 
     private void isRunning() throws MQClientException {
         if (this.serviceState != ServiceState.RUNNING) {
-            throw new MQClientException("The consumer is not in running status, "
-                + this.serviceState
-                + FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK),
+            throw new MQClientException(new StringBuilder().append("The consumer is not in running status, ").append(this.serviceState).append(FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK)).toString(),
                 null);
         }
     }
@@ -300,6 +301,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
                     topic, SubscriptionData.SUB_ALL);
                 this.rebalanceImpl.subscriptionInner.putIfAbsent(topic, subscriptionData);
             } catch (Exception ignore) {
+				logger.error(ignore.getMessage(), ignore);
             }
         }
     }
@@ -319,6 +321,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
                 try {
                     hook.consumeMessageBefore(context);
                 } catch (Throwable ignored) {
+					logger.error(ignored.getMessage(), ignored);
                 }
             }
         }
@@ -330,6 +333,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
                 try {
                     hook.consumeMessageAfter(context);
                 } catch (Throwable ignored) {
+					logger.error(ignored.getMessage(), ignored);
                 }
             }
         }
@@ -389,28 +393,26 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
             mqs.addAll(allocateMq);
             this.offsetStore.persistAll(mqs);
         } catch (Exception e) {
-            log.error("group: " + this.defaultMQPullConsumer.getConsumerGroup() + " persistConsumerOffset exception", e);
+            log.error(new StringBuilder().append("group: ").append(this.defaultMQPullConsumer.getConsumerGroup()).append(" persistConsumerOffset exception").toString(), e);
         }
     }
 
     @Override
     public void updateTopicSubscribeInfo(String topic, Set<MessageQueue> info) {
         Map<String, SubscriptionData> subTable = this.rebalanceImpl.getSubscriptionInner();
-        if (subTable != null) {
-            if (subTable.containsKey(topic)) {
-                this.rebalanceImpl.getTopicSubscribeInfoTable().put(topic, info);
-            }
-        }
+        boolean condition = subTable != null && subTable.containsKey(topic);
+		if (condition) {
+		    this.rebalanceImpl.getTopicSubscribeInfoTable().put(topic, info);
+		}
     }
 
     @Override
     public boolean isSubscribeTopicNeedUpdate(String topic) {
         Map<String, SubscriptionData> subTable = this.rebalanceImpl.getSubscriptionInner();
-        if (subTable != null) {
-            if (subTable.containsKey(topic)) {
-                return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
-            }
-        }
+        boolean condition = subTable != null && subTable.containsKey(topic);
+		if (condition) {
+		    return !this.rebalanceImpl.topicSubscribeInfoTable.containsKey(topic);
+		}
 
         return false;
     }
@@ -663,8 +665,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
                 if (!registerOK) {
                     this.serviceState = ServiceState.CREATE_JUST;
 
-                    throw new MQClientException("The consumer group[" + this.defaultMQPullConsumer.getConsumerGroup()
-                        + "] has been created before, specify another name please." + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+                    throw new MQClientException(new StringBuilder().append("The consumer group[").append(this.defaultMQPullConsumer.getConsumerGroup()).append("] has been created before, specify another name please.").append(FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL)).toString(),
                         null);
                 }
 
@@ -675,9 +676,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
             case RUNNING:
             case START_FAILED:
             case SHUTDOWN_ALREADY:
-                throw new MQClientException("The PullConsumer service state not OK, maybe started once, "
-                    + this.serviceState
-                    + FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK),
+                throw new MQClientException(new StringBuilder().append("The PullConsumer service state not OK, maybe started once, ").append(this.serviceState).append(FAQUrl.suggestTodo(FAQUrl.CLIENT_SERVICE_NOT_OK)).toString(),
                     null);
             default:
                 break;
@@ -700,10 +699,7 @@ public class DefaultMQPullConsumerImpl implements MQConsumerInner {
         // consumerGroup
         if (this.defaultMQPullConsumer.getConsumerGroup().equals(MixAll.DEFAULT_CONSUMER_GROUP)) {
             throw new MQClientException(
-                "consumerGroup can not equal "
-                    + MixAll.DEFAULT_CONSUMER_GROUP
-                    + ", please specify another one."
-                    + FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL),
+                new StringBuilder().append("consumerGroup can not equal ").append(MixAll.DEFAULT_CONSUMER_GROUP).append(", please specify another one.").append(FAQUrl.suggestTodo(FAQUrl.CLIENT_PARAMETER_CHECK_URL)).toString(),
                 null);
         }
 

@@ -29,10 +29,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateTopicSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateTopicSubCommand.class);
+
+	@Override
     public String commandName() {
         return "updateTopic";
     }
@@ -96,31 +101,31 @@ public class UpdateTopicSubCommand implements SubCommand {
             TopicConfig topicConfig = new TopicConfig();
             topicConfig.setReadQueueNums(8);
             topicConfig.setWriteQueueNums(8);
-            topicConfig.setTopicName(commandLine.getOptionValue('t').trim());
+            topicConfig.setTopicName(StringUtils.trim(commandLine.getOptionValue('t')));
 
             // readQueueNums
             if (commandLine.hasOption('r')) {
-                topicConfig.setReadQueueNums(Integer.parseInt(commandLine.getOptionValue('r').trim()));
+                topicConfig.setReadQueueNums(Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('r'))));
             }
 
             // writeQueueNums
             if (commandLine.hasOption('w')) {
-                topicConfig.setWriteQueueNums(Integer.parseInt(commandLine.getOptionValue('w').trim()));
+                topicConfig.setWriteQueueNums(Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('w'))));
             }
 
             // perm
             if (commandLine.hasOption('p')) {
-                topicConfig.setPerm(Integer.parseInt(commandLine.getOptionValue('p').trim()));
+                topicConfig.setPerm(Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('p'))));
             }
 
             boolean isUnit = false;
             if (commandLine.hasOption('u')) {
-                isUnit = Boolean.parseBoolean(commandLine.getOptionValue('u').trim());
+                isUnit = Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('u')));
             }
 
             boolean isCenterSync = false;
             if (commandLine.hasOption('s')) {
-                isCenterSync = Boolean.parseBoolean(commandLine.getOptionValue('s').trim());
+                isCenterSync = Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('s')));
             }
 
             int topicCenterSync = TopicSysFlag.buildSysFlag(isUnit, isCenterSync);
@@ -128,29 +133,28 @@ public class UpdateTopicSubCommand implements SubCommand {
 
             boolean isOrder = false;
             if (commandLine.hasOption('o')) {
-                isOrder = Boolean.parseBoolean(commandLine.getOptionValue('o').trim());
+                isOrder = Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('o')));
             }
             topicConfig.setOrder(isOrder);
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
 
                 defaultMQAdminExt.start();
                 defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
 
                 if (isOrder) {
                     String brokerName = CommandUtil.fetchBrokerNameByAddr(defaultMQAdminExt, addr);
-                    String orderConf = brokerName + ":" + topicConfig.getWriteQueueNums();
+                    String orderConf = new StringBuilder().append(brokerName).append(":").append(topicConfig.getWriteQueueNums()).toString();
                     defaultMQAdminExt.createOrUpdateOrderConf(topicConfig.getTopicName(), orderConf, false);
-                    System.out.printf("%s", String.format("set broker orderConf. isOrder=%s, orderConf=[%s]",
-                        isOrder, orderConf.toString()));
+                    logger.info("%s", String.format("set broker orderConf. isOrder=%s, orderConf=[%s]", isOrder, orderConf));
                 }
-                System.out.printf("create topic to %s success.%n", addr);
-                System.out.printf("%s", topicConfig);
+                logger.info("create topic to %s success.%n", addr);
+                logger.info("%s", topicConfig);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
 
@@ -158,7 +162,7 @@ public class UpdateTopicSubCommand implements SubCommand {
                     CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                    System.out.printf("create topic to %s success.%n", addr);
+                    logger.info("create topic to %s success.%n", addr);
                 }
 
                 if (isOrder) {
@@ -173,10 +177,10 @@ public class UpdateTopicSubCommand implements SubCommand {
                     }
                     defaultMQAdminExt.createOrUpdateOrderConf(topicConfig.getTopicName(),
                         orderConf.toString(), true);
-                    System.out.printf("set cluster orderConf. isOrder=%s, orderConf=[%s]", isOrder, orderConf);
+                    logger.info("set cluster orderConf. isOrder=%s, orderConf=[%s]", isOrder, orderConf);
                 }
 
-                System.out.printf("%s", topicConfig);
+                logger.info("%s", topicConfig);
                 return;
             }
 

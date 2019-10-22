@@ -19,9 +19,13 @@ package org.apache.rocketmq.example.namespace;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProducerWithNamespace {
-    public static void main(String[] args) throws Exception {
+    private static final Logger logger = LoggerFactory.getLogger(ProducerWithNamespace.class);
+
+	public static void main(String[] args) throws Exception {
 
         DefaultMQProducer producer = new DefaultMQProducer("InstanceTest", "pidTest");
         producer.setNamesrvAddr("127.0.0.1:9876");
@@ -30,9 +34,9 @@ public class ProducerWithNamespace {
             Message message = new Message("topicTest", "tagTest", "Hello world".getBytes());
             try {
                 SendResult result = producer.send(message);
-                System.out.printf("Topic:%s send success, misId is:%s%n", message.getTopic(), result.getMsgId());
+                logger.info("Topic:%s send success, misId is:%s%n", message.getTopic(), result.getMsgId());
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         }
     }

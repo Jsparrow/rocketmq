@@ -25,45 +25,46 @@ import org.apache.rocketmq.client.consumer.PullTaskContext;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullScheduleService {
 
-    public static void main(String[] args) throws MQClientException {
+    private static final Logger logger = LoggerFactory.getLogger(PullScheduleService.class);
+
+	public static void main(String[] args) throws MQClientException {
         final MQPullConsumerScheduleService scheduleService = new MQPullConsumerScheduleService("GroupName1");
 
         scheduleService.setMessageModel(MessageModel.CLUSTERING);
-        scheduleService.registerPullTaskCallback("TopicTest", new PullTaskCallback() {
+        scheduleService.registerPullTaskCallback("TopicTest", (MessageQueue mq, PullTaskContext context) -> {
+		    MQPullConsumer consumer = context.getPullConsumer();
+		    try {
 
-            @Override
-            public void doPullTask(MessageQueue mq, PullTaskContext context) {
-                MQPullConsumer consumer = context.getPullConsumer();
-                try {
+		        long offset = consumer.fetchConsumeOffset(mq, false);
+		        if (offset < 0) {
+					offset = 0;
+				}
 
-                    long offset = consumer.fetchConsumeOffset(mq, false);
-                    if (offset < 0)
-                        offset = 0;
+		        PullResult pullResult = consumer.pull(mq, "*", offset, 32);
+		        logger.info("%s%n", new StringBuilder().append(offset).append("\t").append(mq).append("\t").append(pullResult).toString());
+		        switch (pullResult.getPullStatus()) {
+		            case FOUND:
+		                break;
+		            case NO_MATCHED_MSG:
+		                break;
+		            case NO_NEW_MSG:
+		            case OFFSET_ILLEGAL:
+		                break;
+		            default:
+		                break;
+		        }
+		        consumer.updateConsumeOffset(mq, pullResult.getNextBeginOffset());
 
-                    PullResult pullResult = consumer.pull(mq, "*", offset, 32);
-                    System.out.printf("%s%n", offset + "\t" + mq + "\t" + pullResult);
-                    switch (pullResult.getPullStatus()) {
-                        case FOUND:
-                            break;
-                        case NO_MATCHED_MSG:
-                            break;
-                        case NO_NEW_MSG:
-                        case OFFSET_ILLEGAL:
-                            break;
-                        default:
-                            break;
-                    }
-                    consumer.updateConsumeOffset(mq, pullResult.getNextBeginOffset());
-
-                    context.setPullNextDelayTimeMillis(100);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+		        context.setPullNextDelayTimeMillis(100);
+		    } catch (Exception e) {
+		        logger.error(e.getMessage(), e);
+		    }
+		});
 
         scheduleService.start();
     }

@@ -22,9 +22,12 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ParallelTaskExecutor {
-    public List<ParallelTask> tasks = new ArrayList<ParallelTask>();
+    private static final Logger logger = LoggerFactory.getLogger(ParallelTaskExecutor.class);
+	public List<ParallelTask> tasks = new ArrayList<>();
     public ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
     public CountDownLatch latch = null;
 
@@ -42,26 +45,20 @@ public class ParallelTaskExecutor {
         try {
             latch.await();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
     public void startNoBlock() {
-        for (ParallelTask task : tasks) {
-            cachedThreadPool.execute(task);
-        }
+        tasks.forEach(cachedThreadPool::execute);
     }
 
     private void init() {
         latch = new CountDownLatch(tasks.size());
-        for (ParallelTask task : tasks) {
-            task.setLatch(latch);
-        }
+        tasks.forEach(task -> task.setLatch(latch));
     }
 
     private void startTask() {
-        for (ParallelTask task : tasks) {
-            task.start();
-        }
+        tasks.forEach(ParallelTask::start);
     }
 }

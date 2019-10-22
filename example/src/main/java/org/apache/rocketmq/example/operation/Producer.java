@@ -27,40 +27,41 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Producer {
 
-    public static void main(String[] args) throws MQClientException, InterruptedException {
+    private static final Logger logger = LoggerFactory.getLogger(Producer.class);
+
+	public static void main(String[] args) throws MQClientException, InterruptedException {
         CommandLine commandLine = buildCommandline(args);
-        if (commandLine != null) {
-            String group = commandLine.getOptionValue('g');
-            String topic = commandLine.getOptionValue('t');
-            String tags = commandLine.getOptionValue('a');
-            String keys = commandLine.getOptionValue('k');
-            String msgCount = commandLine.getOptionValue('c');
-
-            DefaultMQProducer producer = new DefaultMQProducer(group);
-            producer.setInstanceName(Long.toString(System.currentTimeMillis()));
-
-            producer.start();
-
-            for (int i = 0; i < Integer.parseInt(msgCount); i++) {
-                try {
-                    Message msg = new Message(
-                        topic,
-                        tags,
-                        keys,
-                        ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
-                    SendResult sendResult = producer.send(msg);
-                    System.out.printf("%-8d %s%n", i, sendResult);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Thread.sleep(1000);
-                }
-            }
-
-            producer.shutdown();
-        }
+        if (commandLine == null) {
+			return;
+		}
+		String group = commandLine.getOptionValue('g');
+		String topic = commandLine.getOptionValue('t');
+		String tags = commandLine.getOptionValue('a');
+		String keys = commandLine.getOptionValue('k');
+		String msgCount = commandLine.getOptionValue('c');
+		DefaultMQProducer producer = new DefaultMQProducer(group);
+		producer.setInstanceName(Long.toString(System.currentTimeMillis()));
+		producer.start();
+		for (int i = 0; i < Integer.parseInt(msgCount); i++) {
+		    try {
+		        Message msg = new Message(
+		            topic,
+		            tags,
+		            keys,
+		            ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
+		        SendResult sendResult = producer.send(msg);
+		        logger.info("%-8d %s%n", i, sendResult);
+		    } catch (Exception e) {
+		        logger.error(e.getMessage(), e);
+		        Thread.sleep(1000);
+		    }
+		}
+		producer.shutdown();
     }
 
     public static CommandLine buildCommandline(String[] args) {
@@ -100,7 +101,8 @@ public class Producer {
                 return null;
             }
         } catch (ParseException e) {
-            hf.printHelp("producer", options, true);
+            logger.error(e.getMessage(), e);
+			hf.printHelp("producer", options, true);
             return null;
         }
 

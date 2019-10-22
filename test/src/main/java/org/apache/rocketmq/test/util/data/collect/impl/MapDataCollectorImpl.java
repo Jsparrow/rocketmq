@@ -28,7 +28,7 @@ import org.apache.rocketmq.test.util.data.collect.DataCollector;
 
 public class MapDataCollectorImpl implements DataCollector {
 
-    private Map<Object, AtomicInteger> datas = new ConcurrentHashMap<Object, AtomicInteger>();
+    private Map<Object, AtomicInteger> datas = new ConcurrentHashMap<>();
     private boolean lock = false;
 
     public MapDataCollectorImpl() {
@@ -36,12 +36,11 @@ public class MapDataCollectorImpl implements DataCollector {
     }
 
     public MapDataCollectorImpl(Collection<Object> datas) {
-        for (Object data : datas) {
-            addData(data);
-        }
+        datas.forEach(this::addData);
     }
 
-    public synchronized void addData(Object data) {
+    @Override
+	public synchronized void addData(Object data) {
         if (lock) {
             return;
         }
@@ -52,60 +51,70 @@ public class MapDataCollectorImpl implements DataCollector {
         }
     }
 
-    public Collection<Object> getAllData() {
-        List<Object> lst = new ArrayList<Object>();
-        for (Entry<Object, AtomicInteger> entry : datas.entrySet()) {
+    @Override
+	public Collection<Object> getAllData() {
+        List<Object> lst = new ArrayList<>();
+        datas.entrySet().forEach(entry -> {
             for (int i = 0; i < entry.getValue().get(); i++) {
                 lst.add(entry.getKey());
             }
-        }
+        });
         return lst;
     }
 
-    public long getDataSizeWithoutDuplicate() {
+    @Override
+	public long getDataSizeWithoutDuplicate() {
         return datas.keySet().size();
     }
 
-    public void resetData() {
+    @Override
+	public void resetData() {
         datas.clear();
         unlockIncrement();
     }
 
-    public long getDataSize() {
+    @Override
+	public long getDataSize() {
         long sum = 0;
         for (AtomicInteger count : datas.values()) {
-            sum = sum + count.get();
+            sum += count.get();
         }
         return sum;
     }
 
-    public boolean isRepeatedData(Object data) {
+    @Override
+	public boolean isRepeatedData(Object data) {
         if (datas.containsKey(data)) {
             return datas.get(data).get() == 1;
         }
         return false;
     }
 
-    public Collection<Object> getAllDataWithoutDuplicate() {
+    @Override
+	public Collection<Object> getAllDataWithoutDuplicate() {
         return datas.keySet();
     }
 
-    public int getRepeatedTimeForData(Object data) {
+    @Override
+	public int getRepeatedTimeForData(Object data) {
         if (datas.containsKey(data)) {
             return datas.get(data).intValue();
         }
         return 0;
     }
 
-    public void removeData(Object data) {
+    @Override
+	public void removeData(Object data) {
         datas.remove(data);
     }
 
-    public void lockIncrement() {
+    @Override
+	public void lockIncrement() {
         lock = true;
     }
 
-    public void unlockIncrement() {
+    @Override
+	public void unlockIncrement() {
         lock = false;
     }
 }

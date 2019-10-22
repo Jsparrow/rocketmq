@@ -75,7 +75,7 @@ public class BrokerConsumeStatsSubCommadTest {
 
         ConsumeStatsList consumeStatsList = new ConsumeStatsList();
         consumeStatsList.setBrokerAddr("127.0l.0.1:10911");
-        consumeStatsList.setConsumeStatsList(new ArrayList<Map<String, List<ConsumeStats>>>());
+        consumeStatsList.setConsumeStatsList(new ArrayList<>());
         consumeStatsList.setTotalDiff(123);
         when(mQClientAPIImpl.fetchConsumeStatsInBroker(anyString(), anyBoolean(), anyLong())).thenReturn(consumeStatsList);
     }

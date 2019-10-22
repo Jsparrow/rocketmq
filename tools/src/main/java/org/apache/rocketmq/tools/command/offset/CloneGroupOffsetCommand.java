@@ -29,9 +29,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class CloneGroupOffsetCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(CloneGroupOffsetCommand.class);
+
+	@Override
     public String commandName() {
         return "cloneGroupOffset";
     }
@@ -66,9 +71,9 @@ public class CloneGroupOffsetCommand implements SubCommand {
 
     @Override
     public void execute(CommandLine commandLine, Options options, RPCHook rpcHook) throws SubCommandException {
-        String srcGroup = commandLine.getOptionValue("s").trim();
-        String destGroup = commandLine.getOptionValue("d").trim();
-        String topic = commandLine.getOptionValue("t").trim();
+        String srcGroup = StringUtils.trim(commandLine.getOptionValue("s"));
+        String destGroup = StringUtils.trim(commandLine.getOptionValue("d"));
+        String topic = StringUtils.trim(commandLine.getOptionValue("t"));
 
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
         defaultMQAdminExt.setInstanceName("admin-" + Long.toString(System.currentTimeMillis()));
@@ -80,21 +85,14 @@ public class CloneGroupOffsetCommand implements SubCommand {
             if (!mqs.isEmpty()) {
                 TopicRouteData topicRoute = defaultMQAdminExt.examineTopicRouteInfo(topic);
                 for (MessageQueue mq : mqs) {
-                    String addr = null;
-                    for (BrokerData brokerData : topicRoute.getBrokerDatas()) {
-                        if (brokerData.getBrokerName().equals(mq.getBrokerName())) {
-                            addr = brokerData.selectBrokerAddr();
-                            break;
-                        }
-                    }
+                    String addr = topicRoute.getBrokerDatas().stream().filter(brokerData -> brokerData.getBrokerName().equals(mq.getBrokerName())).findFirst().map(BrokerData::selectBrokerAddr).orElse(null);
                     long offset = consumeStats.getOffsetTable().get(mq).getBrokerOffset();
                     if (offset >= 0) {
                         defaultMQAdminExt.updateConsumeOffset(addr, destGroup, mq, offset);
                     }
                 }
             }
-            System.out.printf("clone group offset success. srcGroup[%s], destGroup=[%s], topic[%s]",
-                srcGroup, destGroup, topic);
+            logger.info("clone group offset success. srcGroup[%s], destGroup=[%s], topic[%s]", srcGroup, destGroup, topic);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

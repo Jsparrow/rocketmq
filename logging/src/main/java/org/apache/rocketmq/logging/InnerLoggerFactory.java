@@ -336,7 +336,7 @@ public class InnerLoggerFactory extends InternalLoggerFactory {
                 String t = o.toString();
                 sbuf.append(t);
             } catch (Throwable var3) {
-                System.err.println("RocketMQ InnerLogger: Failed toString() invocation on an object of type [" + o.getClass().getName() + "]");
+                System.err.println(new StringBuilder().append("RocketMQ InnerLogger: Failed toString() invocation on an object of type [").append(o.getClass().getName()).append("]").toString());
                 var3.printStackTrace();
                 sbuf.append("[FAILED toString()]");
             }

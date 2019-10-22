@@ -17,9 +17,14 @@
 
 package org.apache.rocketmq.logging.inner;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SysLogger {
 
-    protected static boolean debugEnabled = false;
+    private static final Logger logger = LoggerFactory.getLogger(SysLogger.class);
+
+	protected static boolean debugEnabled = false;
 
     private static boolean quietMode = false;
 
@@ -33,24 +38,25 @@ public class SysLogger {
 
     public static void debug(String msg) {
         if (debugEnabled && !quietMode) {
-            System.out.printf("%s", PREFIX + msg);
+            logger.info("%s", PREFIX + msg);
         }
     }
 
     public static void debug(String msg, Throwable t) {
-        if (debugEnabled && !quietMode) {
-            System.out.printf("%s", PREFIX + msg);
-            if (t != null) {
-                t.printStackTrace(System.out);
-            }
-        }
+        if (!(debugEnabled && !quietMode)) {
+			return;
+		}
+		logger.info("%s", PREFIX + msg);
+		if (t != null) {
+		    t.printStackTrace(System.out);
+		}
     }
 
     public static void error(String msg) {
         if (quietMode) {
             return;
         }
-        System.err.println(ERR_PREFIX + msg);
+        logger.error(ERR_PREFIX + msg);
     }
 
     public static void error(String msg, Throwable t) {
@@ -58,7 +64,7 @@ public class SysLogger {
             return;
         }
 
-        System.err.println(ERR_PREFIX + msg);
+        logger.error(ERR_PREFIX + msg);
         if (t != null) {
             t.printStackTrace();
         }
@@ -73,7 +79,7 @@ public class SysLogger {
             return;
         }
 
-        System.err.println(WARN_PREFIX + msg);
+        logger.error(WARN_PREFIX + msg);
     }
 
     public static void warn(String msg, Throwable t) {
@@ -81,7 +87,7 @@ public class SysLogger {
             return;
         }
 
-        System.err.println(WARN_PREFIX + msg);
+        logger.error(WARN_PREFIX + msg);
         if (t != null) {
             t.printStackTrace();
         }

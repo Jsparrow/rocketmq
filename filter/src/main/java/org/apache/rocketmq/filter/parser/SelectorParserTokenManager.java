@@ -23,25 +23,85 @@ package org.apache.rocketmq.filter.parser;
  */
 public class SelectorParserTokenManager implements SelectorParserConstants {
 
-    /**
+    static final long[] JJ_BIT_VEC_0 = {
+        0xfffffffffffffffeL, 0xffffffffffffffffL, 0xffffffffffffffffL, 0xffffffffffffffffL
+    };
+	static final long[] JJ_BIT_VEC_2 = {
+        0x0L, 0x0L, 0xffffffffffffffffL, 0xffffffffffffffffL
+    };
+	static final int[] JJ_NEXT_STATES = {
+        30, 31, 36, 37, 24, 25, 26, 1, 2, 4, 8, 9, 11, 20, 21, 34,
+        35, 38, 39,
+    };
+	/**
+     * Token literal values.
+     */
+    public static final String[] JJ_STR_LITERAL_IMAGES = {
+        "", null, null, null, null, null, null, null, null, null, null, null, null,
+        null, null, null, null, null, null, null, null, null, "\75", "\74\76", "\76",
+        "\76\75", "\74", "\74\75", "\50", "\54", "\51", "\53", "\55"};
+	/**
+     * Lexer state names.
+     */
+    public static final String[] LEX_STATE_NAMES = {
+        "DEFAULT",
+    };
+	static final long[] JJ_TO_TOKEN = {
+        0x1fff7ff01L,
+    };
+	static final long[] JJ_TO_SKIP = {
+        0xfeL,
+    };
+	static final long[] JJ_TO_SPECIAL = {
+        0x3eL,
+    };
+	/**
      * Debug output.
      */
     public java.io.PrintStream debugStream = System.out;
+	protected SimpleCharStream inputStream;
+	private final int[] jjrounds = new int[40];
+	private final int[] jjstateSet = new int[80];
+	protected char curChar;
+	int curLexState = 0;
+	int defaultLexState = 0;
+	int jjnewStateCnt;
+	int jjround;
+	int jjmatchedPos;
+	int jjmatchedKind;
 
-    /**
+	/**
+     * Constructor.
+     */
+    public SelectorParserTokenManager(SimpleCharStream stream) {
+        if (SimpleCharStream.STATIC_FLAG) {
+			throw new Error("ERROR: Cannot use a static CharStream class with a non-static lexical analyzer.");
+		}
+        inputStream = stream;
+    }
+
+	/**
+     * Constructor.
+     */
+    public SelectorParserTokenManager(SimpleCharStream stream, int lexState) {
+        this(stream);
+        SwitchTo(lexState);
+    }
+
+	/**
      * Set debug output.
      */
     public void setDebugStream(java.io.PrintStream ds) {
         debugStream = ds;
     }
 
-    private int jjStopAtPos(int pos, int kind) {
+	private int jjStopAtPos(int pos, int kind) {
         jjmatchedKind = kind;
         jjmatchedPos = pos;
         return pos + 1;
     }
 
-    private int jjMoveStringLiteralDfa0_0() {
+	private int jjMoveStringLiteralDfa0_0() {
         switch (curChar) {
             case 9:
                 jjmatchedKind = 2;
@@ -115,7 +175,7 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         }
     }
 
-    private int jjMoveStringLiteralDfa1_0(long active0) {
+	private int jjMoveStringLiteralDfa1_0(long active0) {
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -195,9 +255,10 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 1);
     }
 
-    private int jjMoveStringLiteralDfa2_0(long old0, long active0) {
-        if (((active0 &= old0)) == 0L)
-            return jjMoveNfa_0(5, 1);
+	private int jjMoveStringLiteralDfa2_0(long old0, long active0) {
+        if (((active0 &= old0)) == 0L) {
+			return jjMoveNfa_0(5, 1);
+		}
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -242,9 +303,10 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 2);
     }
 
-    private int jjMoveStringLiteralDfa3_0(long old0, long active0) {
-        if (((active0 &= old0)) == 0L)
-            return jjMoveNfa_0(5, 2);
+	private int jjMoveStringLiteralDfa3_0(long old0, long active0) {
+        if (((active0 &= old0)) == 0L) {
+			return jjMoveNfa_0(5, 2);
+		}
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -289,9 +351,10 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 3);
     }
 
-    private int jjMoveStringLiteralDfa4_0(long old0, long active0) {
-        if (((active0 &= old0)) == 0L)
-            return jjMoveNfa_0(5, 3);
+	private int jjMoveStringLiteralDfa4_0(long old0, long active0) {
+        if (((active0 &= old0)) == 0L) {
+			return jjMoveNfa_0(5, 3);
+		}
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -316,9 +379,10 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 4);
     }
 
-    private int jjMoveStringLiteralDfa5_0(long old0, long active0) {
-        if (((active0 &= old0)) == 0L)
-            return jjMoveNfa_0(5, 4);
+	private int jjMoveStringLiteralDfa5_0(long old0, long active0) {
+        if (((active0 &= old0)) == 0L) {
+			return jjMoveNfa_0(5, 4);
+		}
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -335,9 +399,10 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 5);
     }
 
-    private int jjMoveStringLiteralDfa6_0(long old0, long active0) {
-        if (((active0 &= old0)) == 0L)
-            return jjMoveNfa_0(5, 5);
+	private int jjMoveStringLiteralDfa6_0(long old0, long active0) {
+        if (((active0 &= old0)) == 0L) {
+			return jjMoveNfa_0(5, 5);
+		}
         try {
             curChar = inputStream.readChar();
         } catch (java.io.IOException e) {
@@ -362,14 +427,7 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return jjMoveNfa_0(5, 6);
     }
 
-    static final long[] JJ_BIT_VEC_0 = {
-        0xfffffffffffffffeL, 0xffffffffffffffffL, 0xffffffffffffffffL, 0xffffffffffffffffL
-    };
-    static final long[] JJ_BIT_VEC_2 = {
-        0x0L, 0x0L, 0xffffffffffffffffL, 0xffffffffffffffffL
-    };
-
-    private int jjMoveNfa_0(int startState, int curPos) {
+	private int jjMoveNfa_0(int startState, int curPos) {
         int strKind = jjmatchedKind;
         int strPos = jjmatchedPos;
         int seenUpto;
@@ -386,201 +444,250 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         jjstateSet[0] = startState;
         int kind = 0x7fffffff;
         for (; ; ) {
-            if (++jjround == 0x7fffffff)
-                ReInitRounds();
+            if (++jjround == 0x7fffffff) {
+				ReInitRounds();
+			}
             if (curChar < 64) {
                 long l = 1L << curChar;
                 do {
                     switch (jjstateSet[--i]) {
                         case 5:
-                            if ((0x3ff000000000000L & l) != 0L)
-                                jjCheckNAddStates(0, 3);
-                            else if (curChar == 36) {
-                                if (kind > 21)
-                                    kind = 21;
+                            if ((0x3ff000000000000L & l) != 0L) {
+								jjCheckNAddStates(0, 3);
+							} else if (curChar == 36) {
+                                if (kind > 21) {
+									kind = 21;
+								}
                                 jjCheckNAdd(28);
-                            } else if (curChar == 39)
-                                jjCheckNAddStates(4, 6);
-                            else if (curChar == 46)
-                                jjCheckNAdd(18);
-                            else if (curChar == 47)
-                                jjstateSet[jjnewStateCnt++] = 6;
-                            else if (curChar == 45)
-                                jjstateSet[jjnewStateCnt++] = 0;
+                            } else if (curChar == 39) {
+								jjCheckNAddStates(4, 6);
+							} else if (curChar == 46) {
+								jjCheckNAdd(18);
+							} else if (curChar == 47) {
+								jjstateSet[jjnewStateCnt++] = 6;
+							} else if (curChar == 45) {
+								jjstateSet[jjnewStateCnt++] = 0;
+							}
                             if ((0x3fe000000000000L & l) != 0L) {
-                                if (kind > 17)
-                                    kind = 17;
+                                if (kind > 17) {
+									kind = 17;
+								}
                                 jjCheckNAddTwoStates(15, 16);
                             } else if (curChar == 48) {
-                                if (kind > 17)
-                                    kind = 17;
+                                if (kind > 17) {
+									kind = 17;
+								}
                             }
                             break;
                         case 0:
-                            if (curChar == 45)
-                                jjCheckNAddStates(7, 9);
+                            if (curChar == 45) {
+								jjCheckNAddStates(7, 9);
+							}
                             break;
                         case 1:
-                            if ((0xffffffffffffdbffL & l) != 0L)
-                                jjCheckNAddStates(7, 9);
+                            if ((0xffffffffffffdbffL & l) != 0L) {
+								jjCheckNAddStates(7, 9);
+							}
                             break;
                         case 2:
-                            if ((0x2400L & l) != 0L && kind > 6)
-                                kind = 6;
+                            if ((0x2400L & l) != 0L && kind > 6) {
+								kind = 6;
+							}
                             break;
                         case 3:
-                            if (curChar == 10 && kind > 6)
-                                kind = 6;
+                            if (curChar == 10 && kind > 6) {
+								kind = 6;
+							}
                             break;
                         case 4:
-                            if (curChar == 13)
-                                jjstateSet[jjnewStateCnt++] = 3;
+                            if (curChar == 13) {
+								jjstateSet[jjnewStateCnt++] = 3;
+							}
                             break;
                         case 6:
-                            if (curChar == 42)
-                                jjCheckNAddTwoStates(7, 8);
+                            if (curChar == 42) {
+								jjCheckNAddTwoStates(7, 8);
+							}
                             break;
                         case 7:
-                            if ((0xfffffbffffffffffL & l) != 0L)
-                                jjCheckNAddTwoStates(7, 8);
+                            if ((0xfffffbffffffffffL & l) != 0L) {
+								jjCheckNAddTwoStates(7, 8);
+							}
                             break;
                         case 8:
-                            if (curChar == 42)
-                                jjCheckNAddStates(10, 12);
+                            if (curChar == 42) {
+								jjCheckNAddStates(10, 12);
+							}
                             break;
                         case 9:
-                            if ((0xffff7bffffffffffL & l) != 0L)
-                                jjCheckNAddTwoStates(10, 8);
+                            if ((0xffff7bffffffffffL & l) != 0L) {
+								jjCheckNAddTwoStates(10, 8);
+							}
                             break;
                         case 10:
-                            if ((0xfffffbffffffffffL & l) != 0L)
-                                jjCheckNAddTwoStates(10, 8);
+                            if ((0xfffffbffffffffffL & l) != 0L) {
+								jjCheckNAddTwoStates(10, 8);
+							}
                             break;
                         case 11:
-                            if (curChar == 47 && kind > 7)
-                                kind = 7;
+                            if (curChar == 47 && kind > 7) {
+								kind = 7;
+							}
                             break;
                         case 12:
-                            if (curChar == 47)
-                                jjstateSet[jjnewStateCnt++] = 6;
+                            if (curChar == 47) {
+								jjstateSet[jjnewStateCnt++] = 6;
+							}
                             break;
                         case 13:
-                            if (curChar == 48 && kind > 17)
-                                kind = 17;
+                            if (curChar == 48 && kind > 17) {
+								kind = 17;
+							}
                             break;
                         case 14:
-                            if ((0x3fe000000000000L & l) == 0L)
-                                break;
-                            if (kind > 17)
-                                kind = 17;
+                            if ((0x3fe000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 17) {
+								kind = 17;
+							}
                             jjCheckNAddTwoStates(15, 16);
                             break;
                         case 15:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 17)
-                                kind = 17;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 17) {
+								kind = 17;
+							}
                             jjCheckNAddTwoStates(15, 16);
                             break;
                         case 17:
-                            if (curChar == 46)
-                                jjCheckNAdd(18);
+                            if (curChar == 46) {
+								jjCheckNAdd(18);
+							}
                             break;
                         case 18:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAddTwoStates(18, 19);
                             break;
                         case 20:
-                            if ((0x280000000000L & l) != 0L)
-                                jjCheckNAdd(21);
+                            if ((0x280000000000L & l) != 0L) {
+								jjCheckNAdd(21);
+							}
                             break;
                         case 21:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAdd(21);
                             break;
                         case 22:
                         case 23:
-                            if (curChar == 39)
-                                jjCheckNAddStates(4, 6);
+                            if (curChar == 39) {
+								jjCheckNAddStates(4, 6);
+							}
                             break;
                         case 24:
-                            if (curChar == 39)
-                                jjstateSet[jjnewStateCnt++] = 23;
+                            if (curChar == 39) {
+								jjstateSet[jjnewStateCnt++] = 23;
+							}
                             break;
                         case 25:
-                            if ((0xffffff7fffffffffL & l) != 0L)
-                                jjCheckNAddStates(4, 6);
+                            if ((0xffffff7fffffffffL & l) != 0L) {
+								jjCheckNAddStates(4, 6);
+							}
                             break;
                         case 26:
-                            if (curChar == 39 && kind > 20)
-                                kind = 20;
+                            if (curChar == 39 && kind > 20) {
+								kind = 20;
+							}
                             break;
                         case 27:
-                            if (curChar != 36)
-                                break;
-                            if (kind > 21)
-                                kind = 21;
+                            if (curChar != 36) {
+								break;
+							}
+                            if (kind > 21) {
+								kind = 21;
+							}
                             jjCheckNAdd(28);
                             break;
                         case 28:
-                            if ((0x3ff001000000000L & l) == 0L)
-                                break;
-                            if (kind > 21)
-                                kind = 21;
+                            if ((0x3ff001000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 21) {
+								kind = 21;
+							}
                             jjCheckNAdd(28);
                             break;
                         case 29:
-                            if ((0x3ff000000000000L & l) != 0L)
-                                jjCheckNAddStates(0, 3);
+                            if ((0x3ff000000000000L & l) != 0L) {
+								jjCheckNAddStates(0, 3);
+							}
                             break;
                         case 30:
-                            if ((0x3ff000000000000L & l) != 0L)
-                                jjCheckNAddTwoStates(30, 31);
+                            if ((0x3ff000000000000L & l) != 0L) {
+								jjCheckNAddTwoStates(30, 31);
+							}
                             break;
                         case 31:
-                            if (curChar != 46)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if (curChar != 46) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAddTwoStates(32, 33);
                             break;
                         case 32:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAddTwoStates(32, 33);
                             break;
                         case 34:
-                            if ((0x280000000000L & l) != 0L)
-                                jjCheckNAdd(35);
+                            if ((0x280000000000L & l) != 0L) {
+								jjCheckNAdd(35);
+							}
                             break;
                         case 35:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAdd(35);
                             break;
                         case 36:
-                            if ((0x3ff000000000000L & l) != 0L)
-                                jjCheckNAddTwoStates(36, 37);
+                            if ((0x3ff000000000000L & l) != 0L) {
+								jjCheckNAddTwoStates(36, 37);
+							}
                             break;
                         case 38:
-                            if ((0x280000000000L & l) != 0L)
-                                jjCheckNAdd(39);
+                            if ((0x280000000000L & l) != 0L) {
+								jjCheckNAdd(39);
+							}
                             break;
                         case 39:
-                            if ((0x3ff000000000000L & l) == 0L)
-                                break;
-                            if (kind > 18)
-                                kind = 18;
+                            if ((0x3ff000000000000L & l) == 0L) {
+								break;
+							}
+                            if (kind > 18) {
+								kind = 18;
+							}
                             jjCheckNAdd(39);
                             break;
                         default:
@@ -594,10 +701,12 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                     switch (jjstateSet[--i]) {
                         case 5:
                         case 28:
-                            if ((0x7fffffe87fffffeL & l) == 0L)
-                                break;
-                            if (kind > 21)
-                                kind = 21;
+                            if ((0x7fffffe87fffffeL & l) == 0L) {
+								break;
+							}
+                            if (kind > 21) {
+								kind = 21;
+							}
                             jjCheckNAdd(28);
                             break;
                         case 1:
@@ -611,23 +720,27 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                             jjCheckNAddTwoStates(10, 8);
                             break;
                         case 16:
-                            if ((0x100000001000L & l) != 0L && kind > 17)
-                                kind = 17;
+                            if ((0x100000001000L & l) != 0L && kind > 17) {
+								kind = 17;
+							}
                             break;
                         case 19:
-                            if ((0x2000000020L & l) != 0L)
-                                jjAddStates(13, 14);
+                            if ((0x2000000020L & l) != 0L) {
+								jjAddStates(13, 14);
+							}
                             break;
                         case 25:
                             jjAddStates(4, 6);
                             break;
                         case 33:
-                            if ((0x2000000020L & l) != 0L)
-                                jjAddStates(15, 16);
+                            if ((0x2000000020L & l) != 0L) {
+								jjAddStates(15, 16);
+							}
                             break;
                         case 37:
-                            if ((0x2000000020L & l) != 0L)
-                                jjAddStates(17, 18);
+                            if ((0x2000000020L & l) != 0L) {
+								jjAddStates(17, 18);
+							}
                             break;
                         default:
                             break;
@@ -643,21 +756,25 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                 do {
                     switch (jjstateSet[--i]) {
                         case 1:
-                            if (jjCanMove_0(hiByte, i1, i2, l1, l2))
-                                jjAddStates(7, 9);
+                            if (jjCanMove_0(hiByte, i1, i2, l1, l2)) {
+								jjAddStates(7, 9);
+							}
                             break;
                         case 7:
-                            if (jjCanMove_0(hiByte, i1, i2, l1, l2))
-                                jjCheckNAddTwoStates(7, 8);
+                            if (jjCanMove_0(hiByte, i1, i2, l1, l2)) {
+								jjCheckNAddTwoStates(7, 8);
+							}
                             break;
                         case 9:
                         case 10:
-                            if (jjCanMove_0(hiByte, i1, i2, l1, l2))
-                                jjCheckNAddTwoStates(10, 8);
+                            if (jjCanMove_0(hiByte, i1, i2, l1, l2)) {
+								jjCheckNAddTwoStates(10, 8);
+							}
                             break;
                         case 25:
-                            if (jjCanMove_0(hiByte, i1, i2, l1, l2))
-                                jjAddStates(4, 6);
+                            if (jjCanMove_0(hiByte, i1, i2, l1, l2)) {
+								jjAddStates(4, 6);
+							}
                             break;
                         default:
                             break;
@@ -671,98 +788,54 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                 kind = 0x7fffffff;
             }
             ++curPos;
-            if ((i = jjnewStateCnt) == (startsAt = 40 - (jjnewStateCnt = startsAt)))
-                break;
+            if ((i = jjnewStateCnt) == (startsAt = 40 - (jjnewStateCnt = startsAt))) {
+				break;
+			}
             try {
                 curChar = inputStream.readChar();
             } catch (java.io.IOException e) {
                 break;
             }
         }
-        if (jjmatchedPos > strPos)
-            return curPos;
+        if (jjmatchedPos > strPos) {
+			return curPos;
+		}
 
         int toRet = Math.max(curPos, seenUpto);
 
-        if (curPos < toRet)
-            for (i = toRet - Math.min(curPos, seenUpto); i-- > 0; )
-                try {
+        if (curPos < toRet) {
+			for (i = toRet - Math.min(curPos, seenUpto); i-- > 0; ) {
+				try {
                     curChar = inputStream.readChar();
                 } catch (java.io.IOException e) {
                     throw new Error("Internal Error : Please send a bug report.");
                 }
+			}
+		}
 
         if (jjmatchedPos < strPos) {
             jjmatchedKind = strKind;
             jjmatchedPos = strPos;
-        } else if (jjmatchedPos == strPos && jjmatchedKind > strKind)
-            jjmatchedKind = strKind;
+        } else if (jjmatchedPos == strPos && jjmatchedKind > strKind) {
+			jjmatchedKind = strKind;
+		}
 
         return toRet;
     }
 
-    static final int[] JJ_NEXT_STATES = {
-        30, 31, 36, 37, 24, 25, 26, 1, 2, 4, 8, 9, 11, 20, 21, 34,
-        35, 38, 39,
-    };
-
-    private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2) {
+	private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
                 return (JJ_BIT_VEC_2[i2] & l2) != 0L;
             default:
-                if ((JJ_BIT_VEC_0[i1] & l1) != 0L)
-                    return true;
+                if ((JJ_BIT_VEC_0[i1] & l1) != 0L) {
+					return true;
+				}
                 return false;
         }
     }
 
-    /**
-     * Token literal values.
-     */
-    public static final String[] JJ_STR_LITERAL_IMAGES = {
-        "", null, null, null, null, null, null, null, null, null, null, null, null,
-        null, null, null, null, null, null, null, null, null, "\75", "\74\76", "\76",
-        "\76\75", "\74", "\74\75", "\50", "\54", "\51", "\53", "\55"};
-
-    /**
-     * Lexer state names.
-     */
-    public static final String[] LEX_STATE_NAMES = {
-        "DEFAULT",
-    };
-    static final long[] JJ_TO_TOKEN = {
-        0x1fff7ff01L,
-    };
-    static final long[] JJ_TO_SKIP = {
-        0xfeL,
-    };
-    static final long[] JJ_TO_SPECIAL = {
-        0x3eL,
-    };
-    protected SimpleCharStream inputStream;
-    private final int[] jjrounds = new int[40];
-    private final int[] jjstateSet = new int[80];
-    protected char curChar;
-
-    /**
-     * Constructor.
-     */
-    public SelectorParserTokenManager(SimpleCharStream stream) {
-        if (SimpleCharStream.STATIC_FLAG)
-            throw new Error("ERROR: Cannot use a static CharStream class with a non-static lexical analyzer.");
-        inputStream = stream;
-    }
-
-    /**
-     * Constructor.
-     */
-    public SelectorParserTokenManager(SimpleCharStream stream, int lexState) {
-        this(stream);
-        SwitchTo(lexState);
-    }
-
-    /**
+	/**
      * Reinitialise parser.
      */
     public void ReInit(SimpleCharStream stream) {
@@ -772,14 +845,15 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         ReInitRounds();
     }
 
-    private void ReInitRounds() {
+	private void ReInitRounds() {
         int i;
         jjround = 0x80000001;
-        for (i = 40; i-- > 0; )
-            jjrounds[i] = 0x80000000;
+        for (i = 40; i-- > 0; ) {
+			jjrounds[i] = 0x80000000;
+		}
     }
 
-    /**
+	/**
      * Reinitialise parser.
      */
     public void ReInit(SimpleCharStream stream, int lexState) {
@@ -787,18 +861,19 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         SwitchTo(lexState);
     }
 
-    /**
+	/**
      * Switch to specified lex state.
      */
     public void SwitchTo(int lexState) {
-        if (lexState >= 1 || lexState < 0)
-            throw new TokenMgrError("Error: Ignoring invalid lexical state : " + lexState + ". State unchanged.",
+        if (lexState >= 1 || lexState < 0) {
+			throw new TokenMgrError(new StringBuilder().append("Error: Ignoring invalid lexical state : ").append(lexState).append(". State unchanged.").toString(),
                 TokenMgrError.INVALID_LEXICAL_STATE);
-        else
-            curLexState = lexState;
+		} else {
+			curLexState = lexState;
+		}
     }
 
-    protected Token jjFillToken() {
+	protected Token jjFillToken() {
         final Token t;
         final String curTokenImage;
         final int beginLine;
@@ -821,14 +896,7 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         return t;
     }
 
-    int curLexState = 0;
-    int defaultLexState = 0;
-    int jjnewStateCnt;
-    int jjround;
-    int jjmatchedPos;
-    int jjmatchedKind;
-
-    /**
+	/**
      * Get the next Token.
      */
     public Token getNextToken() {
@@ -851,8 +919,9 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
             jjmatchedPos = 0;
             curPos = jjMoveStringLiteralDfa0_0();
             if (jjmatchedKind != 0x7fffffff) {
-                if (jjmatchedPos + 1 < curPos)
-                    inputStream.backup(curPos - jjmatchedPos - 1);
+                if (jjmatchedPos + 1 < curPos) {
+					inputStream.backup(curPos - jjmatchedPos - 1);
+				}
                 if ((JJ_TO_TOKEN[jjmatchedKind >> 6] & (1L << (jjmatchedKind & 077))) != 0L) {
                     matchedToken = jjFillToken();
                     matchedToken.specialToken = specialToken;
@@ -860,9 +929,9 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                 } else {
                     if ((JJ_TO_SPECIAL[jjmatchedKind >> 6] & (1L << (jjmatchedKind & 077))) != 0L) {
                         matchedToken = jjFillToken();
-                        if (specialToken == null)
-                            specialToken = matchedToken;
-                        else {
+                        if (specialToken == null) {
+							specialToken = matchedToken;
+						} else {
                             matchedToken.specialToken = specialToken;
                             specialToken = specialToken.next = matchedToken;
                         }
@@ -883,8 +952,9 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
                 if (curChar == '\n' || curChar == '\r') {
                     errorLine++;
                     errorColumn = 0;
-                } else
-                    errorColumn++;
+                } else {
+					errorColumn++;
+				}
             }
             if (!eofSeen) {
                 inputStream.backup(1);
@@ -895,26 +965,27 @@ public class SelectorParserTokenManager implements SelectorParserConstants {
         }
     }
 
-    private void jjCheckNAdd(int state) {
-        if (jjrounds[state] != jjround) {
-            jjstateSet[jjnewStateCnt++] = state;
-            jjrounds[state] = jjround;
-        }
+	private void jjCheckNAdd(int state) {
+        if (jjrounds[state] == jjround) {
+			return;
+		}
+		jjstateSet[jjnewStateCnt++] = state;
+		jjrounds[state] = jjround;
     }
 
-    private void jjAddStates(int start, int end) {
+	private void jjAddStates(int start, int end) {
         do {
             jjstateSet[jjnewStateCnt++] = JJ_NEXT_STATES[start];
         }
         while (start++ != end);
     }
 
-    private void jjCheckNAddTwoStates(int state1, int state2) {
+	private void jjCheckNAddTwoStates(int state1, int state2) {
         jjCheckNAdd(state1);
         jjCheckNAdd(state2);
     }
 
-    private void jjCheckNAddStates(int start, int end) {
+	private void jjCheckNAddStates(int start, int end) {
         do {
             jjCheckNAdd(JJ_NEXT_STATES[start]);
         }

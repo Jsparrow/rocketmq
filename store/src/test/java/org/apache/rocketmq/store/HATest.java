@@ -40,40 +40,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * HATest
  *
  */
 public class HATest {
-    private final String StoreMessage = "Once, there was a chance for me!";
-    private int QUEUE_TOTAL = 100;
-    private AtomicInteger QueueId = new AtomicInteger(0);
-    private SocketAddress BornHost;
-    private SocketAddress StoreHost;
-    private byte[] MessageBody;
+    private static final Logger logger = LoggerFactory.getLogger(HATest.class);
+	private final String storeMessage = "Once, there was a chance for me!";
+    private int queueTotal = 100;
+    private AtomicInteger queueId = new AtomicInteger(0);
+    private SocketAddress bornHost;
+    private SocketAddress storeHost;
+    private byte[] messageBody;
 
     private MessageStore messageStore;
     private MessageStore slaveMessageStore;
     private MessageStoreConfig masterMessageStoreConfig;
     private MessageStoreConfig slaveStoreConfig;
     private BrokerStatsManager brokerStatsManager = new BrokerStatsManager("simpleTest");
-    private String storePathRootParentDir = System.getProperty("user.home") + File.separator +
-            UUID.randomUUID().toString().replace("-", "");
-    private String storePathRootDir = storePathRootParentDir + File.separator + "store";
+    private String storePathRootParentDir = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append(UUID.randomUUID().toString().replace("-", "")).toString();
+    private String storePathRootDir = new StringBuilder().append(storePathRootParentDir).append(File.separator).append("store").toString();
     @Before
     public void init() throws Exception {
-        StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
-        BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+        storeHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+        bornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
         masterMessageStoreConfig = new MessageStoreConfig();
         masterMessageStoreConfig.setBrokerRole(BrokerRole.SYNC_MASTER);
-        masterMessageStoreConfig.setStorePathRootDir(storePathRootDir+File.separator+"master");
-        masterMessageStoreConfig.setStorePathCommitLog(storePathRootDir+File.separator+"master"+ File.separator+"commitlog");
+        masterMessageStoreConfig.setStorePathRootDir(new StringBuilder().append(storePathRootDir).append(File.separator).append("master").toString());
+        masterMessageStoreConfig.setStorePathCommitLog(new StringBuilder().append(storePathRootDir).append(File.separator).append("master").append(File.separator).append("commitlog")
+				.toString());
         buildMessageStoreConfig(masterMessageStoreConfig);
         slaveStoreConfig = new MessageStoreConfig();
         slaveStoreConfig.setBrokerRole(BrokerRole.SLAVE);
-        slaveStoreConfig.setStorePathRootDir(storePathRootDir+File.separator+"slave");
-        slaveStoreConfig.setStorePathCommitLog(storePathRootDir+File.separator+"slave"+ File.separator+"commitlog");
+        slaveStoreConfig.setStorePathRootDir(new StringBuilder().append(storePathRootDir).append(File.separator).append("slave").toString());
+        slaveStoreConfig.setStorePathCommitLog(new StringBuilder().append(storePathRootDir).append(File.separator).append("slave").append(File.separator).append("commitlog")
+				.toString());
         slaveStoreConfig.setHaListenPort(10943);
         buildMessageStoreConfig(slaveStoreConfig);
         messageStore = buildMessageStore(masterMessageStoreConfig,0L);
@@ -91,8 +95,8 @@ public class HATest {
     @Test
     public void testHandleHA() {
         long totalMsgs = 10;
-        QUEUE_TOTAL = 1;
-        MessageBody = StoreMessage.getBytes();
+        queueTotal = 1;
+        messageBody = storeMessage.getBytes();
         for (long i = 0; i < totalMsgs; i++) {
             messageStore.putMessage(buildMessage());
         }
@@ -101,6 +105,7 @@ public class HATest {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
 
@@ -108,6 +113,7 @@ public class HATest {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {
+				logger.error(ignored.getMessage(), ignored);
             }
         }
 
@@ -149,13 +155,13 @@ public class HATest {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
         msg.setTopic("FooBar");
         msg.setTags("TAG1");
-        msg.setBody(MessageBody);
+        msg.setBody(messageBody);
         msg.setKeys(String.valueOf(System.currentTimeMillis()));
-        msg.setQueueId(Math.abs(QueueId.getAndIncrement()) % QUEUE_TOTAL);
+        msg.setQueueId(Math.abs(queueId.getAndIncrement()) % queueTotal);
         msg.setSysFlag(0);
         msg.setBornTimestamp(System.currentTimeMillis());
-        msg.setStoreHost(StoreHost);
-        msg.setBornHost(BornHost);
+        msg.setStoreHost(storeHost);
+        msg.setBornHost(bornHost);
         return msg;
     }
 

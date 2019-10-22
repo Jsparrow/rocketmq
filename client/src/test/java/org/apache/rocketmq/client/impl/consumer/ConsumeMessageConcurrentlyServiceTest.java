@@ -143,7 +143,7 @@ public class ConsumeMessageConcurrentlyServiceTest {
 
     @Ignore
     @Test
-    public void testPullMessage_ConsumeSuccess() throws InterruptedException, RemotingException, MQBrokerException, NoSuchFieldException,Exception {
+    public void testPullMessage_ConsumeSuccess() throws Exception {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MessageExt[] messageExts = new MessageExt[1];
 
@@ -172,7 +172,7 @@ public class ConsumeMessageConcurrentlyServiceTest {
         statItmeSetField.setAccessible(true);
 
         StatsItemSet itemSet = (StatsItemSet)statItmeSetField.get(mgr);
-        StatsItem item = itemSet.getAndCreateStatsItem(topic + "@" + pushConsumer.getDefaultMQPushConsumerImpl().groupName());
+        StatsItem item = itemSet.getAndCreateStatsItem(new StringBuilder().append(topic).append("@").append(pushConsumer.getDefaultMQPushConsumerImpl().groupName()).toString());
 
         assertThat(item.getValue().get()).isGreaterThan(0L);
         assertThat(messageExts[0].getTopic()).isEqualTo(topic);

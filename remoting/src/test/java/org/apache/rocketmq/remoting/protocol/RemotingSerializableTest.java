@@ -68,16 +68,8 @@ public class RemotingSerializableTest {
 
         String prettyString = serializable.toJson(true);
 
-        assertThat(prettyString).isEqualTo("{\n" +
-            "\t\"stringList\":[\n" +
-            "\t\t\"a\",\n" +
-            "\t\t\"o\",\n" +
-            "\t\t\"e\",\n" +
-            "\t\t\"i\",\n" +
-            "\t\t\"u\",\n" +
-            "\t\t\"v\"\n" +
-            "\t]\n" +
-            "}");
+        assertThat(prettyString).isEqualTo(new StringBuilder().append("{\n").append("\t\"stringList\":[\n").append("\t\t\"a\",\n").append("\t\t\"o\",\n").append("\t\t\"e\",\n").append("\t\t\"i\",\n").append("\t\t\"u\",\n").append("\t\t\"v\"\n")
+				.append("\t]\n").append("}").toString());
     }
 
 }
@@ -131,21 +123,27 @@ class Sample {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+        if (this == o) {
+			return true;
+		}
+        if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 
         Sample sample = (Sample) o;
 
-        if (intValue != sample.intValue)
-            return false;
-        if (stringValue != null ? !stringValue.equals(sample.stringValue) : sample.stringValue != null)
-            return false;
-        if (integerValue != null ? !integerValue.equals(sample.integerValue) : sample.integerValue != null)
-            return false;
-        if (!Arrays.equals(doubleArray, sample.doubleArray))
-            return false;
+        if (intValue != sample.intValue) {
+			return false;
+		}
+        if (stringValue != null ? !stringValue.equals(sample.stringValue) : sample.stringValue != null) {
+			return false;
+		}
+        if (integerValue != null ? !integerValue.equals(sample.integerValue) : sample.integerValue != null) {
+			return false;
+		}
+        if (!Arrays.equals(doubleArray, sample.doubleArray)) {
+			return false;
+		}
         return stringList != null ? stringList.equals(sample.stringList) : sample.stringList == null;
 
     }

@@ -19,6 +19,8 @@
 /* JavaCCOptions: */
 package org.apache.rocketmq.filter.parser;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Token Manager Error.
  */
@@ -61,12 +63,38 @@ public class TokenMgrError extends Error {
      */
     int errorCode;
 
-    /**
+    /*
+	   * Constructors of various flavors follow.
+	   */
+	
+	    /**
+	     * No arg constructor.
+	     */
+	    public TokenMgrError() {
+	    }
+
+	/**
+     * Constructor with message and reason.
+     */
+    public TokenMgrError(String message, int reason) {
+        super(message);
+        errorCode = reason;
+    }
+
+	/**
+     * Full Constructor.
+     */
+    public TokenMgrError(boolean eofSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar,
+        int reason) {
+        this(LexicalError(eofSeen, lexState, errorLine, errorColumn, errorAfter, curChar), reason);
+    }
+
+	/**
      * Replaces unprintable characters by their escaped (or unicode escaped)
      * equivalents in the given string
      */
     protected static final String addEscapes(String str) {
-        StringBuffer retval = new StringBuffer();
+        StringBuilder retval = new StringBuilder();
         char ch;
         for (int i = 0; i < str.length(); i++) {
             switch (str.charAt(i)) {
@@ -99,7 +127,7 @@ public class TokenMgrError extends Error {
                 default:
                     if ((ch = str.charAt(i)) < 0x20 || ch > 0x7e) {
                         String s = "0000" + Integer.toString(ch, 16);
-                        retval.append("\\u" + s.substring(s.length() - 4, s.length()));
+                        retval.append("\\u" + StringUtils.substring(s, s.length() - 4, s.length()));
                     } else {
                         retval.append(ch);
                     }
@@ -109,7 +137,7 @@ public class TokenMgrError extends Error {
         return retval.toString();
     }
 
-    /**
+	/**
      * Returns a detailed message for the Error when it is thrown by the
      * token manager to indicate a lexical error.
      * Parameters :
@@ -123,16 +151,13 @@ public class TokenMgrError extends Error {
      */
     protected static String LexicalError(boolean eofSeen, int lexState, int errorLine, int errorColumn,
         String errorAfter, char curChar) {
-        return "Lexical error at line " +
-            errorLine + ", column " +
-            errorColumn + ".  Encountered: " +
-            (eofSeen ?
-                "<EOF> " :
-                ("\"" + addEscapes(String.valueOf(curChar)) + "\"") + " (" + (int) curChar + "), ") +
-            "after : \"" + addEscapes(errorAfter) + "\"";
+        return new StringBuilder().append("Lexical error at line ").append(errorLine).append(", column ").append(errorColumn).append(".  Encountered: ")
+				.append(eofSeen ?
+				    "<EOF> " :
+				    ("\"" + addEscapes(String.valueOf(curChar)) + "\"") + " (" + (int) curChar + "), ").append("after : \"").append(addEscapes(errorAfter)).append("\"").toString();
     }
 
-    /**
+	/**
      * You can also modify the body of this method to customize your error messages.
      * For example, cases like LOOP_DETECTED and INVALID_LEXICAL_STATE are not
      * of end-users concern, so you can return something like :
@@ -141,34 +166,9 @@ public class TokenMgrError extends Error {
      * <p/>
      * from this method for such cases in the release version of your parser.
      */
-    public String getMessage() {
+    @Override
+	public String getMessage() {
         return super.getMessage();
-    }
-
-  /*
-   * Constructors of various flavors follow.
-   */
-
-    /**
-     * No arg constructor.
-     */
-    public TokenMgrError() {
-    }
-
-    /**
-     * Constructor with message and reason.
-     */
-    public TokenMgrError(String message, int reason) {
-        super(message);
-        errorCode = reason;
-    }
-
-    /**
-     * Full Constructor.
-     */
-    public TokenMgrError(boolean eofSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar,
-        int reason) {
-        this(LexicalError(eofSeen, lexState, errorLine, errorColumn, errorAfter, curChar), reason);
     }
 }
 /* JavaCC - OriginalChecksum=e960778c8dcd73e167ed5bfddd59f288 (do not edit this line) */

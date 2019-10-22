@@ -58,15 +58,12 @@ public class CommitLogDispatcherCalcBitMap implements CommitLogDispatcher {
                 return;
             }
 
-            Iterator<ConsumerFilterData> iterator = filterDatas.iterator();
             BitsArray filterBitMap = BitsArray.create(
                 this.consumerFilterManager.getBloomFilter().getM()
             );
 
             long startTime = System.currentTimeMillis();
-            while (iterator.hasNext()) {
-                ConsumerFilterData filterData = iterator.next();
-
+            for (ConsumerFilterData filterData : filterDatas) {
                 if (filterData.getCompiledExpression() == null) {
                     log.error("[BUG] Consumer in filter manager has no compiled expression! {}", filterData);
                     continue;
@@ -89,7 +86,7 @@ public class CommitLogDispatcherCalcBitMap implements CommitLogDispatcher {
                 log.debug("Result of Calc bit map:ret={}, data={}, props={}, offset={}", ret, filterData, request.getPropertiesMap(), request.getCommitLogOffset());
 
                 // eval true
-                if (ret != null && ret instanceof Boolean && (Boolean) ret) {
+                if (ret instanceof Boolean && (Boolean) ret) {
                     consumerFilterManager.getBloomFilter().hashTo(
                         filterData.getBloomFilterData(),
                         filterBitMap

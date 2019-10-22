@@ -37,7 +37,7 @@ public class RemotingHelper {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(ROCKETMQ_REMOTING);
 
     public static String exceptionSimpleDesc(final Throwable e) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (e != null) {
             sb.append(e.toString());
 
@@ -78,12 +78,11 @@ public class RemotingHelper {
                 while (byteBufferRequest.hasRemaining()) {
                     int length = socketChannel.write(byteBufferRequest);
                     if (length > 0) {
-                        if (byteBufferRequest.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        boolean condition = byteBufferRequest.hasRemaining() && (System.currentTimeMillis() - beginTime) > timeoutMillis;
+						if (condition) {
 
-                                throw new RemotingSendRequestException(addr);
-                            }
-                        }
+						    throw new RemotingSendRequestException(addr);
+						}
                     } else {
                         throw new RemotingSendRequestException(addr);
                     }
@@ -97,12 +96,11 @@ public class RemotingHelper {
                 while (byteBufferSize.hasRemaining()) {
                     int length = socketChannel.read(byteBufferSize);
                     if (length > 0) {
-                        if (byteBufferSize.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        boolean condition1 = byteBufferSize.hasRemaining() && (System.currentTimeMillis() - beginTime) > timeoutMillis;
+						if (condition1) {
 
-                                throw new RemotingTimeoutException(addr, timeoutMillis);
-                            }
-                        }
+						    throw new RemotingTimeoutException(addr, timeoutMillis);
+						}
                     } else {
                         throw new RemotingTimeoutException(addr, timeoutMillis);
                     }
@@ -115,12 +113,11 @@ public class RemotingHelper {
                 while (byteBufferBody.hasRemaining()) {
                     int length = socketChannel.read(byteBufferBody);
                     if (length > 0) {
-                        if (byteBufferBody.hasRemaining()) {
-                            if ((System.currentTimeMillis() - beginTime) > timeoutMillis) {
+                        boolean condition2 = byteBufferBody.hasRemaining() && (System.currentTimeMillis() - beginTime) > timeoutMillis;
+						if (condition2) {
 
-                                throw new RemotingTimeoutException(addr, timeoutMillis);
-                            }
-                        }
+						    throw new RemotingTimeoutException(addr, timeoutMillis);
+						}
                     } else {
                         throw new RemotingTimeoutException(addr, timeoutMillis);
                     }
@@ -157,16 +154,14 @@ public class RemotingHelper {
         SocketAddress remote = channel.remoteAddress();
         final String addr = remote != null ? remote.toString() : "";
 
-        if (addr.length() > 0) {
-            int index = addr.lastIndexOf("/");
-            if (index >= 0) {
-                return addr.substring(index + 1);
-            }
-
-            return addr;
-        }
-
-        return "";
+        if (addr.length() <= 0) {
+			return "";
+		}
+		int index = addr.lastIndexOf("/");
+		if (index >= 0) {
+		    return addr.substring(index + 1);
+		}
+		return addr;
     }
 
     public static String parseSocketAddressAddr(SocketAddress socketAddress) {

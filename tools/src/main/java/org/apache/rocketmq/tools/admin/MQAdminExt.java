@@ -117,8 +117,7 @@ public interface MQAdminExt extends MQAdmin {
     TopicRouteData examineTopicRouteInfo(
         final String topic) throws RemotingException, MQClientException, InterruptedException;
 
-    ConsumerConnection examineConsumerConnectionInfo(final String consumerGroup) throws RemotingConnectException,
-        RemotingSendRequestException, RemotingTimeoutException, InterruptedException, MQBrokerException, RemotingException,
+    ConsumerConnection examineConsumerConnectionInfo(final String consumerGroup) throws InterruptedException, MQBrokerException, RemotingException,
         MQClientException;
 
     ProducerConnection examineProducerConnectionInfo(final String producerGroup,
@@ -172,8 +171,7 @@ public interface MQAdminExt extends MQAdmin {
         boolean isCluster) throws RemotingException, MQBrokerException,
         InterruptedException, MQClientException;
 
-    GroupList queryTopicConsumeByWho(final String topic) throws RemotingConnectException, RemotingSendRequestException,
-        RemotingTimeoutException, InterruptedException, MQBrokerException, RemotingException, MQClientException;
+    GroupList queryTopicConsumeByWho(final String topic) throws InterruptedException, MQBrokerException, RemotingException, MQClientException;
 
     List<QueueTimeSpan> queryConsumeTimeSpan(final String topic,
         final String group) throws InterruptedException, MQBrokerException,

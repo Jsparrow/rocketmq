@@ -29,11 +29,11 @@ import org.apache.rocketmq.common.message.MessageQueue;
 
 public class RebalanceLockManager {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.REBALANCE_LOCK_LOGGER_NAME);
-    private final static long REBALANCE_LOCK_MAX_LIVE_TIME = Long.parseLong(System.getProperty(
+    private static final long REBALANCE_LOCK_MAX_LIVE_TIME = Long.parseLong(System.getProperty(
         "rocketmq.broker.rebalance.lockMaxLiveTime", "60000"));
     private final Lock lock = new ReentrantLock();
     private final ConcurrentMap<String/* group */, ConcurrentHashMap<MessageQueue, LockEntry>> mqLockTable =
-        new ConcurrentHashMap<String, ConcurrentHashMap<MessageQueue, LockEntry>>(1024);
+        new ConcurrentHashMap<>(1024);
 
     public boolean tryLock(final String group, final MessageQueue mq, final String clientId) {
 
@@ -116,16 +116,16 @@ public class RebalanceLockManager {
 
     public Set<MessageQueue> tryLockBatch(final String group, final Set<MessageQueue> mqs,
         final String clientId) {
-        Set<MessageQueue> lockedMqs = new HashSet<MessageQueue>(mqs.size());
-        Set<MessageQueue> notLockedMqs = new HashSet<MessageQueue>(mqs.size());
+        Set<MessageQueue> lockedMqs = new HashSet<>(mqs.size());
+        Set<MessageQueue> notLockedMqs = new HashSet<>(mqs.size());
 
-        for (MessageQueue mq : mqs) {
+        mqs.forEach(mq -> {
             if (this.isLocked(group, mq, clientId)) {
                 lockedMqs.add(mq);
             } else {
                 notLockedMqs.add(mq);
             }
-        }
+        });
 
         if (!notLockedMqs.isEmpty()) {
             try {
@@ -195,7 +195,7 @@ public class RebalanceLockManager {
             try {
                 ConcurrentHashMap<MessageQueue, LockEntry> groupValue = this.mqLockTable.get(group);
                 if (null != groupValue) {
-                    for (MessageQueue mq : mqs) {
+                    mqs.forEach(mq -> {
                         LockEntry lockEntry = groupValue.get(mq);
                         if (null != lockEntry) {
                             if (lockEntry.getClientId().equals(clientId)) {
@@ -217,7 +217,7 @@ public class RebalanceLockManager {
                                 mq,
                                 clientId);
                         }
-                    }
+                    });
                 } else {
                     log.warn("unlockBatch, group not exist, Group: {} {}",
                         group,

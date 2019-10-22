@@ -40,7 +40,7 @@ public class VerifyUtils {
     public static Collection<Object> getFilterdMessage(Collection<Object> sendMsgs,
         Collection<Object> recvMsgs) {
         Collection<Object> recvMsgsSync = Collections.synchronizedCollection(recvMsgs);
-        Collection<Object> filterdMsgs = new ArrayList<Object>();
+        Collection<Object> filterdMsgs = new ArrayList<>();
         int filterNum = 0;
         for (Object msg : recvMsgsSync) {
             if (sendMsgs.contains(msg)) {
@@ -59,10 +59,9 @@ public class VerifyUtils {
     }
 
     public static void verifyMessageQueueId(int expectId, Collection<Object> msgs) {
-        for (Object msg : msgs) {
-            MessageExt msgEx = (MessageExt) msg;
-            assert expectId == msgEx.getQueueId();
-        }
+        msgs.stream().map(msg -> (MessageExt) msg).forEach(msgEx -> {
+			assert expectId == msgEx.getQueueId();
+		});
     }
 
     public static boolean verifyBalance(int msgSize, float error, int... recvSize) {
@@ -100,19 +99,14 @@ public class VerifyUtils {
     }
 
     public static boolean verifyOrder(Collection<Collection<Object>> queueMsgs) {
-        for (Collection<Object> msgs : queueMsgs) {
-            if (!verifyOrderMsg(msgs)) {
-                return false;
-            }
-        }
-        return true;
+        return queueMsgs.stream().allMatch(VerifyUtils::verifyOrderMsg);
 
     }
 
     public static boolean verifyOrderMsg(Collection<Object> msgs) {
         int min = Integer.MIN_VALUE;
         int curr;
-        if (msgs.size() == 0 || msgs.size() == 1) {
+        if (msgs.isEmpty() || msgs.size() == 1) {
             return true;
         } else {
             for (Object msg : msgs) {

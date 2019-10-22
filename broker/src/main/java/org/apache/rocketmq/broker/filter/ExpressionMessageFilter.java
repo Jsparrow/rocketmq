@@ -106,8 +106,8 @@ public class ExpressionMessageFilter implements MessageFilter {
                 log.debug("Pull {} by bit map:{}, {}, {}", ret, consumerFilterData, bitsArray, cqExtUnit);
                 return ret;
             } catch (Throwable e) {
-                log.error("bloom filter error, sub=" + subscriptionData
-                    + ", filter=" + consumerFilterData + ", bitMap=" + bitsArray, e);
+                log.error(new StringBuilder().append("bloom filter error, sub=").append(subscriptionData).append(", filter=").append(consumerFilterData).append(", bitMap=").append(bitsArray)
+						.toString(), e);
             }
         }
 
@@ -147,12 +147,12 @@ public class ExpressionMessageFilter implements MessageFilter {
 
             ret = realFilterData.getCompiledExpression().evaluate(context);
         } catch (Throwable e) {
-            log.error("Message Filter error, " + realFilterData + ", " + tempProperties, e);
+            log.error(new StringBuilder().append("Message Filter error, ").append(realFilterData).append(", ").append(tempProperties).toString(), e);
         }
 
         log.debug("Pull eval result: {}, {}, {}", ret, realFilterData, tempProperties);
 
-        if (ret == null || !(ret instanceof Boolean)) {
+        if (!(ret instanceof Boolean)) {
             return false;
         }
 

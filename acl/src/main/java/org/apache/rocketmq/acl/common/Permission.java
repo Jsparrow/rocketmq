@@ -30,7 +30,7 @@ public class Permission {
     public static final byte PUB = 1 << 2;
     public static final byte SUB = 1 << 3;
 
-    public static final Set<Integer> ADMIN_CODE = new HashSet<Integer>();
+    public static final Set<Integer> ADMIN_CODE = new HashSet<>();
 
     static {
         // UPDATE_AND_CREATE_TOPIC
@@ -59,7 +59,7 @@ public class Permission {
         if (permString == null) {
             return Permission.DENY;
         }
-        switch (permString.trim()) {
+        switch (StringUtils.trim(permString)) {
             case "PUB":
                 return Permission.PUB;
             case "SUB":
@@ -83,7 +83,7 @@ public class Permission {
         for (String resource : resources) {
             String[] items = StringUtils.split(resource, "=");
             if (items.length == 2) {
-                plainAccessResource.addResourceAndPerm(isTopic ? items[0].trim() : PlainAccessResource.getRetryTopic(items[0].trim()), parsePermFromString(items[1].trim()));
+                plainAccessResource.addResourceAndPerm(isTopic ? StringUtils.trim(items[0]) : PlainAccessResource.getRetryTopic(StringUtils.trim(items[0])), parsePermFromString(StringUtils.trim(items[1])));
             } else {
                 throw new AclException(String.format("Parse resource permission failed for %s:%s", isTopic ? "topic" : "group", resource));
             }

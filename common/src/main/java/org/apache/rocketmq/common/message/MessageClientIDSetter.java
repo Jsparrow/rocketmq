@@ -48,7 +48,7 @@ public class MessageClientIDSetter {
         COUNTER = new AtomicInteger(0);
     }
 
-    private synchronized static void setStartTime(long millis) {
+    private static synchronized void setStartTime(long millis) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(millis);
         cal.set(Calendar.DAY_OF_MONTH, 1);

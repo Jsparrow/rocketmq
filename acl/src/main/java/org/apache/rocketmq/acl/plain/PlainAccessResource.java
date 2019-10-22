@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.rocketmq.acl.AccessResource;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.commons.lang3.StringUtils;
 
 public class PlainAccessResource implements AccessResource {
 
@@ -56,7 +57,7 @@ public class PlainAccessResource implements AccessResource {
     }
 
     public static boolean isRetryTopic(String topic) {
-        return null != topic && topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX);
+        return null != topic && StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX);
     }
 
     public static String printStr(String resource, boolean isGroup) {
@@ -74,7 +75,7 @@ public class PlainAccessResource implements AccessResource {
         if (retryTopic == null) {
             return null;
         }
-        return retryTopic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        return StringUtils.substring(retryTopic, MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
     }
 
     public static String getRetryTopic(String group) {

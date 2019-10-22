@@ -55,7 +55,7 @@ public class HeartbeatData extends RemotingSerializable {
 
     @Override
     public String toString() {
-        return "HeartbeatData [clientID=" + clientID + ", producerDataSet=" + producerDataSet
-            + ", consumerDataSet=" + consumerDataSet + "]";
+        return new StringBuilder().append("HeartbeatData [clientID=").append(clientID).append(", producerDataSet=").append(producerDataSet).append(", consumerDataSet=").append(consumerDataSet).append("]")
+				.toString();
     }
 }

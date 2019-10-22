@@ -27,13 +27,13 @@ import java.util.ArrayList;
 
 public class LoggingEvent implements java.io.Serializable {
 
-    transient public final String fqnOfCategoryClass;
+    public final transient String fqnOfCategoryClass;
 
-    transient private Object message;
+    private transient Object message;
 
-    transient private Level level;
+    private transient Level level;
 
-    transient private Logger logger;
+    private transient Logger logger;
 
     private String renderedMessage;
 

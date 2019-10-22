@@ -32,37 +32,45 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 public final class ThreadUtils {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.TOOLS_LOGGER_NAME);
 
-    public static ExecutorService newThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime,
+    /**
+     * A constructor to stop this class being constructed.
+     */
+    private ThreadUtils() {
+        // Unused
+
+    }
+
+	public static ExecutorService newThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime,
         TimeUnit unit, BlockingQueue<Runnable> workQueue, String processName, boolean isDaemon) {
         return new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, newThreadFactory(processName, isDaemon));
     }
 
-    public static ExecutorService newSingleThreadExecutor(String processName, boolean isDaemon) {
+	public static ExecutorService newSingleThreadExecutor(String processName, boolean isDaemon) {
         return Executors.newSingleThreadExecutor(newThreadFactory(processName, isDaemon));
     }
 
-    public static ScheduledExecutorService newSingleThreadScheduledExecutor(String processName, boolean isDaemon) {
+	public static ScheduledExecutorService newSingleThreadScheduledExecutor(String processName, boolean isDaemon) {
         return Executors.newSingleThreadScheduledExecutor(newThreadFactory(processName, isDaemon));
     }
 
-    public static ScheduledExecutorService newFixedThreadScheduledPool(int nThreads, String processName,
+	public static ScheduledExecutorService newFixedThreadScheduledPool(int nThreads, String processName,
         boolean isDaemon) {
         return Executors.newScheduledThreadPool(nThreads, newThreadFactory(processName, isDaemon));
     }
 
-    public static ThreadFactory newThreadFactory(String processName, boolean isDaemon) {
+	public static ThreadFactory newThreadFactory(String processName, boolean isDaemon) {
         return newGenericThreadFactory("Remoting-" + processName, isDaemon);
     }
 
-    public static ThreadFactory newGenericThreadFactory(String processName) {
+	public static ThreadFactory newGenericThreadFactory(String processName) {
         return newGenericThreadFactory(processName, false);
     }
 
-    public static ThreadFactory newGenericThreadFactory(String processName, int threads) {
+	public static ThreadFactory newGenericThreadFactory(String processName, int threads) {
         return newGenericThreadFactory(processName, threads, false);
     }
 
-    public static ThreadFactory newGenericThreadFactory(final String processName, final boolean isDaemon) {
+	public static ThreadFactory newGenericThreadFactory(final String processName, final boolean isDaemon) {
         return new ThreadFactory() {
             private AtomicInteger threadIndex = new AtomicInteger(0);
 
@@ -75,7 +83,7 @@ public final class ThreadUtils {
         };
     }
 
-    public static ThreadFactory newGenericThreadFactory(final String processName, final int threads,
+	public static ThreadFactory newGenericThreadFactory(final String processName, final int threads,
         final boolean isDaemon) {
         return new ThreadFactory() {
             private AtomicInteger threadIndex = new AtomicInteger(0);
@@ -89,7 +97,7 @@ public final class ThreadUtils {
         };
     }
 
-    /**
+	/**
      * Create a new thread
      *
      * @param name The name of the thread
@@ -101,14 +109,15 @@ public final class ThreadUtils {
         Thread thread = new Thread(runnable, name);
         thread.setDaemon(daemon);
         thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            public void uncaughtException(Thread t, Throwable e) {
-                log.error("Uncaught exception in thread '" + t.getName() + "':", e);
+            @Override
+			public void uncaughtException(Thread t, Throwable e) {
+                log.error(new StringBuilder().append("Uncaught exception in thread '").append(t.getName()).append("':").toString(), e);
             }
         });
         return thread;
     }
 
-    /**
+	/**
      * Shutdown passed thread using isAlive and join.
      *
      * @param t Thread to stop
@@ -117,15 +126,16 @@ public final class ThreadUtils {
         shutdownGracefully(t, 0);
     }
 
-    /**
+	/**
      * Shutdown passed thread using isAlive and join.
      *
      * @param millis Pass 0 if we're to wait forever.
      * @param t Thread to stop
      */
     public static void shutdownGracefully(final Thread t, final long millis) {
-        if (t == null)
-            return;
+        if (t == null) {
+			return;
+		}
         while (t.isAlive()) {
             try {
                 t.interrupt();
@@ -136,7 +146,7 @@ public final class ThreadUtils {
         }
     }
 
-    /**
+	/**
      * An implementation of the graceful stop sequence recommended by
      * {@link ExecutorService}.
      *
@@ -162,13 +172,5 @@ public final class ThreadUtils {
             // Preserve interrupt status.
             Thread.currentThread().interrupt();
         }
-    }
-
-    /**
-     * A constructor to stop this class being constructed.
-     */
-    private ThreadUtils() {
-        // Unused
-
     }
 }

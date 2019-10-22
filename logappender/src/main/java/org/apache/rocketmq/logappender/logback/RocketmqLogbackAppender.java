@@ -76,18 +76,19 @@ public class RocketmqLogbackAppender extends AppenderBase<ILoggingEvent> {
             //Send message and do not wait for the ack from the message broker.
             producer.sendOneway(msg);
         } catch (Exception e) {
-            addError("Could not send message in RocketmqLogbackAppender [" + name + "]. Message is : " + logStr, e);
+            addError(new StringBuilder().append("Could not send message in RocketmqLogbackAppender [").append(name).append("]. Message is : ").append(logStr).toString(), e);
         }
     }
 
     /**
      * Options are activated and become effective only after calling this method.
      */
-    public void start() {
+    @Override
+	public void start() {
         int errors = 0;
 
         if (this.layout == null) {
-            addStatus(new ErrorStatus("No layout set for the RocketmqLogbackAppender named \"" + name + "\".", this));
+            addStatus(new ErrorStatus(new StringBuilder().append("No layout set for the RocketmqLogbackAppender named \"").append(name).append("\".").toString(), this));
             errors++;
         }
 
@@ -97,8 +98,8 @@ public class RocketmqLogbackAppender extends AppenderBase<ILoggingEvent> {
         try {
             producer = ProducerInstance.getProducerInstance().getInstance(nameServerAddress, producerGroup);
         } catch (Exception e) {
-            addError("Starting RocketmqLogbackAppender [" + this.getName()
-                + "] nameServerAddress:" + nameServerAddress + " group:" + producerGroup + " " + e.getMessage());
+            addError(new StringBuilder().append("Starting RocketmqLogbackAppender [").append(this.getName()).append("] nameServerAddress:").append(nameServerAddress).append(" group:").append(producerGroup)
+					.append(" ").append(e.getMessage()).toString());
         }
         if (producer != null) {
             super.start();
@@ -108,7 +109,8 @@ public class RocketmqLogbackAppender extends AppenderBase<ILoggingEvent> {
     /**
      * When system exit,this method will be called to close resources
      */
-    public synchronized void stop() {
+    @Override
+	public synchronized void stop() {
         // The synchronized modifier avoids concurrent append and close operations
         if (!this.started) {
             return;
@@ -119,8 +121,8 @@ public class RocketmqLogbackAppender extends AppenderBase<ILoggingEvent> {
         try {
             ProducerInstance.getProducerInstance().removeAndClose(this.nameServerAddress, this.producerGroup);
         } catch (Exception e) {
-            addError("Closeing RocketmqLogbackAppender [" + this.getName()
-                + "] nameServerAddress:" + nameServerAddress + " group:" + producerGroup + " " + e.getMessage());
+            addError(new StringBuilder().append("Closeing RocketmqLogbackAppender [").append(this.getName()).append("] nameServerAddress:").append(nameServerAddress).append(" group:").append(producerGroup)
+					.append(" ").append(e.getMessage()).toString());
         }
 
         // Help garbage collection
@@ -135,7 +137,7 @@ public class RocketmqLogbackAppender extends AppenderBase<ILoggingEvent> {
         }
 
         if (fail != null) {
-            addError(fail + " for RocketmqLogbackAppender named [" + name + "].");
+            addError(new StringBuilder().append(fail).append(" for RocketmqLogbackAppender named [").append(name).append("].").toString());
             return false;
         } else {
             return true;

@@ -81,13 +81,10 @@ public class AsyncSendExceptionIT extends BaseConf {
     public void testSelectorThrowsException() throws Exception {
         Message msg = new Message(topic, RandomUtils.getStringByUUID().getBytes());
         DefaultMQProducer producer = ProducerFactory.getRMQProducer(nsAddr);
-        producer.send(msg, new MessageQueueSelector() {
-            @Override
-            public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
-                String str = null;
-                return list.get(str.length());
-            }
-        }, null, SendCallBackFactory.getSendCallBack());
+        producer.send(msg, (List<MessageQueue> list, Message message, Object o) -> {
+		    String str = null;
+		    return list.get(str.length());
+		}, null, SendCallBackFactory.getSendCallBack());
     }
 
     @Test

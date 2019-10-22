@@ -34,7 +34,6 @@ public class DefaultTransactionalMessageCheckListener extends AbstractTransactio
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.TRANSACTION_LOGGER_NAME);
 
     public DefaultTransactionalMessageCheckListener() {
-        super();
     }
 
     @Override

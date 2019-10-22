@@ -20,8 +20,8 @@ package org.apache.rocketmq.broker;
 import java.io.File;
 
 public class BrokerPathConfigHelper {
-    private static String brokerConfigPath = System.getProperty("user.home") + File.separator + "store"
-        + File.separator + "config" + File.separator + "broker.properties";
+    private static String brokerConfigPath = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("store").append(File.separator).append("config")
+			.append(File.separator).append("broker.properties").toString();
 
     public static String getBrokerConfigPath() {
         return brokerConfigPath;
@@ -32,18 +32,22 @@ public class BrokerPathConfigHelper {
     }
 
     public static String getTopicConfigPath(final String rootDir) {
-        return rootDir + File.separator + "config" + File.separator + "topics.json";
+        return new StringBuilder().append(rootDir).append(File.separator).append("config").append(File.separator).append("topics.json")
+				.toString();
     }
 
     public static String getConsumerOffsetPath(final String rootDir) {
-        return rootDir + File.separator + "config" + File.separator + "consumerOffset.json";
+        return new StringBuilder().append(rootDir).append(File.separator).append("config").append(File.separator).append("consumerOffset.json")
+				.toString();
     }
 
     public static String getSubscriptionGroupPath(final String rootDir) {
-        return rootDir + File.separator + "config" + File.separator + "subscriptionGroup.json";
+        return new StringBuilder().append(rootDir).append(File.separator).append("config").append(File.separator).append("subscriptionGroup.json")
+				.toString();
     }
 
     public static String getConsumerFilterPath(final String rootDir) {
-        return rootDir + File.separator + "config" + File.separator + "consumerFilter.json";
+        return new StringBuilder().append(rootDir).append(File.separator).append("config").append(File.separator).append("consumerFilter.json")
+				.toString();
     }
 }

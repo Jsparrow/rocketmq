@@ -27,10 +27,15 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class SendMsgStatusCommand implements SubCommand {
 
-    private static Message buildMessage(final String topic, final int messageSize) throws UnsupportedEncodingException {
+    private static final Logger logger = LoggerFactory.getLogger(SendMsgStatusCommand.class);
+
+	private static Message buildMessage(final String topic, final int messageSize) throws UnsupportedEncodingException {
         Message msg = new Message();
         msg.setTopic(topic);
 
@@ -76,7 +81,7 @@ public class SendMsgStatusCommand implements SubCommand {
 
         try {
             producer.start();
-            String brokerName = commandLine.getOptionValue('b').trim();
+            String brokerName = StringUtils.trim(commandLine.getOptionValue('b'));
             int messageSize = commandLine.hasOption('s') ? Integer.parseInt(commandLine.getOptionValue('s')) : 128;
             int count = commandLine.hasOption('c') ? Integer.parseInt(commandLine.getOptionValue('c')) : 50;
 
@@ -85,7 +90,7 @@ public class SendMsgStatusCommand implements SubCommand {
             for (int i = 0; i < count; i++) {
                 long begin = System.currentTimeMillis();
                 SendResult result = producer.send(buildMessage(brokerName, messageSize));
-                System.out.printf("rt:" + (System.currentTimeMillis() - begin) + "ms, SendResult=%s", result);
+                logger.info(new StringBuilder().append("rt:").append(System.currentTimeMillis() - begin).append("ms, SendResult=%s").toString(), result);
             }
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);

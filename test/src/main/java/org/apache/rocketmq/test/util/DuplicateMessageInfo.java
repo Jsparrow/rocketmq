@@ -26,24 +26,30 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DuplicateMessageInfo<T> {
 
-    public void checkDuplicatedMessageInfo(boolean bPrintLog,
+    private static final Logger logger = LoggerFactory.getLogger(DuplicateMessageInfo.class);
+
+	public void checkDuplicatedMessageInfo(boolean bPrintLog,
         List<List<T>> lQueueList) throws IOException {
         int msgListSize = lQueueList.size();
         int maxmsgList = 0;
-        Map<T, Integer> msgIdMap = new HashMap<T, Integer>();
-        Map<Integer, Integer> dupMsgMap = new HashMap<Integer, Integer>();
+        Map<T, Integer> msgIdMap = new HashMap<>();
+        Map<Integer, Integer> dupMsgMap = new HashMap<>();
 
         for (int i = 0; i < msgListSize; i++) {
-            if (maxmsgList < lQueueList.get(i).size())
-                maxmsgList = lQueueList.get(i).size();
+            if (maxmsgList < lQueueList.get(i).size()) {
+				maxmsgList = lQueueList.get(i).size();
+			}
         }
 
-        List<StringBuilder> strBQueue = new LinkedList<StringBuilder>();
-        for (int i = 0; i < msgListSize; i++)
-            strBQueue.add(new StringBuilder());
+        List<StringBuilder> strBQueue = new LinkedList<>();
+        for (int i = 0; i < msgListSize; i++) {
+			strBQueue.add(new StringBuilder());
+		}
 
         for (int msgListIndex = 0; msgListIndex < maxmsgList; msgListIndex++) {
             for (int msgQueueListIndex = 0; msgQueueListIndex < msgListSize; msgQueueListIndex++) {
@@ -58,9 +64,8 @@ public class DuplicateMessageInfo<T> {
                             dupMsgMap.put(msgQueueListIndex, 1);
                         }
 
-                        strBQueue.get(msgQueueListIndex).append("" + msgQueueListIndex + "\t" +
-                            msgIdMap.get(lQueueList.get(msgQueueListIndex).get(msgListIndex)) + "\t"
-                            + lQueueList.get(msgQueueListIndex).get(msgListIndex) + "\r\n");
+                        strBQueue.get(msgQueueListIndex).append(new StringBuilder().append(Integer.toString(msgQueueListIndex)).append("\t").append(msgIdMap.get(lQueueList.get(msgQueueListIndex).get(msgListIndex))).append("\t").append(lQueueList.get(msgQueueListIndex).get(msgListIndex))
+								.append("\r\n").toString());
                     } else {
                         msgIdMap.put(lQueueList.get(msgQueueListIndex).get(msgListIndex), msgQueueListIndex);
                     }
@@ -74,10 +79,10 @@ public class DuplicateMessageInfo<T> {
         float msgDupRate = ((float) msgTotalDupNum / (float) msgTotalNum) * 100.0f;
         StringBuilder strBuilder = new StringBuilder();
 
-        strBuilder.append("msgTotalNum:" + msgTotalNum + "\r\n");
-        strBuilder.append("msgTotalDupNum:" + msgTotalDupNum + "\r\n");
-        strBuilder.append("msgNoDupNum:" + msgNoDupNum + "\r\n");
-        strBuilder.append("msgDupRate" + getFloatNumString(msgDupRate) + "%\r\n");
+        strBuilder.append(new StringBuilder().append("msgTotalNum:").append(msgTotalNum).append("\r\n").toString());
+        strBuilder.append(new StringBuilder().append("msgTotalDupNum:").append(msgTotalDupNum).append("\r\n").toString());
+        strBuilder.append(new StringBuilder().append("msgNoDupNum:").append(msgNoDupNum).append("\r\n").toString());
+        strBuilder.append(new StringBuilder().append("msgDupRate").append(getFloatNumString(msgDupRate)).append("%\r\n").toString());
 
         strBuilder.append("queue\tmsg(dupNum/dupRate)\tdupRate\r\n");
         for (int i = 0; i < dupMsgMap.size(); i++) {
@@ -86,38 +91,39 @@ public class DuplicateMessageInfo<T> {
             float msgQueueDupRate = ((float) msgDupNum / (float) msgTotalDupNum) * 100.0f;
             float msgQueueInnerDupRate = ((float) msgDupNum / (float) msgNum) * 100.0f;
 
-            strBuilder.append(i + "\t" + msgDupNum + "/" + getFloatNumString(msgQueueDupRate) + "%" + "\t\t" +
-                getFloatNumString(msgQueueInnerDupRate) + "%\r\n");
+            strBuilder.append(new StringBuilder().append(i).append("\t").append(msgDupNum).append("/").append(getFloatNumString(msgQueueDupRate)).append("%")
+					.append("\t\t").append(getFloatNumString(msgQueueInnerDupRate)).append("%\r\n").toString());
         }
 
-        System.out.print(strBuilder.toString());
+        logger.info(strBuilder.toString());
         String titleString = "queue\tdupQueue\tdupMsg\r\n";
-        System.out.print(titleString);
+        logger.info(titleString);
 
-        for (int i = 0; i < msgListSize; i++)
-            System.out.print(strBQueue.get(i).toString());
+        for (int i = 0; i < msgListSize; i++) {
+			logger.info(strBQueue.get(i).toString());
+		}
 
-        if (bPrintLog) {
-            String logFileNameStr = "D:" + File.separator + "checkDuplicatedMessageInfo.txt";
-            File logFileNameFile = new File(logFileNameStr);
-            OutputStream out = new FileOutputStream(logFileNameFile, true);
-
-            String strToWrite;
-            byte[] byteToWrite;
-            strToWrite = strBuilder.toString() + titleString;
-            for (int i = 0; i < msgListSize; i++)
-                strToWrite += strBQueue.get(i).toString() + "\r\n";
-
-            byteToWrite = strToWrite.getBytes();
-            out.write(byteToWrite);
-            out.close();
-        }
+        if (!bPrintLog) {
+			return;
+		}
+		String logFileNameStr = new StringBuilder().append("D:").append(File.separator).append("checkDuplicatedMessageInfo.txt").toString();
+		File logFileNameFile = new File(logFileNameStr);
+		OutputStream out = new FileOutputStream(logFileNameFile, true);
+		String strToWrite;
+		byte[] byteToWrite;
+		strToWrite = strBuilder.toString() + titleString;
+		for (int i = 0; i < msgListSize; i++) {
+			strToWrite += strBQueue.get(i).toString() + "\r\n";
+		}
+		byteToWrite = strToWrite.getBytes();
+		out.write(byteToWrite);
+		out.close();
     }
 
     private int getMsgTotalNumber(List<List<T>> lQueueList) {
         int msgTotalNum = 0;
-        for (int i = 0; i < lQueueList.size(); i++) {
-            msgTotalNum += lQueueList.get(i).size();
+        for (List<T> aLQueueList : lQueueList) {
+            msgTotalNum += aLQueueList.size();
         }
         return msgTotalNum;
     }

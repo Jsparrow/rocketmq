@@ -24,9 +24,14 @@ import org.apache.rocketmq.common.message.MessageClientIDSetter;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class DecodeMessageIdCommond implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(DecodeMessageIdCommond.class);
+
+	@Override
     public String commandName() {
         return "DecodeMessageId";
     }
@@ -47,17 +52,17 @@ public class DecodeMessageIdCommond implements SubCommand {
     @Override
     public void execute(final CommandLine commandLine, final Options options,
         RPCHook rpcHook) throws SubCommandException {
-        String messageId = commandLine.getOptionValue('i').trim();
+        String messageId = StringUtils.trim(commandLine.getOptionValue('i'));
 
         try {
-            System.out.printf("ip=%s", MessageClientIDSetter.getIPStrFromID(messageId));
+            logger.info("ip=%s", MessageClientIDSetter.getIPStrFromID(messageId));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         try {
             String date = UtilAll.formatDate(MessageClientIDSetter.getNearlyTimeFromID(messageId), UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
-            System.out.printf("date=%s", date);
+            logger.info("date=%s", date);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         }

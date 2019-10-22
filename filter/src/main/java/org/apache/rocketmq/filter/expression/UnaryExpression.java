@@ -53,7 +53,8 @@ public abstract class UnaryExpression implements Expression {
 
     public static Expression createNegate(Expression left) {
         return new UnaryExpression(left, UnaryType.NEGATE) {
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
                 Object rvalue = right.evaluate(context);
                 if (rvalue == null) {
                     return null;
@@ -64,7 +65,8 @@ public abstract class UnaryExpression implements Expression {
                 return null;
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 return "-";
             }
         };
@@ -80,12 +82,13 @@ public abstract class UnaryExpression implements Expression {
         } else if (elements.size() < 5) {
             t = elements;
         } else {
-            t = new HashSet<Object>(elements);
+            t = new HashSet<>(elements);
         }
         final Collection inList = t;
 
         return new UnaryInExpression(right, UnaryType.IN, inList, not) {
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
 
                 Object rvalue = right.evaluate(context);
                 if (rvalue == null) {
@@ -103,7 +106,8 @@ public abstract class UnaryExpression implements Expression {
 
             }
 
-            public String toString() {
+            @Override
+			public String toString() {
                 StringBuffer answer = new StringBuffer();
                 answer.append(right);
                 answer.append(" ");
@@ -124,7 +128,8 @@ public abstract class UnaryExpression implements Expression {
                 return answer.toString();
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 if (not) {
                     return "NOT IN";
                 } else {
@@ -134,20 +139,10 @@ public abstract class UnaryExpression implements Expression {
         };
     }
 
-    abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression {
-        public BooleanUnaryExpression(Expression left, UnaryType unaryType) {
-            super(left, unaryType);
-        }
-
-        public boolean matches(EvaluationContext context) throws Exception {
-            Object object = evaluate(context);
-            return object != null && object == Boolean.TRUE;
-        }
-    }
-
     public static BooleanExpression createNOT(BooleanExpression left) {
         return new BooleanUnaryExpression(left, UnaryType.NOT) {
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
                 Boolean lvalue = (Boolean) right.evaluate(context);
                 if (lvalue == null) {
                     return null;
@@ -155,15 +150,17 @@ public abstract class UnaryExpression implements Expression {
                 return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 return "NOT";
             }
         };
     }
 
-    public static BooleanExpression createBooleanCast(Expression left) {
+	public static BooleanExpression createBooleanCast(Expression left) {
         return new BooleanUnaryExpression(left, UnaryType.BOOLEANCAST) {
-            public Object evaluate(EvaluationContext context) throws Exception {
+            @Override
+			public Object evaluate(EvaluationContext context) throws Exception {
                 Object rvalue = right.evaluate(context);
                 if (rvalue == null) {
                     return null;
@@ -174,26 +171,28 @@ public abstract class UnaryExpression implements Expression {
                 return ((Boolean) rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
             }
 
-            public String toString() {
+            @Override
+			public String toString() {
                 return right.toString();
             }
 
-            public String getExpressionSymbol() {
+            @Override
+			public String getExpressionSymbol() {
                 return "";
             }
         };
     }
 
-    private static Number negate(Number left) {
+	private static Number negate(Number left) {
         Class clazz = left.getClass();
         if (clazz == Integer.class) {
-            return new Integer(-left.intValue());
+            return Integer.valueOf(-left.intValue());
         } else if (clazz == Long.class) {
-            return new Long(-left.longValue());
+            return Long.valueOf(-left.longValue());
         } else if (clazz == Float.class) {
-            return new Float(-left.floatValue());
+            return Float.valueOf(-left.floatValue());
         } else if (clazz == Double.class) {
-            return new Double(-left.doubleValue());
+            return Double.valueOf(-left.doubleValue());
         } else if (clazz == BigDecimal.class) {
             // We ussually get a big deciamal when we have Long.MIN_VALUE
             // constant in the
@@ -214,40 +213,43 @@ public abstract class UnaryExpression implements Expression {
         }
     }
 
-    public Expression getRight() {
+	public Expression getRight() {
         return right;
     }
 
-    public void setRight(Expression expression) {
+	public void setRight(Expression expression) {
         right = expression;
     }
 
-    public UnaryType getUnaryType() {
+	public UnaryType getUnaryType() {
         return unaryType;
     }
 
-    public void setUnaryType(UnaryType unaryType) {
+	public void setUnaryType(UnaryType unaryType) {
         this.unaryType = unaryType;
     }
 
-    /**
+	/**
      * @see Object#toString()
      */
-    public String toString() {
-        return "(" + getExpressionSymbol() + " " + right.toString() + ")";
+    @Override
+	public String toString() {
+        return new StringBuilder().append("(").append(getExpressionSymbol()).append(" ").append(right.toString()).append(")").toString();
     }
 
-    /**
+	/**
      * @see Object#hashCode()
      */
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         return toString().hashCode();
     }
 
-    /**
+	/**
      * @see Object#equals(Object)
      */
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
@@ -256,10 +258,22 @@ public abstract class UnaryExpression implements Expression {
 
     }
 
-    /**
+	/**
      * Returns the symbol that represents this binary expression. For example,
      * addition is represented by "+"
      */
     public abstract String getExpressionSymbol();
+
+	abstract static class BooleanUnaryExpression extends UnaryExpression implements BooleanExpression {
+        public BooleanUnaryExpression(Expression left, UnaryType unaryType) {
+            super(left, unaryType);
+        }
+
+        @Override
+		public boolean matches(EvaluationContext context) throws Exception {
+            Object object = evaluate(context);
+            return object != null && object == Boolean.TRUE;
+        }
+    }
 
 }

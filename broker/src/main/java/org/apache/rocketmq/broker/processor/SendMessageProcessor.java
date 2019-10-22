@@ -53,10 +53,14 @@ import org.apache.rocketmq.store.MessageExtBrokerInner;
 import org.apache.rocketmq.store.PutMessageResult;
 import org.apache.rocketmq.store.config.StorePathConfigHelper;
 import org.apache.rocketmq.store.stats.BrokerStatsManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
-public class SendMessageProcessor extends AbstractSendMessageProcessor implements NettyRequestProcessor {
+public class SendMessageProcessor extends AbstractSendMessageProcessor {
 
-    private List<ConsumeMessageHook> consumeMessageHookList;
+    private static final Logger logger = LoggerFactory.getLogger(SendMessageProcessor.class);
+	private List<ConsumeMessageHook> consumeMessageHookList;
 
     public SendMessageProcessor(final BrokerController brokerController) {
         super(brokerController);
@@ -68,7 +72,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
         SendMessageContext mqtraceContext;
         switch (request.getCode()) {
             case RequestCode.CONSUMER_SEND_MSG_BACK:
-                return this.consumerSendMsgBack(ctx, request);
+                return this.consumerSendMsgBack(request);
             default:
                 SendMessageRequestHeader requestHeader = parseRequestHeader(request);
                 if (requestHeader == null) {
@@ -96,7 +100,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             this.brokerController.getMessageStore().isTransientStorePoolDeficient();
     }
 
-    private RemotingCommand consumerSendMsgBack(final ChannelHandlerContext ctx, final RemotingCommand request)
+    private RemotingCommand consumerSendMsgBack(final RemotingCommand request)
         throws RemotingCommandException {
         final RemotingCommand response = RemotingCommand.createResponseCommand(null);
         final ConsumerSendMsgBackRequestHeader requestHeader =
@@ -120,14 +124,13 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(requestHeader.getGroup());
         if (null == subscriptionGroupConfig) {
             response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
-            response.setRemark("subscription group not exist, " + requestHeader.getGroup() + " "
-                + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));
+            response.setRemark(new StringBuilder().append("subscription group not exist, ").append(requestHeader.getGroup()).append(" ").append(FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)).toString());
             return response;
         }
 
         if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1() + "] sending message is forbidden");
+            response.setRemark(new StringBuilder().append("the broker[").append(this.brokerController.getBrokerConfig().getBrokerIP1()).append("] sending message is forbidden").toString());
             return response;
         }
 
@@ -151,7 +154,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             PermName.PERM_WRITE | PermName.PERM_READ, topicSysFlag);
         if (null == topicConfig) {
             response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark("topic[" + newTopic + "] not exist");
+            response.setRemark(new StringBuilder().append("topic[").append(newTopic).append("] not exist").toString());
             return response;
         }
 
@@ -192,7 +195,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             );
             if (null == topicConfig) {
                 response.setCode(ResponseCode.SYSTEM_ERROR);
-                response.setRemark("topic[" + newTopic + "] not exist");
+                response.setRemark(new StringBuilder().append("topic[").append(newTopic).append("] not exist").toString());
                 return response;
             }
         } else {
@@ -255,14 +258,14 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                                       RemotingCommand request,
                                       MessageExt msg, TopicConfig topicConfig) {
         String newTopic = requestHeader.getTopic();
-        if (null != newTopic && newTopic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-            String groupName = newTopic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+        if (null != newTopic && StringUtils.startsWith(newTopic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            String groupName = StringUtils.substring(newTopic, MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
             SubscriptionGroupConfig subscriptionGroupConfig =
                 this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(groupName);
             if (null == subscriptionGroupConfig) {
                 response.setCode(ResponseCode.SUBSCRIPTION_GROUP_NOT_EXIST);
                 response.setRemark(
-                    "subscription group not exist, " + groupName + " " + FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST));
+                    new StringBuilder().append("subscription group not exist, ").append(groupName).append(" ").append(FAQUrl.suggestTodo(FAQUrl.SUBSCRIPTION_GROUP_NOT_EXIST)).toString());
                 return false;
             }
 
@@ -282,7 +285,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
                 msg.setQueueId(queueIdInt);
                 if (null == topicConfig) {
                     response.setCode(ResponseCode.SYSTEM_ERROR);
-                    response.setRemark("topic[" + newTopic + "] not exist");
+                    response.setRemark(new StringBuilder().append("topic[").append(newTopic).append("] not exist").toString());
                     return false;
                 }
             }
@@ -355,8 +358,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             if (this.brokerController.getBrokerConfig().isRejectTransactionMessage()) {
                 response.setCode(ResponseCode.NO_PERMISSION);
                 response.setRemark(
-                    "the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
-                        + "] sending transaction message is forbidden");
+                    new StringBuilder().append("the broker[").append(this.brokerController.getBrokerConfig().getBrokerIP1()).append("] sending transaction message is forbidden").toString());
                 return response;
             }
             putMessageResult = this.brokerController.getTransactionalMessageService().prepareMessage(msgInner);
@@ -412,7 +414,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             case SERVICE_NOT_AVAILABLE:
                 response.setCode(ResponseCode.SERVICE_NOT_AVAILABLE);
                 response.setRemark(
-                    "service not available now, maybe disk full, " + diskUtil() + ", maybe your broker machine memory too small.");
+                    new StringBuilder().append("service not available now, maybe disk full, ").append(diskUtil()).append(", maybe your broker machine memory too small.").toString());
                 break;
             case OS_PAGECACHE_BUSY:
                 response.setCode(ResponseCode.SYSTEM_ERROR);
@@ -514,7 +516,7 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
             return response;
         }
 
-        if (requestHeader.getTopic() != null && requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+        if (requestHeader.getTopic() != null && StringUtils.startsWith(requestHeader.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
             response.setCode(ResponseCode.MESSAGE_ILLEGAL);
             response.setRemark("batch request does not support retry group " + requestHeader.getTopic());
             return response;
@@ -548,17 +550,19 @@ public class SendMessageProcessor extends AbstractSendMessageProcessor implement
 
     public void executeConsumeMessageHookAfter(final ConsumeMessageContext context) {
         if (hasConsumeMessageHook()) {
-            for (ConsumeMessageHook hook : this.consumeMessageHookList) {
+            this.consumeMessageHookList.forEach(hook -> {
                 try {
                     hook.consumeMessageAfter(context);
                 } catch (Throwable e) {
+					logger.error(e.getMessage(), e);
                     // Ignore
                 }
-            }
+            });
         }
     }
 
-    public SocketAddress getStoreHost() {
+    @Override
+	public SocketAddress getStoreHost() {
         return storeHost;
     }
 

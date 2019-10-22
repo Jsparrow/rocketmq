@@ -21,27 +21,32 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Producer {
-    public static void main(String[] args) throws MQClientException, InterruptedException {
+    private static final Logger logger = LoggerFactory.getLogger(Producer.class);
+
+	public static void main(String[] args) throws MQClientException, InterruptedException {
 
         DefaultMQProducer producer = new DefaultMQProducer("ProducerGroupName");
         producer.start();
 
-        for (int i = 0; i < 128; i++)
-            try {
+        for (int i = 0; i < 128; i++) {
+			try {
                 {
                     Message msg = new Message("TopicTest",
                         "TagA",
                         "OrderID188",
                         "Hello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
                     SendResult sendResult = producer.send(msg);
-                    System.out.printf("%s%n", sendResult);
+                    logger.info("%s%n", sendResult);
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
+		}
 
         producer.shutdown();
     }

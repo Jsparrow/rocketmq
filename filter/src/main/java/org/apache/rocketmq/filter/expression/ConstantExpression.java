@@ -17,6 +17,8 @@
 
 package org.apache.rocketmq.filter.expression;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Represents a constant expression
  * <p>
@@ -30,36 +32,24 @@ package org.apache.rocketmq.filter.expression;
  */
 public class ConstantExpression implements Expression {
 
-    static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression {
-        public BooleanConstantExpression(Object value) {
-            super(value);
-        }
-
-        public boolean matches(EvaluationContext context) throws Exception {
-            Object object = evaluate(context);
-            return object != null && object == Boolean.TRUE;
-        }
-    }
-
     public static final BooleanConstantExpression NULL = new BooleanConstantExpression(null);
-    public static final BooleanConstantExpression TRUE = new BooleanConstantExpression(Boolean.TRUE);
-    public static final BooleanConstantExpression FALSE = new BooleanConstantExpression(Boolean.FALSE);
+	public static final BooleanConstantExpression TRUE = new BooleanConstantExpression(Boolean.TRUE);
+	public static final BooleanConstantExpression FALSE = new BooleanConstantExpression(Boolean.FALSE);
+	private Object value;
 
-    private Object value;
-
-    public ConstantExpression(Object value) {
+	public ConstantExpression(Object value) {
         this.value = value;
     }
 
-    public static ConstantExpression createFromDecimal(String text) {
+	public static ConstantExpression createFromDecimal(String text) {
 
         // Strip off the 'l' or 'L' if needed.
-        if (text.endsWith("l") || text.endsWith("L")) {
-            text = text.substring(0, text.length() - 1);
+        if (StringUtils.endsWith(text, "l") || StringUtils.endsWith(text, "L")) {
+            text = StringUtils.substring(text, 0, text.length() - 1);
         }
 
         // only support Long.MIN_VALUE ~ Long.MAX_VALUE
-        Number value = new Long(text);
+        Number value = Long.valueOf(text);
 //        try {
 //            value = new Long(text);
 //        } catch (NumberFormatException e) {
@@ -74,33 +64,35 @@ public class ConstantExpression implements Expression {
         return new ConstantExpression(value);
     }
 
-    public static ConstantExpression createFloat(String text) {
-        Double value = new Double(text);
+	public static ConstantExpression createFloat(String text) {
+        Double value = Double.valueOf(text);
         if (value > Double.MAX_VALUE) {
-            throw new RuntimeException(text + " is greater than " + Double.MAX_VALUE);
+            throw new RuntimeException(new StringBuilder().append(text).append(" is greater than ").append(Double.MAX_VALUE).toString());
         }
         if (value < Double.MIN_VALUE) {
-            throw new RuntimeException(text + " is less than " + Double.MIN_VALUE);
+            throw new RuntimeException(new StringBuilder().append(text).append(" is less than ").append(Double.MIN_VALUE).toString());
         }
         return new ConstantExpression(value);
     }
 
-    public static ConstantExpression createNow() {
+	public static ConstantExpression createNow() {
         return new NowExpression();
     }
 
-    public Object evaluate(EvaluationContext context) throws Exception {
+	@Override
+	public Object evaluate(EvaluationContext context) throws Exception {
         return value;
     }
 
-    public Object getValue() {
+	public Object getValue() {
         return value;
     }
 
-    /**
+	/**
      * @see Object#toString()
      */
-    public String toString() {
+    @Override
+	public String toString() {
         Object value = getValue();
         if (value == null) {
             return "NULL";
@@ -114,17 +106,19 @@ public class ConstantExpression implements Expression {
         return value.toString();
     }
 
-    /**
+	/**
      * @see Object#hashCode()
      */
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         return toString().hashCode();
     }
 
-    /**
+	/**
      * @see Object#equals(Object)
      */
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
@@ -133,12 +127,12 @@ public class ConstantExpression implements Expression {
 
     }
 
-    /**
+	/**
      * Encodes the value of string so that it looks like it would look like when
      * it was provided in a selector.
      */
     public static String encodeString(String s) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('\'');
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -149,6 +143,18 @@ public class ConstantExpression implements Expression {
         }
         b.append('\'');
         return b.toString();
+    }
+
+	static class BooleanConstantExpression extends ConstantExpression implements BooleanExpression {
+        public BooleanConstantExpression(Object value) {
+            super(value);
+        }
+
+        @Override
+		public boolean matches(EvaluationContext context) throws Exception {
+            Object object = evaluate(context);
+            return object != null && object == Boolean.TRUE;
+        }
     }
 
 }

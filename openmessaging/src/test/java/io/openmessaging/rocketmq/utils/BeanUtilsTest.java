@@ -27,44 +27,6 @@ import org.junit.Test;
 public class BeanUtilsTest {
     private KeyValue properties = OMS.newKeyValue();
 
-    public static class CustomizedConfig extends ClientConfig {
-        final static String STRING_TEST = "string.test";
-        String stringTest = "foobar";
-
-        final static String DOUBLE_TEST = "double.test";
-        double doubleTest = 123.0;
-
-        final static String LONG_TEST = "long.test";
-        long longTest = 123L;
-
-        String getStringTest() {
-            return stringTest;
-        }
-
-        public void setStringTest(String stringTest) {
-            this.stringTest = stringTest;
-        }
-
-        double getDoubleTest() {
-            return doubleTest;
-        }
-
-        public void setDoubleTest(final double doubleTest) {
-            this.doubleTest = doubleTest;
-        }
-
-        long getLongTest() {
-            return longTest;
-        }
-
-        public void setLongTest(final long longTest) {
-            this.longTest = longTest;
-        }
-
-        CustomizedConfig() {
-        }
-    }
-
     @Before
     public void init() {
         properties.put(NonStandardKeys.MAX_REDELIVERY_TIMES, 120);
@@ -76,7 +38,7 @@ public class BeanUtilsTest {
         properties.put(CustomizedConfig.DOUBLE_TEST, 10.234);
     }
 
-    @Test
+	@Test
     public void testPopulate() {
         CustomizedConfig config = BeanUtils.populate(properties, CustomizedConfig.class);
 
@@ -89,7 +51,7 @@ public class BeanUtilsTest {
         Assert.assertEquals(config.getDoubleTest(), 10.234, 0.000001);
     }
 
-    @Test
+	@Test
     public void testPopulate_ExistObj() {
         CustomizedConfig config = new CustomizedConfig();
         config.setConsumerId("NewConsumerId");
@@ -105,6 +67,42 @@ public class BeanUtilsTest {
         Assert.assertEquals(config.getRmqMessageConsumeTimeout(), 101);
         Assert.assertEquals(config.getLongTest(), 1234567890L);
         Assert.assertEquals(config.getDoubleTest(), 10.234, 0.000001);
+    }
+
+	public static class CustomizedConfig extends ClientConfig {
+        static final String STRING_TEST = "string.test";
+		static final String DOUBLE_TEST = "double.test";
+		static final String LONG_TEST = "long.test";
+		String stringTest = "foobar";
+		double doubleTest = 123.0;
+		long longTest = 123L;
+
+		CustomizedConfig() {
+        }
+
+		String getStringTest() {
+            return stringTest;
+        }
+
+		public void setStringTest(String stringTest) {
+            this.stringTest = stringTest;
+        }
+
+		double getDoubleTest() {
+            return doubleTest;
+        }
+
+		public void setDoubleTest(final double doubleTest) {
+            this.doubleTest = doubleTest;
+        }
+
+		long getLongTest() {
+            return longTest;
+        }
+
+		public void setLongTest(final long longTest) {
+            this.longTest = longTest;
+        }
     }
 
 }

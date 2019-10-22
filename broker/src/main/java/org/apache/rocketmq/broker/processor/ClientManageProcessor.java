@@ -81,7 +81,7 @@ public class ClientManageProcessor implements NettyRequestProcessor {
             request.getVersion()
         );
 
-        for (ConsumerData data : heartbeatData.getConsumerDataSet()) {
+        heartbeatData.getConsumerDataSet().forEach(data -> {
             SubscriptionGroupConfig subscriptionGroupConfig =
                 this.brokerController.getSubscriptionGroupManager().findSubscriptionGroupConfig(
                     data.getGroupName());
@@ -115,12 +115,9 @@ public class ClientManageProcessor implements NettyRequestProcessor {
                     RemotingHelper.parseChannelRemoteAddr(ctx.channel())
                 );
             }
-        }
+        });
 
-        for (ProducerData data : heartbeatData.getProducerDataSet()) {
-            this.brokerController.getProducerManager().registerProducer(data.getGroupName(),
-                clientChannelInfo);
-        }
+        heartbeatData.getProducerDataSet().forEach(data -> this.brokerController.getProducerManager().registerProducer(data.getGroupName(), clientChannelInfo));
         response.setCode(ResponseCode.SUCCESS);
         response.setRemark(null);
         return response;

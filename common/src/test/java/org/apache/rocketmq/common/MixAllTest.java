@@ -53,7 +53,7 @@ public class MixAllTest {
 
     @Test
     public void testFile2String() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
+        String fileName = new StringBuilder().append(System.getProperty("java.io.tmpdir")).append(File.separator).append("MixAllTest").append(System.currentTimeMillis()).toString();
         File file = new File(fileName);
         if (file.exists()) {
             file.delete();
@@ -69,7 +69,7 @@ public class MixAllTest {
 
     @Test
     public void testFile2String_WithChinese() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
+        String fileName = new StringBuilder().append(System.getProperty("java.io.tmpdir")).append(File.separator).append("MixAllTest").append(System.currentTimeMillis()).toString();
         File file = new File(fileName);
         if (file.exists()) {
             file.delete();
@@ -85,7 +85,7 @@ public class MixAllTest {
 
     @Test
     public void testString2File() throws IOException {
-        String fileName = System.getProperty("java.io.tmpdir") + File.separator + "MixAllTest" + System.currentTimeMillis();
+        String fileName = new StringBuilder().append(System.getProperty("java.io.tmpdir")).append(File.separator).append("MixAllTest").append(System.currentTimeMillis()).toString();
         MixAll.string2File("MixAll_testString2File", fileName);
         assertThat(MixAll.file2String(fileName)).isEqualTo("MixAll_testString2File");
     }

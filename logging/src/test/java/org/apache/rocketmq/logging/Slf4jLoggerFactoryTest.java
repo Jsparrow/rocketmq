@@ -28,10 +28,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
+import org.slf4j.Logger;
 
 public class Slf4jLoggerFactoryTest extends BasicLoggerTest {
 
-    public static final String LOGGER = "Slf4jTestLogger";
+    private static final Logger logger4 = LoggerFactory.getLogger(Slf4jLoggerFactoryTest.class);
+	public static final String LOGGER = "Slf4jTestLogger";
 
     @Before
     public void initLogback() throws JoranException {
@@ -69,7 +71,7 @@ public class Slf4jLoggerFactoryTest extends BasicLoggerTest {
         logger3.error("error {}", "hahahah");
         logger3.debug("debug {}", "hahahah");
         String content = readFile(file);
-        System.out.println(content);
+        logger4.info(content);
 
         Assert.assertTrue(content.contains("Slf4jLoggerFactoryTest"));
         Assert.assertTrue(content.contains("info"));

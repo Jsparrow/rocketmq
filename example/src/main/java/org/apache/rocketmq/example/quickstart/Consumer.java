@@ -24,13 +24,17 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This example shows how to subscribe and consume messages using providing {@link DefaultMQPushConsumer}.
  */
 public class Consumer {
 
-    public static void main(String[] args) throws InterruptedException, MQClientException {
+    private static final Logger logger = LoggerFactory.getLogger(Consumer.class);
+
+	public static void main(String[] args) throws InterruptedException, MQClientException {
 
         /*
          * Instantiate with specified consumer group name.
@@ -62,21 +66,16 @@ public class Consumer {
         /*
          *  Register callback to execute on arrival of messages fetched from brokers.
          */
-        consumer.registerMessageListener(new MessageListenerConcurrently() {
-
-            @Override
-            public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                ConsumeConcurrentlyContext context) {
-                System.out.printf("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
-                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-            }
-        });
+        consumer.registerMessageListener((List<MessageExt> msgs, ConsumeConcurrentlyContext context) -> {
+		logger.info("%s Receive New Messages: %s %n", Thread.currentThread().getName(), msgs);
+		return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+         });
 
         /*
          *  Launch the consumer instance.
          */
         consumer.start();
 
-        System.out.printf("Consumer Started.%n");
+        logger.info("Consumer Started.%n");
     }
 }

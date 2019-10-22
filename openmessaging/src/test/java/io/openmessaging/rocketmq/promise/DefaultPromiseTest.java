@@ -64,48 +64,27 @@ public class DefaultPromiseTest {
 
     @Test
     public void testAddListener() throws Exception {
-        promise.addListener(new FutureListener<String>() {
-            @Override
-            public void operationComplete(Future<String> future) {
-                assertThat(promise.get()).isEqualTo("Done");
-
-            }
-        });
+        promise.addListener((Future<String> future) -> assertThat(promise.get()).isEqualTo("Done"));
         promise.set("Done");
     }
 
     @Test
     public void testAddListener_ListenerAfterSet() throws Exception {
         promise.set("Done");
-        promise.addListener(new FutureListener<String>() {
-            @Override
-            public void operationComplete(Future<String> future) {
-                assertThat(future.get()).isEqualTo("Done");
-            }
-        });
+        promise.addListener((Future<String> future) -> assertThat(future.get()).isEqualTo("Done"));
     }
 
     @Test
     public void testAddListener_WithException_ListenerAfterSet() throws Exception {
         final Throwable exception = new OMSRuntimeException("-1", "Test Error");
         promise.setFailure(exception);
-        promise.addListener(new FutureListener<String>() {
-            @Override
-            public void operationComplete(Future<String> future) {
-                assertThat(promise.getThrowable()).isEqualTo(exception);
-            }
-        });
+        promise.addListener((Future<String> future) -> assertThat(promise.getThrowable()).isEqualTo(exception));
     }
 
     @Test
     public void testAddListener_WithException() throws Exception {
         final Throwable exception = new OMSRuntimeException("-1", "Test Error");
-        promise.addListener(new FutureListener<String>() {
-            @Override
-            public void operationComplete(Future<String> future) {
-                assertThat(promise.getThrowable()).isEqualTo(exception);
-            }
-        });
+        promise.addListener((Future<String> future) -> assertThat(promise.getThrowable()).isEqualTo(exception));
         promise.setFailure(exception);
     }
 

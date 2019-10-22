@@ -36,10 +36,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ClusterAclConfigVersionListSubCommand implements SubCommand {
 
-    @Override public String commandName() {
+    private static final Logger logger = LoggerFactory.getLogger(ClusterAclConfigVersionListSubCommand.class);
+
+	@Override public String commandName() {
         return "clusterAclConfigVersion";
     }
 
@@ -71,31 +76,26 @@ public class ClusterAclConfigVersionListSubCommand implements SubCommand {
         try {
 
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
                 defaultMQAdminExt.start();
                 printClusterBaseInfo(defaultMQAdminExt, addr);
 
-                System.out.printf("get broker's plain access config version success.%n", addr);
+                logger.info("get broker's plain access config version success.%n", addr);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
 
                 Set<String> masterSet =
                     CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
-                System.out.printf("%-16s  %-22s  %-22s  %-20s  %-22s%n",
-                    "#Cluster Name",
-                    "#Broker Name",
-                    "#Broker Addr",
-                    "#AclConfigVersionNum",
-                    "#AclLastUpdateTime"
+                logger.info("%-16s  %-22s  %-22s  %-20s  %-22s%n", "#Cluster Name", "#Broker Name", "#Broker Addr", "#AclConfigVersionNum", "#AclLastUpdateTime"
                 );
                 for (String addr : masterSet) {
                     printClusterBaseInfo(defaultMQAdminExt, addr);
                 }
-                System.out.printf("get cluster's plain access config version success.%n");
+                logger.info("get cluster's plain access config version success.%n");
 
                 return;
             }
@@ -120,12 +120,7 @@ public class ClusterAclConfigVersionListSubCommand implements SubCommand {
         DateFormat sdf = new SimpleDateFormat(UtilAll.YYYY_MM_DD_HH_MM_SS);
         String timeStampStr = sdf.format(new Timestamp(aclDataVersion.getTimestamp()));
 
-        System.out.printf("%-16s  %-22s  %-22s  %-20s  %-22s%n",
-            clusterAclVersionInfo.getClusterName(),
-            clusterAclVersionInfo.getBrokerName(),
-            clusterAclVersionInfo.getBrokerAddr(),
-            versionNum,
-            timeStampStr
+        logger.info("%-16s  %-22s  %-22s  %-20s  %-22s%n", clusterAclVersionInfo.getClusterName(), clusterAclVersionInfo.getBrokerName(), clusterAclVersionInfo.getBrokerAddr(), versionNum, timeStampStr
         );
     }
 }

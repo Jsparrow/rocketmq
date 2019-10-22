@@ -25,18 +25,6 @@ public class BitsArray implements Cloneable {
     private byte[] bytes;
     private int bitLength;
 
-    public static BitsArray create(int bitLength) {
-        return new BitsArray(bitLength);
-    }
-
-    public static BitsArray create(byte[] bytes, int bitLength) {
-        return new BitsArray(bytes, bitLength);
-    }
-
-    public static BitsArray create(byte[] bytes) {
-        return new BitsArray(bytes);
-    }
-
     private BitsArray(int bitLength) {
         this.bitLength = bitLength;
         // init bytes
@@ -50,7 +38,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    private BitsArray(byte[] bytes, int bitLength) {
+	private BitsArray(byte[] bytes, int bitLength) {
         if (bytes == null || bytes.length < 1) {
             throw new IllegalArgumentException("Bytes is empty!");
         }
@@ -68,7 +56,7 @@ public class BitsArray implements Cloneable {
         this.bitLength = bitLength;
     }
 
-    private BitsArray(byte[] bytes) {
+	private BitsArray(byte[] bytes) {
         if (bytes == null || bytes.length < 1) {
             throw new IllegalArgumentException("Bytes is empty!");
         }
@@ -78,19 +66,31 @@ public class BitsArray implements Cloneable {
         System.arraycopy(bytes, 0, this.bytes, 0, this.bytes.length);
     }
 
-    public int bitLength() {
+	public static BitsArray create(int bitLength) {
+        return new BitsArray(bitLength);
+    }
+
+	public static BitsArray create(byte[] bytes, int bitLength) {
+        return new BitsArray(bytes, bitLength);
+    }
+
+	public static BitsArray create(byte[] bytes) {
+        return new BitsArray(bytes);
+    }
+
+	public int bitLength() {
         return this.bitLength;
     }
 
-    public int byteLength() {
+	public int byteLength() {
         return this.bytes.length;
     }
 
-    public byte[] bytes() {
+	public byte[] bytes() {
         return this.bytes;
     }
 
-    public void xor(final BitsArray other) {
+	public void xor(final BitsArray other) {
         checkInitialized(this);
         checkInitialized(other);
 
@@ -101,7 +101,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void xor(int bitPos, boolean set) {
+	public void xor(int bitPos, boolean set) {
         checkBitPosition(bitPos, this);
 
         boolean value = getBit(bitPos);
@@ -112,7 +112,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void or(final BitsArray other) {
+	public void or(final BitsArray other) {
         checkInitialized(this);
         checkInitialized(other);
 
@@ -123,7 +123,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void or(int bitPos, boolean set) {
+	public void or(int bitPos, boolean set) {
         checkBitPosition(bitPos, this);
 
         if (set) {
@@ -131,7 +131,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void and(final BitsArray other) {
+	public void and(final BitsArray other) {
         checkInitialized(this);
         checkInitialized(other);
 
@@ -142,7 +142,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void and(int bitPos, boolean set) {
+	public void and(int bitPos, boolean set) {
         checkBitPosition(bitPos, this);
 
         if (!set) {
@@ -150,13 +150,13 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void not(int bitPos) {
+	public void not(int bitPos) {
         checkBitPosition(bitPos, this);
 
         setBit(bitPos, !getBit(bitPos));
     }
 
-    public void setBit(int bitPos, boolean set) {
+	public void setBit(int bitPos, boolean set) {
         checkBitPosition(bitPos, this);
         int sub = subscript(bitPos);
         int pos = position(bitPos);
@@ -167,33 +167,33 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    public void setByte(int bytePos, byte set) {
+	public void setByte(int bytePos, byte set) {
         checkBytePosition(bytePos, this);
 
         this.bytes[bytePos] = set;
     }
 
-    public boolean getBit(int bitPos) {
+	public boolean getBit(int bitPos) {
         checkBitPosition(bitPos, this);
 
         return (this.bytes[subscript(bitPos)] & position(bitPos)) != 0;
     }
 
-    public byte getByte(int bytePos) {
+	public byte getByte(int bytePos) {
         checkBytePosition(bytePos, this);
 
         return this.bytes[bytePos];
     }
 
-    protected int subscript(int bitPos) {
+	protected int subscript(int bitPos) {
         return bitPos / Byte.SIZE;
     }
 
-    protected int position(int bitPos) {
+	protected int position(int bitPos) {
         return 1 << bitPos % Byte.SIZE;
     }
 
-    protected void checkBytePosition(int bytePos, BitsArray bitsArray) {
+	protected void checkBytePosition(int bytePos, BitsArray bitsArray) {
         checkInitialized(bitsArray);
         if (bytePos > bitsArray.byteLength()) {
             throw new IllegalArgumentException("BytePos is greater than " + bytes.length);
@@ -203,7 +203,7 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    protected void checkBitPosition(int bitPos, BitsArray bitsArray) {
+	protected void checkBitPosition(int bitPos, BitsArray bitsArray) {
         checkInitialized(bitsArray);
         if (bitPos > bitsArray.bitLength()) {
             throw new IllegalArgumentException("BitPos is greater than " + bitLength);
@@ -213,13 +213,14 @@ public class BitsArray implements Cloneable {
         }
     }
 
-    protected void checkInitialized(BitsArray bitsArray) {
+	protected void checkInitialized(BitsArray bitsArray) {
         if (bitsArray.bytes() == null) {
             throw new RuntimeException("Not initialized!");
         }
     }
 
-    public BitsArray clone() {
+	@Override
+	public BitsArray clone() {
         byte[] clone = new byte[this.byteLength()];
 
         System.arraycopy(this.bytes, 0, clone, 0, this.byteLength());
@@ -227,7 +228,7 @@ public class BitsArray implements Cloneable {
         return create(clone, bitLength());
     }
 
-    @Override
+	@Override
     public String toString() {
         if (this.bytes == null) {
             return "null";

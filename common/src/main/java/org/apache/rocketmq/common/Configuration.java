@@ -277,7 +277,8 @@ public class Configuration {
 
     private void merge(Properties from, Properties to) {
         for (Object key : from.keySet()) {
-            Object fromObj = from.get(key), toObj = to.get(key);
+            Object fromObj = from.get(key);
+			Object toObj = to.get(key);
             if (toObj != null && !toObj.equals(fromObj)) {
                 log.info("Replace, key: {}, value: {} -> {}", key, toObj, fromObj);
             }
@@ -291,7 +292,8 @@ public class Configuration {
                 continue;
             }
 
-            Object fromObj = from.get(key), toObj = to.get(key);
+            Object fromObj = from.get(key);
+			Object toObj = to.get(key);
             if (toObj != null && !toObj.equals(fromObj)) {
                 log.info("Replace, key: {}, value: {} -> {}", key, toObj, fromObj);
             }

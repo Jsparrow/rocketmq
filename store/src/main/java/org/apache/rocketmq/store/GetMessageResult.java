@@ -24,9 +24,9 @@ import org.apache.rocketmq.store.stats.BrokerStatsManager;
 public class GetMessageResult {
 
     private final List<SelectMappedBufferResult> messageMapedList =
-        new ArrayList<SelectMappedBufferResult>(100);
+        new ArrayList<>(100);
 
-    private final List<ByteBuffer> messageBufferList = new ArrayList<ByteBuffer>(100);
+    private final List<ByteBuffer> messageBufferList = new ArrayList<>(100);
 
     private GetMessageStatus status;
     private long nextBeginOffset;
@@ -91,9 +91,7 @@ public class GetMessageResult {
     }
 
     public void release() {
-        for (SelectMappedBufferResult select : this.messageMapedList) {
-            select.release();
-        }
+        this.messageMapedList.forEach(SelectMappedBufferResult::release);
     }
 
     public int getBufferTotalSize() {
@@ -126,9 +124,8 @@ public class GetMessageResult {
 
     @Override
     public String toString() {
-        return "GetMessageResult [status=" + status + ", nextBeginOffset=" + nextBeginOffset + ", minOffset="
-            + minOffset + ", maxOffset=" + maxOffset + ", bufferTotalSize=" + bufferTotalSize
-            + ", suggestPullingFromSlave=" + suggestPullingFromSlave + "]";
+        return new StringBuilder().append("GetMessageResult [status=").append(status).append(", nextBeginOffset=").append(nextBeginOffset).append(", minOffset=").append(minOffset).append(", maxOffset=")
+				.append(maxOffset).append(", bufferTotalSize=").append(bufferTotalSize).append(", suggestPullingFromSlave=").append(suggestPullingFromSlave).append("]").toString();
     }
 
 }

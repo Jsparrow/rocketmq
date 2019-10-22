@@ -91,7 +91,8 @@ public class RMQNormalProducer extends AbstractMQProducer {
         }
     }
 
-    public ResultWrapper send(Object msg, Object orderKey) {
+    @Override
+	public ResultWrapper send(Object msg, Object orderKey) {
         org.apache.rocketmq.client.producer.SendResult metaqResult = null;
         Message message = (Message) msg;
         try {
@@ -121,15 +122,11 @@ public class RMQNormalProducer extends AbstractMQProducer {
     }
 
     public void send(Map<MessageQueue, List<Object>> msgs) {
-        for (MessageQueue mq : msgs.keySet()) {
-            send(msgs.get(mq), mq);
-        }
+        msgs.keySet().forEach(mq -> send(msgs.get(mq), mq));
     }
 
     public void send(List<Object> msgs, MessageQueue mq) {
-        for (Object msg : msgs) {
-            sendMQ((Message) msg, mq);
-        }
+        msgs.forEach(msg -> sendMQ((Message) msg, mq));
     }
 
     public ResultWrapper sendMQ(Message msg, MessageQueue mq) {
@@ -160,7 +157,8 @@ public class RMQNormalProducer extends AbstractMQProducer {
         return sendResult;
     }
 
-    public void shutdown() {
+    @Override
+	public void shutdown() {
         producer.shutdown();
     }
 

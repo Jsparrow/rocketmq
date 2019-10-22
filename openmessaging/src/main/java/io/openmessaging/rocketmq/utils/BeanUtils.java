@@ -28,12 +28,12 @@ import org.apache.rocketmq.client.log.ClientLogger;
 import org.apache.rocketmq.logging.InternalLogger;
 
 public final class BeanUtils {
-    final static InternalLogger log = ClientLogger.getLog();
+    static final InternalLogger log = ClientLogger.getLog();
 
     /**
      * Maps primitive {@code Class}es to their corresponding wrapper {@code Class}.
      */
-    private static Map<Class<?>, Class<?>> primitiveWrapperMap = new HashMap<Class<?>, Class<?>>();
+    private static Map<Class<?>, Class<?>> primitiveWrapperMap = new HashMap<>();
 
     static {
         primitiveWrapperMap.put(Boolean.TYPE, Boolean.class);
@@ -47,7 +47,7 @@ public final class BeanUtils {
         primitiveWrapperMap.put(Void.TYPE, Void.TYPE);
     }
 
-    private static Map<Class<?>, Class<?>> wrapperMap = new HashMap<Class<?>, Class<?>>();
+    private static Map<Class<?>, Class<?>> wrapperMap = new HashMap<>();
 
     static {
         for (final Class<?> primitiveClass : primitiveWrapperMap.keySet()) {
@@ -108,7 +108,7 @@ public final class BeanUtils {
     public static Class<?> getMethodClass(Class<?> clazz, String methodName) {
         Method[] methods = clazz.getMethods();
         for (Method method : methods) {
-            if (method.getName().equalsIgnoreCase(methodName)) {
+            if (StringUtils.equalsIgnoreCase(method.getName(), methodName)) {
                 return method.getParameterTypes()[0];
             }
         }
@@ -129,8 +129,9 @@ public final class BeanUtils {
             setterMethod.invoke(obj, Float.valueOf(value.toString()));
         } else if (parameterClass == Long.TYPE) {
             setterMethod.invoke(obj, Long.valueOf(value.toString()));
-        } else
-            setterMethod.invoke(obj, value);
+        } else {
+			setterMethod.invoke(obj, value);
+		}
     }
 
     public static <T> T populate(final Properties properties, final T obj) {
@@ -142,7 +143,7 @@ public final class BeanUtils {
                 String entryKey = entry.getKey().toString();
                 String[] keyGroup = entryKey.split("\\.");
                 for (int i = 0; i < keyGroup.length; i++) {
-                    keyGroup[i] = keyGroup[i].toLowerCase();
+                    keyGroup[i] = StringUtils.lowerCase(keyGroup[i]);
                     keyGroup[i] = StringUtils.capitalize(keyGroup[i]);
                 }
                 String beanFieldNameWithCapitalization = StringUtils.join(keyGroup);
@@ -166,7 +167,7 @@ public final class BeanUtils {
             for (String key : keySet) {
                 String[] keyGroup = key.split("[\\._]");
                 for (int i = 0; i < keyGroup.length; i++) {
-                    keyGroup[i] = keyGroup[i].toLowerCase();
+                    keyGroup[i] = StringUtils.lowerCase(keyGroup[i]);
                     keyGroup[i] = StringUtils.capitalize(keyGroup[i]);
                 }
                 String beanFieldNameWithCapitalization = StringUtils.join(keyGroup);

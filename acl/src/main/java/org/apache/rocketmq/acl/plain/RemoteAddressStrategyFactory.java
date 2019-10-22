@@ -44,10 +44,10 @@ public class RemoteAddressStrategyFactory {
         if ("*".equals(remoteAddr) || "*.*.*.*".equals(remoteAddr)) {
             return NULL_NET_ADDRESS_STRATEGY;
         }
-        if (remoteAddr.endsWith("}")) {
+        if (StringUtils.endsWith(remoteAddr, "}")) {
             String[] strArray = StringUtils.split(remoteAddr, ".");
             String four = strArray[3];
-            if (!four.startsWith("{")) {
+            if (!StringUtils.startsWith(four, "{")) {
                 throw new AclException(String.format("MultipleRemoteAddressStrategy netaddress examine scope Exception netaddress", remoteAddr));
             }
             return new MultipleRemoteAddressStrategy(AclUtils.getAddreeStrArray(remoteAddr, four));
@@ -124,21 +124,21 @@ public class RemoteAddressStrategyFactory {
             String[] strArray = StringUtils.split(remoteAddr, ".");
             if (analysis(strArray, 1) || analysis(strArray, 2) || analysis(strArray, 3)) {
                 AclUtils.verify(remoteAddr, index - 1);
-                StringBuffer sb = new StringBuffer().append(strArray[0].trim()).append(".").append(strArray[1].trim()).append(".");
+                StringBuffer sb = new StringBuffer().append(StringUtils.trim(strArray[0])).append(".").append(StringUtils.trim(strArray[1])).append(".");
                 if (index == 3) {
-                    sb.append(strArray[2].trim()).append(".");
+                    sb.append(StringUtils.trim(strArray[2])).append(".");
                 }
                 this.head = sb.toString();
             }
         }
 
         private boolean analysis(String[] strArray, int index) {
-            String value = strArray[index].trim();
+            String value = StringUtils.trim(strArray[index]);
             this.index = index;
             if ("*".equals(value)) {
                 setValue(0, 255);
             } else if (AclUtils.isMinus(value)) {
-                if (value.indexOf("-") == 0) {
+                if (StringUtils.indexOf(value, "-") == 0) {
                     throw new AclException(String.format("RangeRemoteAddressStrategy netaddress examine scope Exception value %s ", value));
 
                 }
@@ -160,12 +160,12 @@ public class RemoteAddressStrategyFactory {
         @Override
         public boolean match(PlainAccessResource plainAccessResource) {
             String netAddress = plainAccessResource.getWhiteRemoteAddress();
-            if (netAddress.startsWith(this.head)) {
+            if (StringUtils.startsWith(netAddress, this.head)) {
                 String value;
                 if (index == 3) {
-                    value = netAddress.substring(this.head.length());
+                    value = StringUtils.substring(netAddress, this.head.length());
                 } else {
-                    value = netAddress.substring(this.head.length(), netAddress.lastIndexOf('.'));
+                    value = StringUtils.substring(netAddress, this.head.length(), netAddress.lastIndexOf('.'));
                 }
                 Integer address = Integer.valueOf(value);
                 if (address >= this.start && address <= this.end) {

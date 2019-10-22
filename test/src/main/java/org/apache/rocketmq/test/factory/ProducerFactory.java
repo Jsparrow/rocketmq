@@ -21,17 +21,21 @@ import java.util.UUID;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.test.util.RandomUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProducerFactory {
 
-    public static DefaultMQProducer getRMQProducer(String ns) {
+    private static final Logger logger = LoggerFactory.getLogger(ProducerFactory.class);
+
+	public static DefaultMQProducer getRMQProducer(String ns) {
         DefaultMQProducer producer = new DefaultMQProducer(RandomUtil.getStringByUUID());
         producer.setInstanceName(UUID.randomUUID().toString());
         producer.setNamesrvAddr(ns);
         try {
             producer.start();
         } catch (MQClientException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
 
         return producer;

@@ -59,11 +59,10 @@ public class TransientStorePool {
     }
 
     public void destroy() {
-        for (ByteBuffer byteBuffer : availableBuffers) {
-            final long address = ((DirectBuffer) byteBuffer).address();
-            Pointer pointer = new Pointer(address);
-            LibC.INSTANCE.munlock(pointer, new NativeLong(fileSize));
-        }
+        availableBuffers.stream().mapToLong(byteBuffer -> ((DirectBuffer) byteBuffer).address()).forEach(address -> {
+			Pointer pointer = new Pointer(address);
+			LibC.INSTANCE.munlock(pointer, new NativeLong(fileSize));
+		});
     }
 
     public void returnBuffer(ByteBuffer byteBuffer) {

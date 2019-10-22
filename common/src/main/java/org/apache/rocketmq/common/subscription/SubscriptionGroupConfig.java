@@ -129,44 +129,54 @@ public class SubscriptionGroupConfig {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) {
+			return true;
+		}
+        if (obj == null) {
+			return false;
+		}
+        if (getClass() != obj.getClass()) {
+			return false;
+		}
         SubscriptionGroupConfig other = (SubscriptionGroupConfig) obj;
-        if (brokerId != other.brokerId)
-            return false;
-        if (consumeBroadcastEnable != other.consumeBroadcastEnable)
-            return false;
-        if (consumeEnable != other.consumeEnable)
-            return false;
-        if (consumeFromMinEnable != other.consumeFromMinEnable)
-            return false;
+        if (brokerId != other.brokerId) {
+			return false;
+		}
+        if (consumeBroadcastEnable != other.consumeBroadcastEnable) {
+			return false;
+		}
+        if (consumeEnable != other.consumeEnable) {
+			return false;
+		}
+        if (consumeFromMinEnable != other.consumeFromMinEnable) {
+			return false;
+		}
         if (groupName == null) {
-            if (other.groupName != null)
-                return false;
-        } else if (!groupName.equals(other.groupName))
-            return false;
-        if (retryMaxTimes != other.retryMaxTimes)
-            return false;
-        if (retryQueueNums != other.retryQueueNums)
-            return false;
-        if (whichBrokerWhenConsumeSlowly != other.whichBrokerWhenConsumeSlowly)
-            return false;
-        if (notifyConsumerIdsChangedEnable != other.notifyConsumerIdsChangedEnable)
-            return false;
+            if (other.groupName != null) {
+				return false;
+			}
+        } else if (!groupName.equals(other.groupName)) {
+			return false;
+		}
+        if (retryMaxTimes != other.retryMaxTimes) {
+			return false;
+		}
+        if (retryQueueNums != other.retryQueueNums) {
+			return false;
+		}
+        if (whichBrokerWhenConsumeSlowly != other.whichBrokerWhenConsumeSlowly) {
+			return false;
+		}
+        if (notifyConsumerIdsChangedEnable != other.notifyConsumerIdsChangedEnable) {
+			return false;
+		}
         return true;
     }
 
     @Override
     public String toString() {
-        return "SubscriptionGroupConfig [groupName=" + groupName + ", consumeEnable=" + consumeEnable
-            + ", consumeFromMinEnable=" + consumeFromMinEnable + ", consumeBroadcastEnable="
-            + consumeBroadcastEnable + ", retryQueueNums=" + retryQueueNums + ", retryMaxTimes="
-            + retryMaxTimes + ", brokerId=" + brokerId + ", whichBrokerWhenConsumeSlowly="
-            + whichBrokerWhenConsumeSlowly + ", notifyConsumerIdsChangedEnable="
-            + notifyConsumerIdsChangedEnable + "]";
+        return new StringBuilder().append("SubscriptionGroupConfig [groupName=").append(groupName).append(", consumeEnable=").append(consumeEnable).append(", consumeFromMinEnable=").append(consumeFromMinEnable).append(", consumeBroadcastEnable=")
+				.append(consumeBroadcastEnable).append(", retryQueueNums=").append(retryQueueNums).append(", retryMaxTimes=").append(retryMaxTimes).append(", brokerId=").append(brokerId)
+				.append(", whichBrokerWhenConsumeSlowly=").append(whichBrokerWhenConsumeSlowly).append(", notifyConsumerIdsChangedEnable=").append(notifyConsumerIdsChangedEnable).append("]").toString();
     }
 }

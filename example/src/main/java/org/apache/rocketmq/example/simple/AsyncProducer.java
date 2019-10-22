@@ -25,9 +25,13 @@ import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AsyncProducer {
-    public static void main(
+    private static final Logger logger = LoggerFactory.getLogger(AsyncProducer.class);
+
+	public static void main(
         String[] args) throws MQClientException, InterruptedException, UnsupportedEncodingException {
 
         DefaultMQProducer producer = new DefaultMQProducer("Jodie_Daily_test");
@@ -47,18 +51,18 @@ public class AsyncProducer {
                     @Override
                     public void onSuccess(SendResult sendResult) {
                         countDownLatch.countDown();
-                        System.out.printf("%-10d OK %s %n", index, sendResult.getMsgId());
+                        logger.info("%-10d OK %s %n", index, sendResult.getMsgId());
                     }
 
                     @Override
                     public void onException(Throwable e) {
                         countDownLatch.countDown();
-                        System.out.printf("%-10d Exception %s %n", index, e);
+                        logger.info("%-10d Exception %s %n", index, e);
                         e.printStackTrace();
                     }
                 });
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
         }
         countDownLatch.await(5, TimeUnit.SECONDS);

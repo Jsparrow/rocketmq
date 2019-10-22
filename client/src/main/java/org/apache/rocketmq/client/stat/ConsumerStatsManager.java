@@ -62,23 +62,23 @@ public class ConsumerStatsManager {
     }
 
     public void incPullRT(final String group, final String topic, final long rt) {
-        this.topicAndGroupPullRT.addValue(topic + "@" + group, (int) rt, 1);
+        this.topicAndGroupPullRT.addValue(new StringBuilder().append(topic).append("@").append(group).toString(), (int) rt, 1);
     }
 
     public void incPullTPS(final String group, final String topic, final long msgs) {
-        this.topicAndGroupPullTPS.addValue(topic + "@" + group, (int) msgs, 1);
+        this.topicAndGroupPullTPS.addValue(new StringBuilder().append(topic).append("@").append(group).toString(), (int) msgs, 1);
     }
 
     public void incConsumeRT(final String group, final String topic, final long rt) {
-        this.topicAndGroupConsumeRT.addValue(topic + "@" + group, (int) rt, 1);
+        this.topicAndGroupConsumeRT.addValue(new StringBuilder().append(topic).append("@").append(group).toString(), (int) rt, 1);
     }
 
     public void incConsumeOKTPS(final String group, final String topic, final long msgs) {
-        this.topicAndGroupConsumeOKTPS.addValue(topic + "@" + group, (int) msgs, 1);
+        this.topicAndGroupConsumeOKTPS.addValue(new StringBuilder().append(topic).append("@").append(group).toString(), (int) msgs, 1);
     }
 
     public void incConsumeFailedTPS(final String group, final String topic, final long msgs) {
-        this.topicAndGroupConsumeFailedTPS.addValue(topic + "@" + group, (int) msgs, 1);
+        this.topicAndGroupConsumeFailedTPS.addValue(new StringBuilder().append(topic).append("@").append(group).toString(), (int) msgs, 1);
     }
 
     public ConsumeStatus consumeStatus(final String group, final String topic) {
@@ -119,7 +119,7 @@ public class ConsumerStatsManager {
         }
 
         {
-            StatsSnapshot ss = this.topicAndGroupConsumeFailedTPS.getStatsDataInHour(topic + "@" + group);
+            StatsSnapshot ss = this.topicAndGroupConsumeFailedTPS.getStatsDataInHour(new StringBuilder().append(topic).append("@").append(group).toString());
             if (ss != null) {
                 cs.setConsumeFailedMsgs(ss.getSum());
             }
@@ -129,27 +129,27 @@ public class ConsumerStatsManager {
     }
 
     private StatsSnapshot getPullRT(final String group, final String topic) {
-        return this.topicAndGroupPullRT.getStatsDataInMinute(topic + "@" + group);
+        return this.topicAndGroupPullRT.getStatsDataInMinute(new StringBuilder().append(topic).append("@").append(group).toString());
     }
 
     private StatsSnapshot getPullTPS(final String group, final String topic) {
-        return this.topicAndGroupPullTPS.getStatsDataInMinute(topic + "@" + group);
+        return this.topicAndGroupPullTPS.getStatsDataInMinute(new StringBuilder().append(topic).append("@").append(group).toString());
     }
 
     private StatsSnapshot getConsumeRT(final String group, final String topic) {
-        StatsSnapshot statsData = this.topicAndGroupConsumeRT.getStatsDataInMinute(topic + "@" + group);
+        StatsSnapshot statsData = this.topicAndGroupConsumeRT.getStatsDataInMinute(new StringBuilder().append(topic).append("@").append(group).toString());
         if (0 == statsData.getSum()) {
-            statsData = this.topicAndGroupConsumeRT.getStatsDataInHour(topic + "@" + group);
+            statsData = this.topicAndGroupConsumeRT.getStatsDataInHour(new StringBuilder().append(topic).append("@").append(group).toString());
         }
 
         return statsData;
     }
 
     private StatsSnapshot getConsumeOKTPS(final String group, final String topic) {
-        return this.topicAndGroupConsumeOKTPS.getStatsDataInMinute(topic + "@" + group);
+        return this.topicAndGroupConsumeOKTPS.getStatsDataInMinute(new StringBuilder().append(topic).append("@").append(group).toString());
     }
 
     private StatsSnapshot getConsumeFailedTPS(final String group, final String topic) {
-        return this.topicAndGroupConsumeFailedTPS.getStatsDataInMinute(topic + "@" + group);
+        return this.topicAndGroupConsumeFailedTPS.getStatsDataInMinute(new StringBuilder().append(topic).append("@").append(group).toString());
     }
 }

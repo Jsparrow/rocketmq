@@ -23,6 +23,7 @@ import org.apache.rocketmq.srvutil.ServerUtil;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.apache.commons.lang3.StringUtils;
 
 public class AllocateMQSubCommandTest {
     @Test
@@ -32,7 +33,7 @@ public class AllocateMQSubCommandTest {
         String[] subargs = new String[] {"-t unit-test", "-i 127.0.0.1:10911"};
         final CommandLine commandLine =
             ServerUtil.parseCmdLine("mqadmin " + cmd.commandName(), subargs, cmd.buildCommandlineOptions(options), new PosixParser());
-        assertThat(commandLine.getOptionValue('t').trim()).isEqualTo("unit-test");
-        assertThat(commandLine.getOptionValue("i").trim()).isEqualTo("127.0.0.1:10911");
+        assertThat(StringUtils.trim(commandLine.getOptionValue('t'))).isEqualTo("unit-test");
+        assertThat(StringUtils.trim(commandLine.getOptionValue("i"))).isEqualTo("127.0.0.1:10911");
     }
 }

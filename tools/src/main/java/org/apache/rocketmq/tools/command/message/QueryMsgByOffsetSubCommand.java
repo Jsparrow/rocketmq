@@ -27,6 +27,7 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.apache.commons.lang3.StringUtils;
 
 public class QueryMsgByOffsetSubCommand implements SubCommand {
 
@@ -70,10 +71,10 @@ public class QueryMsgByOffsetSubCommand implements SubCommand {
         defaultMQPullConsumer.setInstanceName(Long.toString(System.currentTimeMillis()));
 
         try {
-            String topic = commandLine.getOptionValue('t').trim();
-            String brokerName = commandLine.getOptionValue('b').trim();
-            String queueId = commandLine.getOptionValue('i').trim();
-            String offset = commandLine.getOptionValue('o').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+            String brokerName = StringUtils.trim(commandLine.getOptionValue('b'));
+            String queueId = StringUtils.trim(commandLine.getOptionValue('i'));
+            String offset = StringUtils.trim(commandLine.getOptionValue('o'));
 
             MessageQueue mq = new MessageQueue();
             mq.setTopic(topic);

@@ -47,8 +47,7 @@ public class PutMessageResult {
 
     @Override
     public String toString() {
-        return "PutMessageResult [putMessageStatus=" + putMessageStatus + ", appendMessageResult="
-            + appendMessageResult + "]";
+        return new StringBuilder().append("PutMessageResult [putMessageStatus=").append(putMessageStatus).append(", appendMessageResult=").append(appendMessageResult).append("]").toString();
     }
 
 }

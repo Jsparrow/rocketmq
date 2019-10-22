@@ -26,10 +26,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ProducerConnectionSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(ProducerConnectionSubCommand.class);
+
+	@Override
     public String commandName() {
         return "producerConnection";
     }
@@ -61,19 +66,14 @@ public class ProducerConnectionSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            String group = commandLine.getOptionValue('g').trim();
-            String topic = commandLine.getOptionValue('t').trim();
+            String group = StringUtils.trim(commandLine.getOptionValue('g'));
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
 
             ProducerConnection pc = defaultMQAdminExt.examineProducerConnectionInfo(group, topic);
 
             int i = 1;
             for (Connection conn : pc.getConnectionSet()) {
-                System.out.printf("%04d  %-32s %-22s %-8s %s%n",
-                    i++,
-                    conn.getClientId(),
-                    conn.getClientAddr(),
-                    conn.getLanguage(),
-                    MQVersion.getVersionDesc(conn.getVersion())
+                logger.info("%04d  %-32s %-22s %-8s %s%n", i++, conn.getClientId(), conn.getClientAddr(), conn.getLanguage(), MQVersion.getVersionDesc(conn.getVersion())
                 );
             }
         } catch (Exception e) {

@@ -28,9 +28,13 @@ import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Producer {
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    private static final Logger logger = LoggerFactory.getLogger(Producer.class);
+
+	public static void main(String[] args) throws UnsupportedEncodingException {
         try {
             MQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
             producer.start();
@@ -41,21 +45,18 @@ public class Producer {
                 Message msg =
                     new Message("TopicTestjjj", tags[i % tags.length], "KEY" + i,
                         ("Hello RocketMQ " + i).getBytes(RemotingHelper.DEFAULT_CHARSET));
-                SendResult sendResult = producer.send(msg, new MessageQueueSelector() {
-                    @Override
-                    public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
-                        Integer id = (Integer) arg;
-                        int index = id % mqs.size();
-                        return mqs.get(index);
-                    }
-                }, orderId);
+                SendResult sendResult = producer.send(msg, (List<MessageQueue> mqs, Message msg1, Object arg) -> {
+				    Integer id = (Integer) arg;
+				    int index = id % mqs.size();
+				    return mqs.get(index);
+				}, orderId);
 
-                System.out.printf("%s%n", sendResult);
+                logger.info("%s%n", sendResult);
             }
 
             producer.shutdown();
         } catch (MQClientException | RemotingException | MQBrokerException | InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

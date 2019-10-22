@@ -26,10 +26,13 @@ import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.common.stats.MomentStatsItemSet;
 import org.apache.rocketmq.common.stats.StatsItem;
 import org.apache.rocketmq.common.stats.StatsItemSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BrokerStatsManager {
 
-    public static final String TOPIC_PUT_NUMS = "TOPIC_PUT_NUMS";
+    private static final Logger logger = LoggerFactory.getLogger(BrokerStatsManager.class);
+	public static final String TOPIC_PUT_NUMS = "TOPIC_PUT_NUMS";
     public static final String TOPIC_PUT_SIZE = "TOPIC_PUT_SIZE";
     public static final String GROUP_GET_NUMS = "GROUP_GET_NUMS";
     public static final String GROUP_GET_SIZE = "GROUP_GET_SIZE";
@@ -66,7 +69,7 @@ public class BrokerStatsManager {
         "BrokerStatsThread"));
     private final ScheduledExecutorService commercialExecutor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
         "CommercialStatsThread"));
-    private final HashMap<String, StatsItemSet> statsTable = new HashMap<String, StatsItemSet>();
+    private final HashMap<String, StatsItemSet> statsTable = new HashMap<>();
     private final String clusterName;
     private final MomentStatsItemSet momentStatsItemSetFallSize = new MomentStatsItemSet(GROUP_GET_FALL_SIZE, scheduledExecutorService, log);
     private final MomentStatsItemSet momentStatsItemSetFallTime = new MomentStatsItemSet(GROUP_GET_FALL_TIME, scheduledExecutorService, log);
@@ -116,6 +119,7 @@ public class BrokerStatsManager {
         try {
             return this.statsTable.get(statsName).getStatsItem(statsKey);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         }
 
         return null;
@@ -139,7 +143,7 @@ public class BrokerStatsManager {
     }
 
     public String buildStatsKey(String topic, String group) {
-        StringBuffer strBuilder = new StringBuffer();
+        StringBuilder strBuilder = new StringBuilder();
         strBuilder.append(topic);
         strBuilder.append("@");
         strBuilder.append(group);
@@ -197,7 +201,7 @@ public class BrokerStatsManager {
     }
 
     public String buildCommercialStatsKey(String owner, String topic, String group, String type) {
-        StringBuffer strBuilder = new StringBuffer();
+        StringBuilder strBuilder = new StringBuilder();
         strBuilder.append(owner);
         strBuilder.append("@");
         strBuilder.append(topic);

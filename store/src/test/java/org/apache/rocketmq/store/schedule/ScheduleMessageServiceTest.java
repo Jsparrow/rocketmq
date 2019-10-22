@@ -41,53 +41,55 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class ScheduleMessageServiceTest {
 
 
-    /**
-     * t
-     * defaultMessageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h"
-     */
-    String testMessageDelayLevel = "5s 8s";
-    /**
-     * choose delay level
-     */
-    int delayLevel = 2;
-
-    private static final String storePath = System.getProperty("user.home") + File.separator + "schedule_test#" + UUID.randomUUID();
-    private static final int commitLogFileSize = 1024;
-    private static final int cqFileSize = 10;
-    private static final int cqExtFileSize = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
-
-    private static SocketAddress bornHost;
-    private static SocketAddress storeHost;
-    DefaultMessageStore messageStore;
-    MessageStoreConfig messageStoreConfig;
-    BrokerConfig brokerConfig;
-    ScheduleMessageService scheduleMessageService;
-
-    static String sendMessage = " ------- schedule message test -------";
-    static String topic = "schedule_topic_test";
-    static String messageGroup = "delayGroupTest";
+    private static final Logger logger = LoggerFactory.getLogger(ScheduleMessageServiceTest.class);
+	private static final String storePath = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("schedule_test#").append(UUID.randomUUID()).toString();
+	private static final int commitLogFileSize = 1024;
+	private static final int cqFileSize = 10;
+	private static final int cqExtFileSize = 10 * (ConsumeQueueExt.CqExtUnit.MIN_EXT_UNIT_SIZE + 64);
+	private static SocketAddress bornHost;
+	private static SocketAddress storeHost;
+	static String sendMessage = " ------- schedule message test -------";
+	static String topic = "schedule_topic_test";
+	static String messageGroup = "delayGroupTest";
 
 
-    static {
+	static {
         try {
             bornHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         try {
             storeHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 
 
-    @Before
+	/**
+     * t
+     * defaultMessageDelayLevel = "1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h"
+     */
+    String testMessageDelayLevel = "5s 8s";
+	/**
+     * choose delay level
+     */
+    int delayLevel = 2;
+	DefaultMessageStore messageStore;
+	MessageStoreConfig messageStoreConfig;
+	BrokerConfig brokerConfig;
+	ScheduleMessageService scheduleMessageService;
+
+
+	@Before
     public void init() throws Exception {
         messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setMessageDelayLevel(testMessageDelayLevel);
@@ -97,7 +99,7 @@ public class ScheduleMessageServiceTest {
         messageStoreConfig.setMessageIndexEnable(false);
         messageStoreConfig.setEnableConsumeQueueExt(true);
         messageStoreConfig.setStorePathRootDir(storePath);
-        messageStoreConfig.setStorePathCommitLog(storePath + File.separator + "commitlog");
+        messageStoreConfig.setStorePathCommitLog(new StringBuilder().append(storePath).append(File.separator).append("commitlog").toString());
 
         brokerConfig = new BrokerConfig();
         BrokerStatsManager manager = new BrokerStatsManager(brokerConfig.getBrokerClusterName());
@@ -110,7 +112,7 @@ public class ScheduleMessageServiceTest {
     }
 
 
-    @Test
+	@Test
     public void deliverDelayedMessageTimerTaskTest() throws Exception {
         MessageExtBrokerInner msg = buildMessage();
         int realQueueId = msg.getQueueId();
@@ -135,7 +137,7 @@ public class ScheduleMessageServiceTest {
         // timer run maybe delay, then consumer message again
         // and wait offsetTable
         TimeUnit.SECONDS.sleep(10);
-        scheduleMessageService.buildRunningStats(new HashMap<String, String>());
+        scheduleMessageService.buildRunningStats(new HashMap<>());
 
         messageResult = getMessage(realQueueId, offset);
         // now,found the message
@@ -163,7 +165,8 @@ public class ScheduleMessageServiceTest {
 
     }
 
-    /**
+
+	/**
      * add some [error/no use] code test
      */
     @Test
@@ -181,14 +184,14 @@ public class ScheduleMessageServiceTest {
     }
 
 
-    private GetMessageResult getMessage(int queueId, Long offset) {
+	private GetMessageResult getMessage(int queueId, Long offset) {
         return messageStore.getMessage(messageGroup, topic,
                 queueId, offset, 1, null);
 
     }
 
 
-    @After
+	@After
     public void shutdown() throws InterruptedException {
         messageStore.shutdown();
         messageStore.destroy();
@@ -197,7 +200,7 @@ public class ScheduleMessageServiceTest {
     }
 
 
-    public MessageExtBrokerInner buildMessage() {
+	public MessageExtBrokerInner buildMessage() {
 
         byte[] msgBody = sendMessage.getBytes();
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
@@ -211,9 +214,7 @@ public class ScheduleMessageServiceTest {
         msg.setBornHost(bornHost);
         return msg;
     }
-
-
-    private class MyMessageArrivingListener implements MessageArrivingListener {
+	private class MyMessageArrivingListener implements MessageArrivingListener {
         @Override
         public void arriving(String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime,
                              byte[] filterBitMap, Map<String, String> properties) {

@@ -23,7 +23,6 @@ public class AclException extends RuntimeException {
     private int code;
 
     public AclException(String status, int code) {
-        super();
         this.status = status;
         this.code = code;
     }

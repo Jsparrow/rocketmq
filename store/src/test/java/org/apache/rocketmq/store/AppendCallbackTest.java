@@ -51,8 +51,9 @@ public class AppendCallbackTest {
         messageStoreConfig.setMappedFileSizeConsumeQueue(1024 * 4);
         messageStoreConfig.setMaxHashSlotNum(100);
         messageStoreConfig.setMaxIndexNum(100 * 10);
-        messageStoreConfig.setStorePathRootDir(System.getProperty("user.home") + File.separator + "unitteststore");
-        messageStoreConfig.setStorePathCommitLog(System.getProperty("user.home") + File.separator + "unitteststore" + File.separator + "commitlog");
+        messageStoreConfig.setStorePathRootDir(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("unitteststore").toString());
+        messageStoreConfig.setStorePathCommitLog(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("unitteststore").append(File.separator).append("commitlog")
+				.toString());
         //too much reference
         DefaultMessageStore messageStore = new DefaultMessageStore(messageStoreConfig, null, null, null);
         CommitLog commitLog = new CommitLog(messageStore);
@@ -61,7 +62,7 @@ public class AppendCallbackTest {
 
     @After
     public void destroy() {
-        UtilAll.deleteFile(new File(System.getProperty("user.home") + File.separator + "unitteststore"));
+        UtilAll.deleteFile(new File(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("unitteststore").toString()));
     }
 
     @Test

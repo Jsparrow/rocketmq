@@ -33,12 +33,16 @@ import org.apache.rocketmq.common.protocol.NamespaceUtil;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default pulling consumer
  */
 public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsumer {
-    protected final transient DefaultMQPullConsumerImpl defaultMQPullConsumerImpl;
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQPullConsumer.class);
+
+	protected final transient DefaultMQPullConsumerImpl defaultMQPullConsumerImpl;
 
     /**
      * Do the same thing for the same Group, the application must be set,and guarantee Globally unique
@@ -393,6 +397,7 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
             MessageDecoder.decodeMessageId(uniqKey);
             return this.viewMessage(uniqKey);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
             // Ignore
         }
         return this.defaultMQPullConsumerImpl.queryMessageByUniqKey(withNamespace(topic), uniqKey);
@@ -429,11 +434,13 @@ public class DefaultMQPullConsumer extends ClientConfig implements MQPullConsume
         return defaultMQPullConsumerImpl;
     }
 
-    public boolean isUnitMode() {
+    @Override
+	public boolean isUnitMode() {
         return unitMode;
     }
 
-    public void setUnitMode(boolean isUnitMode) {
+    @Override
+	public void setUnitMode(boolean isUnitMode) {
         this.unitMode = isUnitMode;
     }
 

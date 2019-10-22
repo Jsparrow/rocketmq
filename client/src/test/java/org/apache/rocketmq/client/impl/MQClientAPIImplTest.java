@@ -55,29 +55,31 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MQClientAPIImplTest {
-    private MQClientAPIImpl mqClientAPI = new MQClientAPIImpl(new NettyClientConfig(), null, null, new ClientConfig());
-    @Mock
+    private static final Logger logger = LoggerFactory.getLogger(MQClientAPIImplTest.class);
+	private static String group = "FooBarGroup";
+	private static String topic = "FooBar";
+	private MQClientAPIImpl mqClientAPI = new MQClientAPIImpl(new NettyClientConfig(), null, null, new ClientConfig());
+	@Mock
     private RemotingClient remotingClient;
-    @Mock
+	@Mock
     private DefaultMQProducerImpl defaultMQProducerImpl;
+	private String brokerAddr = "127.0.0.1";
+	private String brokerName = "DefaultBroker";
+	private Message msg = new Message("FooBar", new byte[] {});
 
-    private String brokerAddr = "127.0.0.1";
-    private String brokerName = "DefaultBroker";
-    private static String group = "FooBarGroup";
-    private static String topic = "FooBar";
-    private Message msg = new Message("FooBar", new byte[] {});
-
-    @Before
+	@Before
     public void init() throws Exception {
         Field field = MQClientAPIImpl.class.getDeclaredField("remotingClient");
         field.setAccessible(true);
         field.set(mqClientAPI, remotingClient);
     }
 
-    @Test
+	@Test
     public void testSendMessageOneWay_Success() throws RemotingException, InterruptedException, MQBrokerException {
         doNothing().when(remotingClient).invokeOneway(anyString(), any(RemotingCommand.class), anyLong());
         SendResult sendResult = mqClientAPI.sendMessage(brokerAddr, brokerName, msg, new SendMessageRequestHeader(),
@@ -85,7 +87,7 @@ public class MQClientAPIImplTest {
         assertThat(sendResult).isNull();
     }
 
-    @Test
+	@Test
     public void testSendMessageOneWay_WithException() throws RemotingException, InterruptedException, MQBrokerException {
         doThrow(new RemotingTimeoutException("Remoting Exception in Test")).when(remotingClient).invokeOneway(anyString(), any(RemotingCommand.class), anyLong());
         try {
@@ -106,7 +108,7 @@ public class MQClientAPIImplTest {
         }
     }
 
-    @Test
+	@Test
     public void testSendMessageSync_Success() throws InterruptedException, RemotingException, MQBrokerException {
         doAnswer(new Answer() {
             @Override
@@ -127,7 +129,7 @@ public class MQClientAPIImplTest {
         assertThat(sendResult.getMessageQueue().getQueueId()).isEqualTo(1);
     }
 
-    @Test
+	@Test
     public void testSendMessageSync_WithException() throws InterruptedException, RemotingException, MQBrokerException {
         doAnswer(new Answer() {
             @Override
@@ -152,7 +154,7 @@ public class MQClientAPIImplTest {
         }
     }
 
-    @Test
+	@Test
     public void testSendMessageAsync_Success() throws RemotingException, InterruptedException, MQBrokerException {
         doNothing().when(remotingClient).invokeAsync(anyString(), any(RemotingCommand.class), anyLong(), any(InvokeCallback.class));
         SendResult sendResult = mqClientAPI.sendMessage(brokerAddr, brokerName, msg, new SendMessageRequestHeader(),
@@ -189,7 +191,7 @@ public class MQClientAPIImplTest {
             null, null, 0, sendMessageContext, defaultMQProducerImpl);
     }
 
-    @Test
+	@Test
     public void testSendMessageAsync_WithException() throws RemotingException, InterruptedException, MQBrokerException {
         doThrow(new RemotingTimeoutException("Remoting Exception in Test")).when(remotingClient)
             .invokeAsync(anyString(), any(RemotingCommand.class), anyLong(), any(InvokeCallback.class));
@@ -212,7 +214,7 @@ public class MQClientAPIImplTest {
         }
     }
 
-    @Test
+	@Test
     public void testCreatePlainAccessConfig_Success() throws InterruptedException, RemotingException, MQBrokerException {
 
         doAnswer(new Answer() {
@@ -228,11 +230,12 @@ public class MQClientAPIImplTest {
         try {
             mqClientAPI.createPlainAccessConfig(brokerAddr, config, 3 * 1000);
         } catch (MQClientException ex) {
+			logger.error(ex.getMessage(), ex);
 
         }
     }
 
-    @Test
+	@Test
     public void testCreatePlainAccessConfig_Exception() throws InterruptedException, RemotingException, MQBrokerException {
 
         doAnswer(new Answer() {
@@ -252,7 +255,7 @@ public class MQClientAPIImplTest {
         }
     }
 
-    @Test
+	@Test
     public void testDeleteAccessConfig_Success() throws InterruptedException, RemotingException, MQBrokerException {
 
         doAnswer(new Answer() {
@@ -267,11 +270,12 @@ public class MQClientAPIImplTest {
         try {
             mqClientAPI.deleteAccessConfig(brokerAddr, accessKey, 3 * 1000);
         } catch (MQClientException ex) {
+			logger.error(ex.getMessage(), ex);
 
         }
     }
 
-    @Test
+	@Test
     public void testDeleteAccessConfig_Exception() throws InterruptedException, RemotingException, MQBrokerException {
 
         doAnswer(new Answer() {
@@ -289,7 +293,8 @@ public class MQClientAPIImplTest {
             assertThat(ex.getErrorMessage()).isEqualTo("corresponding to accessConfig has been deleted failed");
         }
     }
-    @Test
+
+	@Test
     public void testResumeCheckHalfMessage_WithException() throws RemotingException, InterruptedException, MQBrokerException, MQClientException {
         doAnswer(new Answer() {
             @Override
@@ -307,7 +312,7 @@ public class MQClientAPIImplTest {
         assertThat(result).isEqualTo(false);
     }
 
-    @Test
+	@Test
     public void testResumeCheckHalfMessage_Success() throws InterruptedException, RemotingException, MQBrokerException, MQClientException {
         doAnswer(new Answer() {
             @Override
@@ -322,14 +327,14 @@ public class MQClientAPIImplTest {
         assertThat(result).isEqualTo(true);
     }
 
-    private RemotingCommand createResumeSuccessResponse(RemotingCommand request) {
+	private RemotingCommand createResumeSuccessResponse(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.SUCCESS);
         response.setOpaque(request.getOpaque());
         return response;
     }
 
-    private RemotingCommand createSuccessResponse(RemotingCommand request) {
+	private RemotingCommand createSuccessResponse(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(SendMessageResponseHeader.class);
         response.setCode(ResponseCode.SUCCESS);
         response.setOpaque(request.getOpaque());
@@ -347,7 +352,7 @@ public class MQClientAPIImplTest {
         return response;
     }
 
-    private RemotingCommand createSuccessResponse4UpdateAclConfig(RemotingCommand request) {
+	private RemotingCommand createSuccessResponse4UpdateAclConfig(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.SUCCESS);
         response.setOpaque(request.getOpaque());
@@ -357,7 +362,7 @@ public class MQClientAPIImplTest {
         return response;
     }
 
-    private RemotingCommand createSuccessResponse4DeleteAclConfig(RemotingCommand request) {
+	private RemotingCommand createSuccessResponse4DeleteAclConfig(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.SUCCESS);
         response.setOpaque(request.getOpaque());
@@ -367,7 +372,7 @@ public class MQClientAPIImplTest {
         return response;
     }
 
-    private RemotingCommand createErrorResponse4UpdateAclConfig(RemotingCommand request) {
+	private RemotingCommand createErrorResponse4UpdateAclConfig(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.UPDATE_AND_CREATE_ACL_CONFIG_FAILED);
         response.setOpaque(request.getOpaque());
@@ -377,7 +382,7 @@ public class MQClientAPIImplTest {
         return response;
     }
 
-    private RemotingCommand createErrorResponse4DeleteAclConfig(RemotingCommand request) {
+	private RemotingCommand createErrorResponse4DeleteAclConfig(RemotingCommand request) {
         RemotingCommand response = RemotingCommand.createResponseCommand(null);
         response.setCode(ResponseCode.DELETE_ACL_CONFIG_FAILED);
         response.setOpaque(request.getOpaque());
@@ -387,7 +392,7 @@ public class MQClientAPIImplTest {
         return response;
     }
 
-    private PlainAccessConfig createUpdateAclConfig() {
+	private PlainAccessConfig createUpdateAclConfig() {
 
         PlainAccessConfig config = new PlainAccessConfig();
         config.setAccessKey("Rocketmq111");
@@ -399,7 +404,7 @@ public class MQClientAPIImplTest {
         return config;
     }
 
-    private SendMessageRequestHeader createSendMessageRequestHeader() {
+	private SendMessageRequestHeader createSendMessageRequestHeader() {
         SendMessageRequestHeader requestHeader = new SendMessageRequestHeader();
         requestHeader.setBornTimestamp(System.currentTimeMillis());
         requestHeader.setTopic(topic);

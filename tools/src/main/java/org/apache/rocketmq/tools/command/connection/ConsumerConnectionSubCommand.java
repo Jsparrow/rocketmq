@@ -29,10 +29,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConsumerConnectionSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerConnectionSubCommand.class);
+
+	@Override
     public String commandName() {
         return "consumerConnection";
     }
@@ -60,38 +65,30 @@ public class ConsumerConnectionSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            String group = commandLine.getOptionValue('g').trim();
+            String group = StringUtils.trim(commandLine.getOptionValue('g'));
 
             ConsumerConnection cc = defaultMQAdminExt.examineConsumerConnectionInfo(group);
 
             int i = 1;
             for (Connection conn : cc.getConnectionSet()) {
-                System.out.printf("%03d  %-32s %-22s %-8s %s%n",
-                    i++,
-                    conn.getClientId(),
-                    conn.getClientAddr(),
-                    conn.getLanguage(),
-                    MQVersion.getVersionDesc(conn.getVersion())
+                logger.info("%03d  %-32s %-22s %-8s %s%n", i++, conn.getClientId(), conn.getClientAddr(), conn.getLanguage(), MQVersion.getVersionDesc(conn.getVersion())
                 );
             }
 
-            System.out.printf("%nBelow is subscription:");
+            logger.info("%nBelow is subscription:");
             Iterator<Entry<String, SubscriptionData>> it = cc.getSubscriptionTable().entrySet().iterator();
             i = 1;
             while (it.hasNext()) {
                 Entry<String, SubscriptionData> entry = it.next();
                 SubscriptionData sd = entry.getValue();
-                System.out.printf("%03d  Topic: %-40s SubExpression: %s%n",
-                    i++,
-                    sd.getTopic(),
-                    sd.getSubString()
+                logger.info("%03d  Topic: %-40s SubExpression: %s%n", i++, sd.getTopic(), sd.getSubString()
                 );
             }
 
-            System.out.printf("");
-            System.out.printf("ConsumeType: %s%n", cc.getConsumeType());
-            System.out.printf("MessageModel: %s%n", cc.getMessageModel());
-            System.out.printf("ConsumeFromWhere: %s%n", cc.getConsumeFromWhere());
+            logger.info("");
+            logger.info("ConsumeType: %s%n", cc.getConsumeType());
+            logger.info("MessageModel: %s%n", cc.getMessageModel());
+            logger.info("ConsumeFromWhere: %s%n", cc.getConsumeFromWhere());
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

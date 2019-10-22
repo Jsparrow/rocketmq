@@ -23,32 +23,35 @@ import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestProducer {
-    public static void main(String[] args) throws MQClientException, InterruptedException {
+    private static final Logger logger = LoggerFactory.getLogger(TestProducer.class);
+
+	public static void main(String[] args) throws MQClientException, InterruptedException {
         DefaultMQProducer producer = new DefaultMQProducer("ProducerGroupName");
         producer.start();
 
-        for (int i = 0; i < 1; i++)
-            try {
+        for (int i = 0; i < 1; i++) {
+			try {
                 {
                     Message msg = new Message("TopicTest1",
                         "TagA",
                         "key113",
                         "Hello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
                     SendResult sendResult = producer.send(msg);
-                    System.out.printf("%s%n", sendResult);
+                    logger.info("%s%n", sendResult);
 
                     QueryResult queryMessage =
                         producer.queryMessage("TopicTest1", "key113", 10, 0, System.currentTimeMillis());
-                    for (MessageExt m : queryMessage.getMessageList()) {
-                        System.out.printf("%s%n", m);
-                    }
+                    queryMessage.getMessageList().forEach(m -> logger.info("%s%n", m));
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
+		}
         producer.shutdown();
     }
 }

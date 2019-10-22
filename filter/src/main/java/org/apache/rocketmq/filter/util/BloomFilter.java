@@ -38,16 +38,6 @@ public class BloomFilter {
     private int m;
 
     /**
-     * Create bloom filter by error rate and mapping num.
-     *
-     * @param f error rate
-     * @param n num will mapping to bit
-     */
-    public static BloomFilter createByFn(int f, int n) {
-        return new BloomFilter(f, n);
-    }
-
-    /**
      * Constructor.
      *
      * @param f error rate
@@ -80,7 +70,17 @@ public class BloomFilter {
         this.m = (int) (Byte.SIZE * Math.ceil(this.m / (Byte.SIZE * 1.0)));
     }
 
-    /**
+	/**
+     * Create bloom filter by error rate and mapping num.
+     *
+     * @param f error rate
+     * @param n num will mapping to bit
+     */
+    public static BloomFilter createByFn(int f, int n) {
+        return new BloomFilter(f, n);
+    }
+
+	/**
      * Calculate bit positions of {@code str}.
      * <p>
      * See "Less Hashing, Same Performance: Building a Better Bloom Filter" by Adam Kirsch and Michael
@@ -107,7 +107,7 @@ public class BloomFilter {
         return bitPositions;
     }
 
-    /**
+	/**
      * Calculate bit positions of {@code str} to construct {@code BloomFilterData}
      */
     public BloomFilterData generate(String str) {
@@ -116,14 +116,14 @@ public class BloomFilter {
         return new BloomFilterData(bitPositions, this.m);
     }
 
-    /**
+	/**
      * Calculate bit positions of {@code str}, then set the related {@code bits} positions to 1.
      */
     public void hashTo(String str, BitsArray bits) {
         hashTo(calcBitPositions(str), bits);
     }
 
-    /**
+	/**
      * Set the related {@code bits} positions to 1.
      */
     public void hashTo(int[] bitPositions, BitsArray bits) {
@@ -134,7 +134,7 @@ public class BloomFilter {
         }
     }
 
-    /**
+	/**
      * Extra check:
      * <li>1. check {@code filterData} belong to this bloom filter.</li>
      * <p>
@@ -151,7 +151,7 @@ public class BloomFilter {
         hashTo(filterData.getBitPos(), bits);
     }
 
-    /**
+	/**
      * Calculate bit positions of {@code str}, then check all the related {@code bits} positions is 1.
      *
      * @return true: all the related {@code bits} positions is 1
@@ -160,7 +160,7 @@ public class BloomFilter {
         return isHit(calcBitPositions(str), bits);
     }
 
-    /**
+	/**
      * Check all the related {@code bits} positions is 1.
      *
      * @return true: all the related {@code bits} positions is 1
@@ -174,7 +174,7 @@ public class BloomFilter {
         return ret;
     }
 
-    /**
+	/**
      * Check all the related {@code bits} positions is 1.
      *
      * @return true: all the related {@code bits} positions is 1
@@ -189,15 +189,13 @@ public class BloomFilter {
         return isHit(filterData.getBitPos(), bits);
     }
 
-    /**
+	/**
      * Check whether one of {@code bitPositions} has been occupied.
      *
      * @return true: if all positions have been occupied.
      */
     public boolean checkFalseHit(int[] bitPositions, BitsArray bits) {
-        for (int j = 0; j < bitPositions.length; j++) {
-            int pos = bitPositions[j];
-
+        for (int pos : bitPositions) {
             // check position of bits has been set.
             // that mean no one occupy the position.
             if (!bits.getBit(pos)) {
@@ -208,7 +206,7 @@ public class BloomFilter {
         return true;
     }
 
-    protected void check(BitsArray bits) {
+	protected void check(BitsArray bits) {
         if (bits.bitLength() != this.m) {
             throw new IllegalArgumentException(
                 String.format("Length(%d) of bits in BitsArray is not equal to %d!", bits.bitLength(), this.m)
@@ -216,7 +214,7 @@ public class BloomFilter {
         }
     }
 
-    /**
+	/**
      * Check {@code BloomFilterData} is valid, and belong to this bloom filter.
      * <li>1. not null</li>
      * <li>2. {@link org.apache.rocketmq.filter.util.BloomFilterData#getBitNum} must be equal to {@code m} </li>
@@ -234,56 +232,62 @@ public class BloomFilter {
         return true;
     }
 
-    /**
+	/**
      * error rate.
      */
     public int getF() {
         return f;
     }
 
-    /**
+	/**
      * expect mapping num.
      */
     public int getN() {
         return n;
     }
 
-    /**
+	/**
      * hash function num.
      */
     public int getK() {
         return k;
     }
 
-    /**
+	/**
      * total bit num.
      */
     public int getM() {
         return m;
     }
 
-    @Override
+	@Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (!(o instanceof BloomFilter))
-            return false;
+        if (this == o) {
+			return true;
+		}
+        if (!(o instanceof BloomFilter)) {
+			return false;
+		}
 
         BloomFilter that = (BloomFilter) o;
 
-        if (f != that.f)
-            return false;
-        if (k != that.k)
-            return false;
-        if (m != that.m)
-            return false;
-        if (n != that.n)
-            return false;
+        if (f != that.f) {
+			return false;
+		}
+        if (k != that.k) {
+			return false;
+		}
+        if (m != that.m) {
+			return false;
+		}
+        if (n != that.n) {
+			return false;
+		}
 
         return true;
     }
 
-    @Override
+	@Override
     public int hashCode() {
         int result = f;
         result = 31 * result + n;
@@ -292,12 +296,12 @@ public class BloomFilter {
         return result;
     }
 
-    @Override
+	@Override
     public String toString() {
         return String.format("f: %d, n: %d, k: %d, m: %d", f, n, k, m);
     }
 
-    protected double logMN(double m, double n) {
+	protected double logMN(double m, double n) {
         return Math.log(n) / Math.log(m);
     }
 }

@@ -50,56 +50,58 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageStoreWithFilterTest {
 
-    private static final String msg = "Once, there was a chance for me!";
+    private static final Logger logger = LoggerFactory.getLogger(MessageStoreWithFilterTest.class);
+	private static final String msg = "Once, there was a chance for me!";
     private static final byte[] msgBody = msg.getBytes();
 
     private static final String topic = "topic";
     private static final int queueId = 0;
-    private static final String storePath = "." + File.separator + "unit_test_store";
+    private static final String storePath = new StringBuilder().append(".").append(File.separator).append("unit_test_store").toString();
     private static final int commitLogFileSize = 1024 * 1024 * 256;
     private static final int cqFileSize = 300000 * 20;
     private static final int cqExtFileSize = 300000 * 128;
 
-    private static SocketAddress BornHost;
+    private static SocketAddress bornHost;
 
-    private static SocketAddress StoreHost;
-
-    private DefaultMessageStore master;
-
-    private ConsumerFilterManager filterManager;
-
-    private int topicCount = 3;
-
-    private int msgPerTopic = 30;
+    private static SocketAddress storeHost;
 
     static {
         try {
-            StoreHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
+            storeHost = new InetSocketAddress(InetAddress.getLocalHost(), 8123);
         } catch (UnknownHostException e) {
+			logger.error(e.getMessage(), e);
         }
         try {
-            BornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
+            bornHost = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0);
         } catch (UnknownHostException e) {
+			logger.error(e.getMessage(), e);
         }
     }
 
-    @Before
+	private DefaultMessageStore master;
+	private ConsumerFilterManager filterManager;
+	private int topicCount = 3;
+	private int msgPerTopic = 30;
+
+	@Before
     public void init() throws Exception {
         filterManager = ConsumerFilterManagerTest.gen(topicCount, msgPerTopic);
         master = gen(filterManager);
     }
 
-    @After
+	@After
     public void destroy() {
         master.shutdown();
         master.destroy();
         UtilAll.deleteFile(new File(storePath));
     }
 
-    public MessageExtBrokerInner buildMessage() {
+	public MessageExtBrokerInner buildMessage() {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
         msg.setTopic(topic);
         msg.setTags(System.currentTimeMillis() + "TAG");
@@ -109,8 +111,8 @@ public class MessageStoreWithFilterTest {
         msg.setQueueId(queueId);
         msg.setSysFlag(0);
         msg.setBornTimestamp(System.currentTimeMillis());
-        msg.setStoreHost(StoreHost);
-        msg.setBornHost(BornHost);
+        msg.setStoreHost(storeHost);
+        msg.setBornHost(bornHost);
         for (int i = 1; i < 3; i++) {
             msg.putUserProperty(String.valueOf(i), "imagoodperson" + i);
         }
@@ -119,7 +121,7 @@ public class MessageStoreWithFilterTest {
         return msg;
     }
 
-    public MessageStoreConfig buildStoreConfig(int commitLogFileSize, int cqFileSize,
+	public MessageStoreConfig buildStoreConfig(int commitLogFileSize, int cqFileSize,
                                                boolean enableCqExt, int cqExtFileSize) {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setMappedFileSizeCommitLog(commitLogFileSize);
@@ -129,12 +131,12 @@ public class MessageStoreWithFilterTest {
         messageStoreConfig.setEnableConsumeQueueExt(enableCqExt);
 
         messageStoreConfig.setStorePathRootDir(storePath);
-        messageStoreConfig.setStorePathCommitLog(storePath + File.separator + "commitlog");
+        messageStoreConfig.setStorePathCommitLog(new StringBuilder().append(storePath).append(File.separator).append("commitlog").toString());
 
         return messageStoreConfig;
     }
 
-    protected DefaultMessageStore gen(ConsumerFilterManager filterManager) throws Exception {
+	protected DefaultMessageStore gen(ConsumerFilterManager filterManager) throws Exception {
         MessageStoreConfig messageStoreConfig = buildStoreConfig(
             commitLogFileSize, cqFileSize, true, cqExtFileSize
         );
@@ -147,23 +149,16 @@ public class MessageStoreWithFilterTest {
         DefaultMessageStore master = new DefaultMessageStore(
             messageStoreConfig,
             new BrokerStatsManager(brokerConfig.getBrokerClusterName()),
-            new MessageArrivingListener() {
-                @Override
-                public void arriving(String topic, int queueId, long logicOffset, long tagsCode,
-                                     long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
-                }
+            (String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) -> {
             }
             , brokerConfig);
 
-        master.getDispatcherList().addFirst(new CommitLogDispatcher() {
-            @Override
-            public void dispatch(DispatchRequest request) {
-                try {
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+        master.getDispatcherList().addFirst((DispatchRequest request) -> {
+		    try {
+		    } catch (Throwable e) {
+		        e.printStackTrace();
+		    }
+		});
         master.getDispatcherList().addFirst(new CommitLogDispatcherCalcBitMap(brokerConfig, filterManager));
 
         assertThat(master.load()).isTrue();
@@ -173,9 +168,9 @@ public class MessageStoreWithFilterTest {
         return master;
     }
 
-    protected List<MessageExtBrokerInner> putMsg(DefaultMessageStore master, int topicCount,
+	protected List<MessageExtBrokerInner> putMsg(DefaultMessageStore master, int topicCount,
                                                  int msgCountPerTopic) throws Exception {
-        List<MessageExtBrokerInner> msgs = new ArrayList<MessageExtBrokerInner>();
+        List<MessageExtBrokerInner> msgs = new ArrayList<>();
         for (int i = 0; i < topicCount; i++) {
             String realTopic = topic + i;
             for (int j = 0; j < msgCountPerTopic; j++) {
@@ -195,8 +190,8 @@ public class MessageStoreWithFilterTest {
         return msgs;
     }
 
-    protected List<MessageExtBrokerInner> filtered(List<MessageExtBrokerInner> msgs, ConsumerFilterData filterData) {
-        List<MessageExtBrokerInner> filteredMsgs = new ArrayList<MessageExtBrokerInner>();
+	protected List<MessageExtBrokerInner> filtered(List<MessageExtBrokerInner> msgs, ConsumerFilterData filterData) {
+        List<MessageExtBrokerInner> filteredMsgs = new ArrayList<>();
 
         for (MessageExtBrokerInner messageExtBrokerInner : msgs) {
 
@@ -207,11 +202,11 @@ public class MessageStoreWithFilterTest {
             try {
                 Object evlRet = filterData.getCompiledExpression().evaluate(new MessageEvaluationContext(messageExtBrokerInner.getProperties()));
 
-                if (evlRet == null || !(evlRet instanceof Boolean) || (Boolean) evlRet) {
+                if (!(evlRet instanceof Boolean) || (Boolean) evlRet) {
                     filteredMsgs.add(messageExtBrokerInner);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
                 assertThat(true).isFalse();
             }
         }
@@ -219,7 +214,7 @@ public class MessageStoreWithFilterTest {
         return filteredMsgs;
     }
 
-    @Test
+	@Test
     public void testGetMessage_withFilterBitMapAndConsumerChanged() throws Exception {
         List<MessageExtBrokerInner> msgs = putMsg(master, topicCount, msgPerTopic);
 
@@ -281,7 +276,7 @@ public class MessageStoreWithFilterTest {
         }
     }
 
-    @Test
+	@Test
     public void testGetMessage_withFilterBitMap() throws Exception {
         List<MessageExtBrokerInner> msgs = putMsg(master, topicCount, msgPerTopic);
 
@@ -306,36 +301,32 @@ public class MessageStoreWithFilterTest {
 
                 GetMessageResult getMessageResult = master.getMessage(group, realTopic, queueId, 0, 10000,
                     new ExpressionMessageFilter(subscriptionData, filterData, filterManager));
-                String assertMsg = group + "-" + realTopic;
+                String assertMsg = new StringBuilder().append(group).append("-").append(realTopic).toString();
                 try {
                     assertThat(getMessageResult).isNotNull();
                     assertThat(GetMessageStatus.FOUND).isEqualTo(getMessageResult.getStatus());
                     assertThat(getMessageResult.getMessageBufferList()).isNotNull().isNotEmpty();
                     assertThat(getMessageResult.getMessageBufferList().size()).isEqualTo(filteredMsgs.size());
 
-                    for (ByteBuffer buffer : getMessageResult.getMessageBufferList()) {
-                        MessageExt messageExt = MessageDecoder.decode(buffer.slice(), false);
-                        assertThat(messageExt).isNotNull();
-
-                        Object evlRet = null;
-                        try {
+                    getMessageResult.getMessageBufferList().stream().map(buffer -> MessageDecoder.decode(buffer.slice(), false)).forEach(messageExt -> {
+						assertThat(messageExt).isNotNull();
+						Object evlRet = null;
+						try {
                             evlRet = filterData.getCompiledExpression().evaluate(new MessageEvaluationContext(messageExt.getProperties()));
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            logger.error(e.getMessage(), e);
                             assertThat(true).isFalse();
                         }
-
-                        assertThat(evlRet).isNotNull().isEqualTo(Boolean.TRUE);
-
-                        // check
+						assertThat(evlRet).isNotNull().isEqualTo(Boolean.TRUE);
+						// check
                         boolean find = false;
-                        for (MessageExtBrokerInner messageExtBrokerInner : filteredMsgs) {
+						for (MessageExtBrokerInner messageExtBrokerInner : filteredMsgs) {
                             if (messageExtBrokerInner.getMsgId().equals(messageExt.getMsgId())) {
                                 find = true;
                             }
                         }
-                        assertThat(find).isTrue();
-                    }
+						assertThat(find).isTrue();
+					});
                 } finally {
                     getMessageResult.release();
                 }
@@ -343,7 +334,7 @@ public class MessageStoreWithFilterTest {
         }
     }
 
-    @Test
+	@Test
     public void testGetMessage_withFilter_checkTagsCode() throws Exception {
         putMsg(master, topicCount, msgPerTopic);
 

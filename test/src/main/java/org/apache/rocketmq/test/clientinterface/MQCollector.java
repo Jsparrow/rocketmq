@@ -42,7 +42,7 @@ public abstract class MQCollector {
             .fetchListDataCollector(RandomUtil.getStringByUUID());
         errorMsgs = DataCollectorManager.getInstance()
             .fetchListDataCollector(RandomUtil.getStringByUUID());
-        originMsgIndex = new ConcurrentHashMap<Object, Object>();
+        originMsgIndex = new ConcurrentHashMap<>();
         msgRTs = DataCollectorManager.getInstance()
             .fetchListDataCollector(RandomUtil.getStringByUUID());
     }
@@ -85,7 +85,7 @@ public abstract class MQCollector {
     }
 
     public Collection<Object> getMsgBodysCopy() {
-        msgBodysCopy = new ArrayList<Object>();
+        msgBodysCopy = new ArrayList<>();
         msgBodysCopy.addAll(msgBodys.getAllData());
         return msgBodysCopy;
     }

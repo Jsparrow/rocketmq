@@ -59,11 +59,12 @@ public class BasicLoggerTest {
     @After
     public void clean() {
         File file = new File(loggingDir);
-        if (file.exists()) {
-            File[] files = file.listFiles();
-            for (File file1 : files) {
-                file1.delete();
-            }
-        }
+        if (!file.exists()) {
+			return;
+		}
+		File[] files = file.listFiles();
+		for (File file1 : files) {
+		    file1.delete();
+		}
     }
 }

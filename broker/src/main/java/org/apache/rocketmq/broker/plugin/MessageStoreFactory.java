@@ -20,12 +20,13 @@ package org.apache.rocketmq.broker.plugin;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import org.apache.rocketmq.store.MessageStore;
+import org.apache.commons.lang3.StringUtils;
 
 public final class MessageStoreFactory {
-    public final static MessageStore build(MessageStorePluginContext context, MessageStore messageStore)
+    public static final MessageStore build(MessageStorePluginContext context, MessageStore messageStore)
         throws IOException {
         String plugin = context.getBrokerConfig().getMessageStorePlugIn();
-        if (plugin != null && plugin.trim().length() != 0) {
+        if (plugin != null && StringUtils.trim(plugin).length() != 0) {
             String[] pluginClasses = plugin.split(",");
             for (int i = pluginClasses.length - 1; i >= 0; --i) {
                 String pluginClass = pluginClasses[i];

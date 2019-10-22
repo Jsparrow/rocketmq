@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.rocketmq.common.MixAll;
+import org.apache.commons.lang3.StringUtils;
 
 public class MessageBatch extends Message implements Iterable<Message> {
 
@@ -35,7 +36,8 @@ public class MessageBatch extends Message implements Iterable<Message> {
         return MessageDecoder.encodeMessages(messages);
     }
 
-    public Iterator<Message> iterator() {
+    @Override
+	public Iterator<Message> iterator() {
         return messages.iterator();
     }
 
@@ -48,7 +50,7 @@ public class MessageBatch extends Message implements Iterable<Message> {
             if (message.getDelayTimeLevel() > 0) {
                 throw new UnsupportedOperationException("TimeDelayLevel is not supported for batching");
             }
-            if (message.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+            if (StringUtils.startsWith(message.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                 throw new UnsupportedOperationException("Retry Group is not supported for batching");
             }
             if (first == null) {

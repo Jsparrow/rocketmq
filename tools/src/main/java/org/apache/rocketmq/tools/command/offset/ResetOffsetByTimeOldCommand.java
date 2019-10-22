@@ -31,35 +31,27 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ResetOffsetByTimeOldCommand implements SubCommand {
-    public static void resetOffset(DefaultMQAdminExt defaultMQAdminExt, String consumerGroup, String topic,
+    private static final Logger logger = LoggerFactory.getLogger(ResetOffsetByTimeOldCommand.class);
+
+	public static void resetOffset(DefaultMQAdminExt defaultMQAdminExt, String consumerGroup, String topic,
         long timestamp, boolean force,
         String timeStampStr) throws RemotingException, MQBrokerException, InterruptedException, MQClientException {
         List<RollbackStats> rollbackStatsList = defaultMQAdminExt.resetOffsetByTimestampOld(consumerGroup, topic, timestamp, force);
-        System.out.printf(
-            "rollback consumer offset by specified consumerGroup[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n",
-            consumerGroup, topic, force, timeStampStr, timestamp);
+        logger.info(
+            "rollback consumer offset by specified consumerGroup[%s], topic[%s], force[%s], timestamp(string)[%s], timestamp(long)[%s]%n", consumerGroup, topic, force, timeStampStr, timestamp);
 
-        System.out.printf("%-20s  %-20s  %-20s  %-20s  %-20s  %-20s%n",
-            "#brokerName",
-            "#queueId",
-            "#brokerOffset",
-            "#consumerOffset",
-            "#timestampOffset",
-            "#rollbackOffset"
+        logger.info("%-20s  %-20s  %-20s  %-20s  %-20s  %-20s%n", "#brokerName", "#queueId", "#brokerOffset", "#consumerOffset", "#timestampOffset", "#rollbackOffset"
         );
 
-        for (RollbackStats rollbackStats : rollbackStatsList) {
-            System.out.printf("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",
-                UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32),
-                rollbackStats.getQueueId(),
-                rollbackStats.getBrokerOffset(),
-                rollbackStats.getConsumerOffset(),
-                rollbackStats.getTimestampOffset(),
-                rollbackStats.getRollbackOffset()
-            );
-        }
+        rollbackStatsList.forEach(rollbackStats -> logger.info("%-20s  %-20d  %-20d  %-20d  %-20d  %-20d%n",
+				UtilAll.frontStringAtLeast(rollbackStats.getBrokerName(), 32), rollbackStats.getQueueId(),
+				rollbackStats.getBrokerOffset(), rollbackStats.getConsumerOffset(), rollbackStats.getTimestampOffset(),
+				rollbackStats.getRollbackOffset()));
     }
 
     @Override
@@ -97,25 +89,26 @@ public class ResetOffsetByTimeOldCommand implements SubCommand {
         DefaultMQAdminExt defaultMQAdminExt = new DefaultMQAdminExt(rpcHook);
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
-            String consumerGroup = commandLine.getOptionValue("g").trim();
-            String topic = commandLine.getOptionValue("t").trim();
-            String timeStampStr = commandLine.getOptionValue("s").trim();
+            String consumerGroup = StringUtils.trim(commandLine.getOptionValue("g"));
+            String topic = StringUtils.trim(commandLine.getOptionValue("t"));
+            String timeStampStr = StringUtils.trim(commandLine.getOptionValue("s"));
             long timestamp = 0;
             try {
                 timestamp = Long.parseLong(timeStampStr);
             } catch (NumberFormatException e) {
 
-                Date date = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
+                logger.error(e.getMessage(), e);
+				Date date = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS);
                 if (date != null) {
                     timestamp = UtilAll.parseDate(timeStampStr, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
                 } else {
-                    System.out.printf("specified timestamp invalid.%n");
+                    logger.info("specified timestamp invalid.%n");
                     return;
                 }
 
                 boolean force = true;
                 if (commandLine.hasOption('f')) {
-                    force = Boolean.valueOf(commandLine.getOptionValue("f").trim());
+                    force = Boolean.valueOf(StringUtils.trim(commandLine.getOptionValue("f")));
                 }
 
                 defaultMQAdminExt.start();

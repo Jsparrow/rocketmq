@@ -31,25 +31,30 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class DeleteTopicSubCommand implements SubCommand {
-    public static void deleteTopic(final DefaultMQAdminExt adminExt,
+    private static final Logger logger = LoggerFactory.getLogger(DeleteTopicSubCommand.class);
+
+	public static void deleteTopic(final DefaultMQAdminExt adminExt,
         final String clusterName,
         final String topic
     ) throws InterruptedException, MQBrokerException, RemotingException, MQClientException {
 
         Set<String> brokerAddressSet = CommandUtil.fetchMasterAndSlaveAddrByClusterName(adminExt, clusterName);
         adminExt.deleteTopicInBroker(brokerAddressSet, topic);
-        System.out.printf("delete topic [%s] from cluster [%s] success.%n", topic, clusterName);
+        logger.info("delete topic [%s] from cluster [%s] success.%n", topic, clusterName);
 
         Set<String> nameServerSet = null;
         if (adminExt.getNamesrvAddr() != null) {
-            String[] ns = adminExt.getNamesrvAddr().trim().split(";");
+            String[] ns = StringUtils.trim(adminExt.getNamesrvAddr()).split(";");
             nameServerSet = new HashSet(Arrays.asList(ns));
         }
 
         adminExt.deleteTopicInNameServer(nameServerSet, topic);
-        System.out.printf("delete topic [%s] from NameServer success.%n", topic);
+        logger.info("delete topic [%s] from NameServer success.%n", topic);
     }
 
     @Override
@@ -80,10 +85,10 @@ public class DeleteTopicSubCommand implements SubCommand {
         DefaultMQAdminExt adminExt = new DefaultMQAdminExt(rpcHook);
         adminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
-            String topic = commandLine.getOptionValue('t').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
 
             if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 adminExt.start();
                 deleteTopic(adminExt, clusterName, topic);

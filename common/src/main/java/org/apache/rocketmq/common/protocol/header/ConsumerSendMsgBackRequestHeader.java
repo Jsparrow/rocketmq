@@ -98,7 +98,7 @@ public class ConsumerSendMsgBackRequestHeader implements CommandCustomHeader {
 
     @Override
     public String toString() {
-        return "ConsumerSendMsgBackRequestHeader [group=" + group + ", originTopic=" + originTopic + ", originMsgId=" + originMsgId
-            + ", delayLevel=" + delayLevel + ", unitMode=" + unitMode + ", maxReconsumeTimes=" + maxReconsumeTimes + "]";
+        return new StringBuilder().append("ConsumerSendMsgBackRequestHeader [group=").append(group).append(", originTopic=").append(originTopic).append(", originMsgId=").append(originMsgId).append(", delayLevel=")
+				.append(delayLevel).append(", unitMode=").append(unitMode).append(", maxReconsumeTimes=").append(maxReconsumeTimes).append("]").toString();
     }
 }

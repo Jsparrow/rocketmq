@@ -47,9 +47,12 @@ import org.apache.rocketmq.common.protocol.body.CMResult;
 import org.apache.rocketmq.common.protocol.body.ConsumeMessageDirectlyResult;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConsumeMessageConcurrentlyService implements ConsumeMessageService {
-    private static final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(ConsumeMessageConcurrentlyService.class);
+	private static final InternalLogger log = ClientLogger.getLog();
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
     private final DefaultMQPushConsumer defaultMQPushConsumer;
     private final MessageListenerConcurrently messageListener;
@@ -81,7 +84,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         this.cleanExpireMsgExecutors = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("CleanExpireMsgScheduledThread_"));
     }
 
-    public void start() {
+    @Override
+	public void start() {
         this.cleanExpireMsgExecutors.scheduleAtFixedRate(new Runnable() {
 
             @Override
@@ -92,7 +96,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
         }, this.defaultMQPushConsumer.getConsumeTimeout(), this.defaultMQPushConsumer.getConsumeTimeout(), TimeUnit.MINUTES);
     }
 
-    public void shutdown() {
+    @Override
+	public void shutdown() {
         this.scheduledExecutorService.shutdown();
         this.consumeExecutor.shutdown();
         this.cleanExpireMsgExecutors.shutdown();
@@ -209,7 +214,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             try {
                 this.consumeExecutor.submit(consumeRequest);
             } catch (RejectedExecutionException e) {
-                this.submitConsumeRequestLater(consumeRequest);
+                logger.error(e.getMessage(), e);
+				this.submitConsumeRequestLater(consumeRequest);
             }
         } else {
             for (int total = 0; total < msgs.size(); ) {
@@ -226,7 +232,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 try {
                     this.consumeExecutor.submit(consumeRequest);
                 } catch (RejectedExecutionException e) {
-                    for (; total < msgs.size(); total++) {
+                    logger.error(e.getMessage(), e);
+					for (; total < msgs.size(); total++) {
                         msgThis.add(msgs.get(total));
                     }
 
@@ -254,8 +261,9 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
     ) {
         int ackIndex = context.getAckIndex();
 
-        if (consumeRequest.getMsgs().isEmpty())
-            return;
+        if (consumeRequest.getMsgs().isEmpty()) {
+			return;
+		}
 
         switch (status) {
             case CONSUME_SUCCESS:
@@ -323,7 +331,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             this.defaultMQPushConsumerImpl.sendMessageBack(msg, delayLevel, context.getMessageQueue().getBrokerName());
             return true;
         } catch (Exception e) {
-            log.error("sendMessageBack exception, group: " + this.consumerGroup + " msg: " + msg.toString(), e);
+            log.error(new StringBuilder().append("sendMessageBack exception, group: ").append(this.consumerGroup).append(" msg: ").append(msg.toString()).toString(), e);
         }
 
         return false;

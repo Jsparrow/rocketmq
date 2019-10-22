@@ -27,10 +27,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateBrokerConfigSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateBrokerConfigSubCommand.class);
+
+	@Override
     public String commandName() {
         return "updateBrokerConfig";
     }
@@ -68,22 +73,22 @@ public class UpdateBrokerConfigSubCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
 
         try {
-            String key = commandLine.getOptionValue('k').trim();
-            String value = commandLine.getOptionValue('v').trim();
+            String key = StringUtils.trim(commandLine.getOptionValue('k'));
+            String value = StringUtils.trim(commandLine.getOptionValue('v'));
             Properties properties = new Properties();
             properties.put(key, value);
 
             if (commandLine.hasOption('b')) {
-                String brokerAddr = commandLine.getOptionValue('b').trim();
+                String brokerAddr = StringUtils.trim(commandLine.getOptionValue('b'));
 
                 defaultMQAdminExt.start();
 
                 defaultMQAdminExt.updateBrokerConfig(brokerAddr, properties);
-                System.out.printf("update broker config success, %s\n", brokerAddr);
+                logger.info("update broker config success, %s\n", brokerAddr);
                 return;
 
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
 
                 defaultMQAdminExt.start();
 
@@ -92,9 +97,9 @@ public class UpdateBrokerConfigSubCommand implements SubCommand {
                 for (String brokerAddr : masterSet) {
                     try {
                         defaultMQAdminExt.updateBrokerConfig(brokerAddr, properties);
-                        System.out.printf("update broker config success, %s\n", brokerAddr);
+                        logger.info("update broker config success, %s\n", brokerAddr);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
                 return;

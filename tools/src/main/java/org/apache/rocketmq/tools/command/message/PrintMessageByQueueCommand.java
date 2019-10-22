@@ -37,16 +37,21 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PrintMessageByQueueCommand implements SubCommand {
 
-    public static long timestampFormat(final String value) {
+    private static final Logger logger = LoggerFactory.getLogger(PrintMessageByQueueCommand.class);
+
+	public static long timestampFormat(final String value) {
         long timestamp = 0;
         try {
             timestamp = Long.parseLong(value);
         } catch (NumberFormatException e) {
 
-            timestamp = UtilAll.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
+            logger.error(e.getMessage(), e);
+			timestamp = UtilAll.parseDate(value, UtilAll.YYYY_MM_DD_HH_MM_SS_SSS).getTime();
         }
 
         return timestamp;
@@ -54,12 +59,12 @@ public class PrintMessageByQueueCommand implements SubCommand {
 
     private static void calculateByTag(final List<MessageExt> msgs, final Map<String, AtomicLong> tagCalmap,
         final boolean calByTag) {
-        if (!calByTag)
-            return;
+        if (!calByTag) {
+			return;
+		}
 
-        for (MessageExt msg : msgs) {
-            String tag = msg.getTags();
-            if (StringUtils.isNotBlank(tag)) {
+        msgs.stream().map(MessageExt::getTags).forEach(tag -> {
+			if (StringUtils.isNotBlank(tag)) {
                 AtomicLong count = tagCalmap.get(tag);
                 if (count == null) {
                     count = new AtomicLong();
@@ -67,38 +72,34 @@ public class PrintMessageByQueueCommand implements SubCommand {
                 }
                 count.incrementAndGet();
             }
-        }
+		});
     }
 
     private static void printCalculateByTag(final Map<String, AtomicLong> tagCalmap, final boolean calByTag) {
-        if (!calByTag)
-            return;
+        if (!calByTag) {
+			return;
+		}
 
-        List<TagCountBean> list = new ArrayList<TagCountBean>();
-        for (Map.Entry<String, AtomicLong> entry : tagCalmap.entrySet()) {
-            TagCountBean tagBean = new TagCountBean(entry.getKey(), entry.getValue());
-            list.add(tagBean);
-        }
+        List<TagCountBean> list = new ArrayList<>();
+        tagCalmap.entrySet().stream().map(entry -> new TagCountBean(entry.getKey(), entry.getValue())).forEach(list::add);
         Collections.sort(list);
 
-        for (TagCountBean tagCountBean : list) {
-            System.out.printf("Tag: %-30s Count: %s%n", tagCountBean.getTag(), tagCountBean.getCount());
-        }
+        list.forEach(tagCountBean -> logger.info("Tag: %-30s Count: %s%n", tagCountBean.getTag(), tagCountBean.getCount()));
     }
 
     public static void printMessage(final List<MessageExt> msgs, final String charsetName, boolean printMsg,
         boolean printBody) {
-        if (!printMsg)
-            return;
+        if (!printMsg) {
+			return;
+		}
 
-        for (MessageExt msg : msgs) {
+        msgs.forEach(msg -> {
             try {
-                System.out.printf("MSGID: %s %s BODY: %s%n", msg.getMsgId(), msg.toString(),
-                    printBody ? new String(msg.getBody(), charsetName) : "NOT PRINT BODY");
+                logger.info("MSGID: %s %s BODY: %s%n", msg.getMsgId(), msg.toString(), printBody ? new String(msg.getBody(), charsetName) : "NOT PRINT BODY");
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(), e);
             }
-        }
+        });
     }
 
     @Override
@@ -162,19 +163,19 @@ public class PrintMessageByQueueCommand implements SubCommand {
 
         try {
             String charsetName =
-                !commandLine.hasOption('c') ? "UTF-8" : commandLine.getOptionValue('c').trim();
+                !commandLine.hasOption('c') ? "UTF-8" : StringUtils.trim(commandLine.getOptionValue('c'));
             boolean printMsg =
-                commandLine.hasOption('p') && Boolean.parseBoolean(commandLine.getOptionValue('p').trim());
+                commandLine.hasOption('p') && Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('p')));
             boolean printBody =
-                commandLine.hasOption('d') && Boolean.parseBoolean(commandLine.getOptionValue('d').trim());
+                commandLine.hasOption('d') && Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('d')));
             boolean calByTag =
-                commandLine.hasOption('f') && Boolean.parseBoolean(commandLine.getOptionValue('f').trim());
+                commandLine.hasOption('f') && Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('f')));
             String subExpression =
-                !commandLine.hasOption('s') ? "*" : commandLine.getOptionValue('s').trim();
+                !commandLine.hasOption('s') ? "*" : StringUtils.trim(commandLine.getOptionValue('s'));
 
-            String topic = commandLine.getOptionValue('t').trim();
-            String brokerName = commandLine.getOptionValue('a').trim();
-            int queueId = Integer.parseInt(commandLine.getOptionValue('i').trim());
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+            String brokerName = StringUtils.trim(commandLine.getOptionValue('a'));
+            int queueId = Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('i')));
             consumer.start();
 
             MessageQueue mq = new MessageQueue(topic, brokerName, queueId);
@@ -182,18 +183,18 @@ public class PrintMessageByQueueCommand implements SubCommand {
             long maxOffset = consumer.maxOffset(mq);
 
             if (commandLine.hasOption('b')) {
-                String timestampStr = commandLine.getOptionValue('b').trim();
+                String timestampStr = StringUtils.trim(commandLine.getOptionValue('b'));
                 long timeValue = timestampFormat(timestampStr);
                 minOffset = consumer.searchOffset(mq, timeValue);
             }
 
             if (commandLine.hasOption('e')) {
-                String timestampStr = commandLine.getOptionValue('e').trim();
+                String timestampStr = StringUtils.trim(commandLine.getOptionValue('e'));
                 long timeValue = timestampFormat(timestampStr);
                 maxOffset = consumer.searchOffset(mq, timeValue);
             }
 
-            final Map<String, AtomicLong> tagCalmap = new HashMap<String, AtomicLong>();
+            final Map<String, AtomicLong> tagCalmap = new HashMap<>();
             READQ:
             for (long offset = minOffset; offset < maxOffset; ) {
                 try {
@@ -210,7 +211,7 @@ public class PrintMessageByQueueCommand implements SubCommand {
                             break READQ;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                     break;
                 }
             }

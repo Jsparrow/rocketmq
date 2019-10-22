@@ -69,10 +69,10 @@ public class PlainPermissionManager {
         Map<String, PlainAccessResource> plainAccessResourceMap = new HashMap<>();
         List<RemoteAddressStrategy> globalWhiteRemoteAddressStrategy = new ArrayList<>();
 
-        JSONObject plainAclConfData = AclUtils.getYamlDataObject(fileHome + File.separator + fileName,
+        JSONObject plainAclConfData = AclUtils.getYamlDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(),
             JSONObject.class);
         if (plainAclConfData == null || plainAclConfData.isEmpty()) {
-            throw new AclException(String.format("%s file  is not data", fileHome + File.separator + fileName));
+            throw new AclException(String.format("%s file  is not data", new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString()));
         }
         log.info("Broker plain acl conf data is : ", plainAclConfData.toString());
         JSONArray globalWhiteRemoteAddressesList = plainAclConfData.getJSONArray("globalWhiteRemoteAddresses");
@@ -86,10 +86,7 @@ public class PlainPermissionManager {
         JSONArray accounts = plainAclConfData.getJSONArray(AclConstants.CONFIG_ACCOUNTS);
         if (accounts != null && !accounts.isEmpty()) {
             List<PlainAccessConfig> plainAccessConfigList = accounts.toJavaList(PlainAccessConfig.class);
-            for (PlainAccessConfig plainAccessConfig : plainAccessConfigList) {
-                PlainAccessResource plainAccessResource = buildPlainAccessResource(plainAccessConfig);
-                plainAccessResourceMap.put(plainAccessResource.getAccessKey(),plainAccessResource);
-            }
+            plainAccessConfigList.stream().map(this::buildPlainAccessResource).forEach(plainAccessResource -> plainAccessResourceMap.put(plainAccessResource.getAccessKey(),plainAccessResource));
         }
 
         // For loading dataversion part just
@@ -111,7 +108,7 @@ public class PlainPermissionManager {
     private Map<String, Object> updateAclConfigFileVersion(Map<String, Object> updateAclConfigMap) {
 
         dataVersion.nextVersion();
-        List<Map<String, Object>> versionElement = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> versionElement = new ArrayList<>();
         Map<String, Object> accountsMap = new LinkedHashMap<String, Object>() {
             {
                 put(AclConstants.CONFIG_COUNTER, dataVersion.getCounter().longValue());
@@ -130,7 +127,7 @@ public class PlainPermissionManager {
             return false;
         }
 
-        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(fileHome + File.separator + fileName,
+        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(),
             Map.class);
 
         List<Map<String, Object>> accounts = (List<Map<String, Object>>) aclAccessConfigMap.get(AclConstants.CONFIG_ACCOUNTS);
@@ -144,7 +141,7 @@ public class PlainPermissionManager {
                     accounts.add(updateAccountMap);
                     aclAccessConfigMap.put(AclConstants.CONFIG_ACCOUNTS, accounts);
 
-                    if (AclUtils.writeDataObject(fileHome + File.separator + fileName, updateAclConfigFileVersion(aclAccessConfigMap))) {
+                    if (AclUtils.writeDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(), updateAclConfigFileVersion(aclAccessConfigMap))) {
                         return true;
                     }
                     return false;
@@ -153,7 +150,7 @@ public class PlainPermissionManager {
             // Create acl access config elements
             accounts.add(createAclAccessConfigMap(null, plainAccessConfig));
             aclAccessConfigMap.put(AclConstants.CONFIG_ACCOUNTS, accounts);
-            if (AclUtils.writeDataObject(fileHome + File.separator + fileName, updateAclConfigFileVersion(aclAccessConfigMap))) {
+            if (AclUtils.writeDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(), updateAclConfigFileVersion(aclAccessConfigMap))) {
                 return true;
             }
             return false;
@@ -168,7 +165,7 @@ public class PlainPermissionManager {
 
         Map<String, Object> newAccountsMap = null;
         if (existedAccoutMap == null) {
-            newAccountsMap = new LinkedHashMap<String, Object>();
+            newAccountsMap = new LinkedHashMap<>();
         } else {
             newAccountsMap = existedAccoutMap;
         }
@@ -217,7 +214,7 @@ public class PlainPermissionManager {
             return false;
         }
 
-        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(fileHome + File.separator + fileName,
+        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(),
                     Map.class);
 
         List<Map<String, Object>> accounts = (List<Map<String, Object>>) aclAccessConfigMap.get("accounts");
@@ -230,7 +227,7 @@ public class PlainPermissionManager {
                     itemIterator.remove();
                     aclAccessConfigMap.put(AclConstants.CONFIG_ACCOUNTS, accounts);
 
-                    if (AclUtils.writeDataObject(fileHome + File.separator + fileName, updateAclConfigFileVersion(aclAccessConfigMap))) {
+                    if (AclUtils.writeDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(), updateAclConfigFileVersion(aclAccessConfigMap))) {
                         return true;
                     }
                     return false;
@@ -249,7 +246,7 @@ public class PlainPermissionManager {
             return false;
         }
 
-        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(fileHome + File.separator + fileName,
+        Map<String, Object> aclAccessConfigMap = AclUtils.getYamlDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(),
             Map.class);
 
         List<String> globalWhiteRemoteAddrList = (List<String>) aclAccessConfigMap.get(AclConstants.CONFIG_GLOBAL_WHITE_ADDRS);
@@ -260,7 +257,7 @@ public class PlainPermissionManager {
 
             // Update globalWhiteRemoteAddr element in memeory map firstly
             aclAccessConfigMap.put(AclConstants.CONFIG_GLOBAL_WHITE_ADDRS,globalWhiteRemoteAddrList);
-            if (AclUtils.writeDataObject(fileHome + File.separator + fileName, updateAclConfigFileVersion(aclAccessConfigMap))) {
+            if (AclUtils.writeDataObject(new StringBuilder().append(fileHome).append(File.separator).append(fileName).toString(), updateAclConfigFileVersion(aclAccessConfigMap))) {
                 return true;
             }
             return false;
@@ -273,13 +270,10 @@ public class PlainPermissionManager {
     private void watch() {
         try {
             String watchFilePath = fileHome + fileName;
-            FileWatchService fileWatchService = new FileWatchService(new String[] {watchFilePath}, new FileWatchService.Listener() {
-                @Override
-                public void onChanged(String path) {
-                    log.info("The plain acl yml changed, reload the context");
-                    load();
-                }
-            });
+            FileWatchService fileWatchService = new FileWatchService(new String[] {watchFilePath}, (String path) -> {
+			    log.info("The plain acl yml changed, reload the context");
+			    load();
+			});
             fileWatchService.start();
             log.info("Succeed to start AclWatcherService");
             this.isWatchStart = true;
@@ -330,7 +324,7 @@ public class PlainPermissionManager {
         this.globalWhiteRemoteAddressStrategy.clear();
     }
 
-    public PlainAccessResource buildPlainAccessResource(PlainAccessConfig plainAccessConfig) throws AclException {
+    public PlainAccessResource buildPlainAccessResource(PlainAccessConfig plainAccessConfig) {
         if (plainAccessConfig.getAccessKey() == null
             || plainAccessConfig.getSecretKey() == null
             || plainAccessConfig.getAccessKey().length() <= AclConstants.ACCESS_KEY_MIN_LENGTH

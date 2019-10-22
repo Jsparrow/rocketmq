@@ -103,7 +103,7 @@ public final class RandomUtil {
     private static char getChar(int arg[]) {
         int size = arg.length;
         int c = rd.nextInt(size / 2);
-        c = c * 2;
+        c *= 2;
         return (char) (getIntegerBetween(arg[c], arg[c + 1]));
     }
 
@@ -152,9 +152,9 @@ public final class RandomUtil {
 
     public static String getStringWithPrefix(int n, String prefix) {
         int len = prefix.length();
-        if (n <= len)
-            return prefix;
-        else {
+        if (n <= len) {
+			return prefix;
+		} else {
             len = n - len;
             StringBuilder res = new StringBuilder(prefix);
             res.append(getStringWithCharacter(len));
@@ -165,9 +165,9 @@ public final class RandomUtil {
     public static String getStringWithSuffix(int n, String suffix) {
 
         int len = suffix.length();
-        if (n <= len)
-            return suffix;
-        else {
+        if (n <= len) {
+			return suffix;
+		} else {
             len = n - len;
             StringBuilder res = new StringBuilder();
             res.append(getStringWithCharacter(len));
@@ -179,9 +179,9 @@ public final class RandomUtil {
     public static String getStringWithBoth(int n, String prefix, String suffix) {
         int len = prefix.length() + suffix.length();
         StringBuilder res = new StringBuilder(prefix);
-        if (n <= len)
-            return res.append(suffix).toString();
-        else {
+        if (n <= len) {
+			return res.append(suffix).toString();
+		} else {
             len = n - len;
             res.append(getStringWithCharacter(len));
             res.append(suffix);
@@ -191,9 +191,9 @@ public final class RandomUtil {
 
     public static String getCheseWordWithPrifix(int n, String prefix) {
         int len = prefix.length();
-        if (n <= len)
-            return prefix;
-        else {
+        if (n <= len) {
+			return prefix;
+		} else {
             len = n - len;
             StringBuilder res = new StringBuilder(prefix);
             res.append(getCheseWord(len));
@@ -204,9 +204,9 @@ public final class RandomUtil {
     public static String getCheseWordWithSuffix(int n, String suffix) {
 
         int len = suffix.length();
-        if (n <= len)
-            return suffix;
-        else {
+        if (n <= len) {
+			return suffix;
+		} else {
             len = n - len;
             StringBuilder res = new StringBuilder();
             res.append(getCheseWord(len));
@@ -218,9 +218,9 @@ public final class RandomUtil {
     public static String getCheseWordWithBoth(int n, String prefix, String suffix) {
         int len = prefix.length() + suffix.length();
         StringBuilder res = new StringBuilder(prefix);
-        if (n <= len)
-            return res.append(suffix).toString();
-        else {
+        if (n <= len) {
+			return res.append(suffix).toString();
+		} else {
             len = n - len;
             res.append(getCheseWord(len));
             res.append(suffix);
@@ -273,7 +273,7 @@ public final class RandomUtil {
     }
 
     public static Collection<Integer> getRandomCollection(int min, int max, int n) {
-        Set<Integer> res = new HashSet<Integer>();
+        Set<Integer> res = new HashSet<>();
         int mx = max;
         int mn = min;
         if (n == (max + 1 - min)) {

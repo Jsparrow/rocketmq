@@ -27,9 +27,14 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateNamesrvConfigCommand implements SubCommand {
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateNamesrvConfigCommand.class);
+
+	@Override
     public String commandName() {
         return "updateNamesrvConfig";
     }
@@ -59,9 +64,9 @@ public class UpdateNamesrvConfigCommand implements SubCommand {
         defaultMQAdminExt.setInstanceName(Long.toString(System.currentTimeMillis()));
         try {
             // key name
-            String key = commandLine.getOptionValue('k').trim();
+            String key = StringUtils.trim(commandLine.getOptionValue('k'));
             // key name
-            String value = commandLine.getOptionValue('v').trim();
+            String value = StringUtils.trim(commandLine.getOptionValue('v'));
             Properties properties = new Properties();
             properties.put(key, value);
 
@@ -69,7 +74,7 @@ public class UpdateNamesrvConfigCommand implements SubCommand {
             String servers = commandLine.getOptionValue('n');
             List<String> serverList = null;
             if (servers != null && servers.length() > 0) {
-                String[] serverArray = servers.trim().split(";");
+                String[] serverArray = StringUtils.trim(servers).split(";");
 
                 if (serverArray.length > 0) {
                     serverList = Arrays.asList(serverArray);
@@ -80,8 +85,7 @@ public class UpdateNamesrvConfigCommand implements SubCommand {
 
             defaultMQAdminExt.updateNameServerConfig(properties, serverList);
 
-            System.out.printf("update name server config success!%s\n%s : %s\n",
-                serverList == null ? "" : serverList, key, value);
+            logger.info("update name server config success!%s\n%s : %s\n", serverList == null ? "" : serverList, key, value);
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

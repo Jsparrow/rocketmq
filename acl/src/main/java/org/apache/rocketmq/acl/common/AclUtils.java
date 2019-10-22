@@ -34,19 +34,18 @@ import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.yaml.snakeyaml.Yaml;
 
 import static org.apache.rocketmq.acl.common.SessionCredentials.CHARSET;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AclUtils {
 
-    private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(AclUtils.class);
+	private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
 
     public static byte[] combineRequestContent(RemotingCommand request, SortedMap<String, String> fieldsMap) {
         try {
             StringBuilder sb = new StringBuilder("");
-            for (Map.Entry<String, String> entry : fieldsMap.entrySet()) {
-                if (!SessionCredentials.SIGNATURE.equals(entry.getKey())) {
-                    sb.append(entry.getValue());
-                }
-            }
+            fieldsMap.entrySet().stream().filter(entry -> !SessionCredentials.SIGNATURE.equals(entry.getKey())).forEach(entry -> sb.append(entry.getValue()));
 
             return AclUtils.combineBytes(sb.toString().getBytes(CHARSET), request.getBody());
         } catch (Exception e) {
@@ -57,10 +56,12 @@ public class AclUtils {
     public static byte[] combineBytes(byte[] b1, byte[] b2) {
         int size = (null != b1 ? b1.length : 0) + (null != b2 ? b2.length : 0);
         byte[] total = new byte[size];
-        if (null != b1)
-            System.arraycopy(b1, 0, total, 0, b1.length);
-        if (null != b2)
-            System.arraycopy(b2, 0, total, b1.length, b2.length);
+        if (null != b1) {
+			System.arraycopy(b1, 0, total, 0, b1.length);
+		}
+        if (null != b2) {
+			System.arraycopy(b2, 0, total, b1.length, b2.length);
+		}
         return total;
     }
 
@@ -76,8 +77,8 @@ public class AclUtils {
     }
 
     public static String[] getAddreeStrArray(String netaddress, String four) {
-        String[] fourStrArray = StringUtils.split(four.substring(1, four.length() - 1), ",");
-        String address = netaddress.substring(0, netaddress.indexOf("{"));
+        String[] fourStrArray = StringUtils.split(StringUtils.substring(four, 1, four.length() - 1), ",");
+        String address = StringUtils.substring(netaddress, 0, StringUtils.indexOf(netaddress, "{"));
         String[] addreeStrArray = new String[fourStrArray.length];
         for (int i = 0; i < fourStrArray.length; i++) {
             addreeStrArray[i] = address + fourStrArray[i];
@@ -108,7 +109,7 @@ public class AclUtils {
     }
 
     public static boolean isScope(String num) {
-        return isScope(Integer.valueOf(num.trim()));
+        return isScope(Integer.valueOf(StringUtils.trim(num)));
     }
 
     public static boolean isScope(int num) {
@@ -116,15 +117,15 @@ public class AclUtils {
     }
 
     public static boolean isAsterisk(String asterisk) {
-        return asterisk.indexOf('*') > -1;
+        return StringUtils.indexOf(asterisk, '*') > -1;
     }
 
     public static boolean isColon(String colon) {
-        return colon.indexOf(',') > -1;
+        return StringUtils.indexOf(colon, ',') > -1;
     }
 
     public static boolean isMinus(String minus) {
-        return minus.indexOf('-') > -1;
+        return StringUtils.indexOf(minus, '-') > -1;
 
     }
 
@@ -135,7 +136,8 @@ public class AclUtils {
             fis = new FileInputStream(new File(path));
             return yaml.loadAs(fis, clazz);
         } catch (FileNotFoundException ignore) {
-            return null;
+            logger.error(ignore.getMessage(), ignore);
+			return null;
         } catch (Exception e) {
             throw new AclException(e.getMessage());
         } finally {
@@ -143,6 +145,7 @@ public class AclUtils {
                 try {
                     fis.close();
                 } catch (IOException ignore) {
+					logger.error(ignore.getMessage(), ignore);
                 }
             }
         }
@@ -184,12 +187,11 @@ public class AclUtils {
         String accessKey = yamlDataObject.getString(AclConstants.CONFIG_ACCESS_KEY);
         String secretKey = yamlDataObject.getString(AclConstants.CONFIG_SECRET_KEY);
 
-        if (StringUtils.isBlank(accessKey) || StringUtils.isBlank(secretKey)) {
-            log.warn("AccessKey or secretKey is blank, the acl is not enabled.");
-
-            return null;
-        }
-        return new AclClientRPCHook(new SessionCredentials(accessKey,secretKey));
+        if (!(StringUtils.isBlank(accessKey) || StringUtils.isBlank(secretKey))) {
+			return new AclClientRPCHook(new SessionCredentials(accessKey,secretKey));
+		}
+		log.warn("AccessKey or secretKey is blank, the acl is not enabled.");
+		return null;
     }
 
 }

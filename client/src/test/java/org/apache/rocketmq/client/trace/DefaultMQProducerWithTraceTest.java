@@ -55,11 +55,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultMQProducerWithTraceTest {
 
-    @Spy
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQProducerWithTraceTest.class);
+	@Spy
     private MQClientInstance mQClientFactory = MQClientManager.getInstance().getAndCreateMQClientInstance(new ClientConfig());
     @Mock
     private MQClientAPIImpl mQClientAPIImpl;
@@ -127,6 +130,7 @@ public class DefaultMQProducerWithTraceTest {
         try {
             producer.send(message);
         } catch (MQClientException e) {
+			logger.error(e.getMessage(), e);
         }
         countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
 
@@ -139,6 +143,7 @@ public class DefaultMQProducerWithTraceTest {
         try {
             producer.send(message);
         } catch (MQClientException e) {
+			logger.error(e.getMessage(), e);
         }
         countDownLatch.await(3000L, TimeUnit.MILLISECONDS);
 

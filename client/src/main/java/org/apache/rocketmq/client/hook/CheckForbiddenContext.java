@@ -115,9 +115,8 @@ public class CheckForbiddenContext {
 
     @Override
     public String toString() {
-        return "SendMessageContext [nameSrvAddr=" + nameSrvAddr + ", group=" + group + ", message=" + message
-            + ", mq=" + mq + ", brokerAddr=" + brokerAddr + ", communicationMode=" + communicationMode
-            + ", sendResult=" + sendResult + ", exception=" + exception + ", unitMode=" + unitMode
-            + ", arg=" + arg + "]";
+        return new StringBuilder().append("SendMessageContext [nameSrvAddr=").append(nameSrvAddr).append(", group=").append(group).append(", message=").append(message).append(", mq=")
+				.append(mq).append(", brokerAddr=").append(brokerAddr).append(", communicationMode=").append(communicationMode).append(", sendResult=").append(sendResult)
+				.append(", exception=").append(exception).append(", unitMode=").append(unitMode).append(", arg=").append(arg).append("]").toString();
     }
 }

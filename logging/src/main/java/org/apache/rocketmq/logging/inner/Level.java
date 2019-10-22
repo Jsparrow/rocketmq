@@ -21,59 +21,44 @@ import java.io.Serializable;
 
 public class Level implements Serializable {
 
-    transient int level;
-    transient String levelStr;
-    transient int syslogEquivalent;
+    public static final int OFF_INT = Integer.MAX_VALUE;
+	public static final int ERROR_INT = 40000;
+	public static final int WARN_INT = 30000;
+	public static final int INFO_INT = 20000;
+	public static final int DEBUG_INT = 10000;
+	public static final int ALL_INT = Integer.MIN_VALUE;
+	private static final String ALL_NAME = "ALL";
+	private static final String DEBUG_NAME = "DEBUG";
+	private static final String INFO_NAME = "INFO";
+	private static final String WARN_NAME = "WARN";
+	private static final String ERROR_NAME = "ERROR";
+	private static final String OFF_NAME = "OFF";
+	public static final Level OFF = new Level(OFF_INT, OFF_NAME, 0);
+	public static final Level ERROR = new Level(ERROR_INT, ERROR_NAME, 3);
+	public static final Level WARN = new Level(WARN_INT, WARN_NAME, 4);
+	public static final Level INFO = new Level(INFO_INT, INFO_NAME, 6);
+	public static final Level DEBUG = new Level(DEBUG_INT, DEBUG_NAME, 7);
+	public static final Level ALL = new Level(ALL_INT, ALL_NAME, 7);
+	static final long serialVersionUID = 3491141966387921974L;
+	transient int level;
+	transient String levelStr;
+	transient int syslogEquivalent;
 
-    public final static int OFF_INT = Integer.MAX_VALUE;
-    public final static int ERROR_INT = 40000;
-    public final static int WARN_INT = 30000;
-    public final static int INFO_INT = 20000;
-    public final static int DEBUG_INT = 10000;
-    public final static int ALL_INT = Integer.MIN_VALUE;
-
-
-    private static final String ALL_NAME = "ALL";
-
-    private static final String DEBUG_NAME = "DEBUG";
-
-    private static final String INFO_NAME = "INFO";
-
-    private static final String WARN_NAME = "WARN";
-
-    private static final String ERROR_NAME = "ERROR";
-
-    private static final String OFF_NAME = "OFF";
-
-    final static public Level OFF = new Level(OFF_INT, OFF_NAME, 0);
-
-    final static public Level ERROR = new Level(ERROR_INT, ERROR_NAME, 3);
-
-    final static public Level WARN = new Level(WARN_INT, WARN_NAME, 4);
-
-    final static public Level INFO = new Level(INFO_INT, INFO_NAME, 6);
-
-    final static public Level DEBUG = new Level(DEBUG_INT, DEBUG_NAME, 7);
-
-    final static public Level ALL = new Level(ALL_INT, ALL_NAME, 7);
-
-    static final long serialVersionUID = 3491141966387921974L;
-
-    protected Level(int level, String levelStr, int syslogEquivalent) {
+	protected Level(int level, String levelStr, int syslogEquivalent) {
         this.level = level;
         this.levelStr = levelStr;
         this.syslogEquivalent = syslogEquivalent;
     }
 
-    public static Level toLevel(String sArg) {
+	public static Level toLevel(String sArg) {
         return toLevel(sArg, Level.DEBUG);
     }
 
-    public static Level toLevel(int val) {
+	public static Level toLevel(int val) {
         return toLevel(val, Level.DEBUG);
     }
 
-    public static Level toLevel(int val, Level defaultLevel) {
+	public static Level toLevel(int val, Level defaultLevel) {
         switch (val) {
             case ALL_INT:
                 return ALL;
@@ -92,7 +77,7 @@ public class Level implements Serializable {
         }
     }
 
-    public static Level toLevel(String sArg, Level defaultLevel) {
+	public static Level toLevel(String sArg, Level defaultLevel) {
         if (sArg == null) {
             return defaultLevel;
         }
@@ -123,8 +108,8 @@ public class Level implements Serializable {
         return defaultLevel;
     }
 
-
-    public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
         if (o instanceof Level) {
             Level r = (Level) o;
             return this.level == r.level;
@@ -133,7 +118,7 @@ public class Level implements Serializable {
         }
     }
 
-    @Override
+	@Override
     public int hashCode() {
         int result = level;
         result = 31 * result + (levelStr != null ? levelStr.hashCode() : 0);
@@ -141,15 +126,16 @@ public class Level implements Serializable {
         return result;
     }
 
-    public boolean isGreaterOrEqual(Level r) {
+	public boolean isGreaterOrEqual(Level r) {
         return level >= r.level;
     }
 
-    final public String toString() {
+	@Override
+	public final String toString() {
         return levelStr;
     }
 
-    public final int toInt() {
+	public final int toInt() {
         return level;
     }
 

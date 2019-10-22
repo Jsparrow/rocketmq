@@ -69,7 +69,7 @@ public class FilterMessageContext {
 
     @Override
     public String toString() {
-        return "ConsumeMessageContext [consumerGroup=" + consumerGroup + ", msgList=" + msgList + ", mq="
-            + mq + ", arg=" + arg + "]";
+        return new StringBuilder().append("ConsumeMessageContext [consumerGroup=").append(consumerGroup).append(", msgList=").append(msgList).append(", mq=").append(mq).append(", arg=")
+				.append(arg).append("]").toString();
     }
 }

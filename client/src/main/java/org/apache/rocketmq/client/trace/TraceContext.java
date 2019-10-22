@@ -128,9 +128,9 @@ public class TraceContext implements Comparable<TraceContext> {
             .append("_").append(regionId).append("_").append(isSuccess).append("_");
         if (traceBeans != null && traceBeans.size() > 0) {
             for (TraceBean bean : traceBeans) {
-                sb.append(bean.getMsgId() + "_" + bean.getTopic() + "_");
+                sb.append(new StringBuilder().append(bean.getMsgId()).append("_").append(bean.getTopic()).append("_").toString());
             }
         }
-        return "TraceContext{" + sb.toString() + '}';
+        return new StringBuilder().append("TraceContext{").append(sb.toString()).append('}').toString();
     }
 }

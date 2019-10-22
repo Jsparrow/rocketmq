@@ -28,6 +28,7 @@ import org.apache.rocketmq.common.help.FAQUrl;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.logging.InternalLoggerFactory;
 import org.apache.rocketmq.common.utils.HttpTinyClient;
+import org.apache.commons.lang3.StringUtils;
 
 public class TopAddressing {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.COMMON_LOGGER_NAME);
@@ -46,15 +47,15 @@ public class TopAddressing {
     }
 
     private static String clearNewLine(final String str) {
-        String newString = str.trim();
-        int index = newString.indexOf("\r");
+        String newString = StringUtils.trim(str);
+        int index = StringUtils.indexOf(newString, "\r");
         if (index != -1) {
-            return newString.substring(0, index);
+            return StringUtils.substring(newString, 0, index);
         }
 
-        index = newString.indexOf("\n");
+        index = StringUtils.indexOf(newString, "\n");
         if (index != -1) {
-            return newString.substring(0, index);
+            return StringUtils.substring(newString, 0, index);
         }
 
         return newString;
@@ -68,7 +69,7 @@ public class TopAddressing {
         String url = this.wsAddr;
         try {
             if (!UtilAll.isBlank(this.unitName)) {
-                url = url + "-" + this.unitName + "?nofix=1";
+                url = new StringBuilder().append(url).append("-").append(this.unitName).append("?nofix=1").toString();
             }
             HttpTinyClient.HttpResult result = HttpTinyClient.httpGet(url, null, null, "UTF-8", timeoutMills);
             if (200 == result.code) {
@@ -89,7 +90,7 @@ public class TopAddressing {
 
         if (verbose) {
             String errorMsg =
-                "connect to " + url + " failed, maybe the domain name " + MixAll.getWSAddr() + " not bind in /etc/hosts";
+                new StringBuilder().append("connect to ").append(url).append(" failed, maybe the domain name ").append(MixAll.getWSAddr()).append(" not bind in /etc/hosts").toString();
             errorMsg += FAQUrl.suggestTodo(FAQUrl.NAME_SERVER_ADDR_NOT_EXIST_URL);
 
             log.warn(errorMsg);

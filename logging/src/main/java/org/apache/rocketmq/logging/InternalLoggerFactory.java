@@ -18,10 +18,14 @@
 package org.apache.rocketmq.logging;
 
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class InternalLoggerFactory {
 
-    public static final String LOGGER_SLF4J = "slf4j";
+    private static final Logger logger = LoggerFactory.getLogger(InternalLoggerFactory.class);
+
+	public static final String LOGGER_SLF4J = "slf4j";
 
     public static final String LOGGER_INNER = "inner";
 
@@ -31,15 +35,30 @@ public abstract class InternalLoggerFactory {
 
     private static ConcurrentHashMap<String, InternalLoggerFactory> loggerFactoryCache = new ConcurrentHashMap<String, InternalLoggerFactory>();
 
-    public static InternalLogger getLogger(Class clazz) {
+    static {
+        try {
+            new Slf4jLoggerFactory();
+        } catch (Throwable e) {
+			logger.error(e.getMessage(), e);
+            //ignore
+        }
+        try {
+            new InnerLoggerFactory();
+        } catch (Throwable e) {
+			logger.error(e.getMessage(), e);
+            //ignore
+        }
+    }
+
+	public static InternalLogger getLogger(Class clazz) {
         return getLogger(clazz.getName());
     }
 
-    public static InternalLogger getLogger(String name) {
+	public static InternalLogger getLogger(String name) {
         return getLoggerFactory().getLoggerInstance(name);
     }
 
-    private static InternalLoggerFactory getLoggerFactory() {
+	private static InternalLoggerFactory getLoggerFactory() {
         InternalLoggerFactory internalLoggerFactory = null;
         if (loggerType != null) {
             internalLoggerFactory = loggerFactoryCache.get(loggerType);
@@ -56,24 +75,11 @@ public abstract class InternalLoggerFactory {
         return internalLoggerFactory;
     }
 
-    public static void setCurrentLoggerType(String type) {
+	public static void setCurrentLoggerType(String type) {
         loggerType = type;
     }
 
-    static {
-        try {
-            new Slf4jLoggerFactory();
-        } catch (Throwable e) {
-            //ignore
-        }
-        try {
-            new InnerLoggerFactory();
-        } catch (Throwable e) {
-            //ignore
-        }
-    }
-
-    protected void doRegister() {
+	protected void doRegister() {
         String loggerType = getLoggerType();
         if (loggerFactoryCache.get(loggerType) != null) {
             return;
@@ -81,9 +87,9 @@ public abstract class InternalLoggerFactory {
         loggerFactoryCache.put(loggerType, this);
     }
 
-    protected abstract void shutdown();
+	protected abstract void shutdown();
 
-    protected abstract InternalLogger getLoggerInstance(String name);
+	protected abstract InternalLogger getLoggerInstance(String name);
 
-    protected abstract String getLoggerType();
+	protected abstract String getLoggerType();
 }

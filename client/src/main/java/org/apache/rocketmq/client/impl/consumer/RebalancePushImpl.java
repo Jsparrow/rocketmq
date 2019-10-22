@@ -31,9 +31,13 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class RebalancePushImpl extends RebalanceImpl {
-    private final static long UNLOCK_DELAY_TIME_MILLS = Long.parseLong(System.getProperty("rocketmq.client.unlockDelayTimeMills", "20000"));
+    private static final Logger logger = LoggerFactory.getLogger(RebalancePushImpl.class);
+	private static final long UNLOCK_DELAY_TIME_MILLS = Long.parseLong(System.getProperty("rocketmq.client.unlockDelayTimeMills", "20000"));
     private final DefaultMQPushConsumerImpl defaultMQPushConsumerImpl;
 
     public RebalancePushImpl(DefaultMQPushConsumerImpl defaultMQPushConsumerImpl) {
@@ -85,29 +89,28 @@ public class RebalancePushImpl extends RebalanceImpl {
     public boolean removeUnnecessaryMessageQueue(MessageQueue mq, ProcessQueue pq) {
         this.defaultMQPushConsumerImpl.getOffsetStore().persist(mq);
         this.defaultMQPushConsumerImpl.getOffsetStore().removeOffset(mq);
-        if (this.defaultMQPushConsumerImpl.isConsumeOrderly()
-            && MessageModel.CLUSTERING.equals(this.defaultMQPushConsumerImpl.messageModel())) {
-            try {
-                if (pq.getLockConsume().tryLock(1000, TimeUnit.MILLISECONDS)) {
-                    try {
-                        return this.unlockDelay(mq, pq);
-                    } finally {
-                        pq.getLockConsume().unlock();
-                    }
-                } else {
-                    log.warn("[WRONG]mq is consuming, so can not unlock it, {}. maybe hanged for a while, {}",
-                        mq,
-                        pq.getTryUnlockTimes());
+        if (!(this.defaultMQPushConsumerImpl.isConsumeOrderly()
+            && MessageModel.CLUSTERING == this.defaultMQPushConsumerImpl.messageModel())) {
+			return true;
+		}
+		try {
+		    if (pq.getLockConsume().tryLock(1000, TimeUnit.MILLISECONDS)) {
+		        try {
+		            return this.unlockDelay(mq, pq);
+		        } finally {
+		            pq.getLockConsume().unlock();
+		        }
+		    } else {
+		        log.warn("[WRONG]mq is consuming, so can not unlock it, {}. maybe hanged for a while, {}",
+		            mq,
+		            pq.getTryUnlockTimes());
 
-                    pq.incTryUnlockTimes();
-                }
-            } catch (Exception e) {
-                log.error("removeUnnecessaryMessageQueue Exception", e);
-            }
-
-            return false;
-        }
-        return true;
+		        pq.incTryUnlockTimes();
+		    }
+		} catch (Exception e) {
+		    log.error("removeUnnecessaryMessageQueue Exception", e);
+		}
+		return false;
     }
 
     private boolean unlockDelay(final MessageQueue mq, final ProcessQueue pq) {
@@ -153,13 +156,14 @@ public class RebalancePushImpl extends RebalanceImpl {
                 }
                 // First start,no offset
                 else if (-1 == lastOffset) {
-                    if (mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    if (StringUtils.startsWith(mq.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         result = 0L;
                     } else {
                         try {
                             result = this.mQClientFactory.getMQAdminImpl().maxOffset(mq);
                         } catch (MQClientException e) {
-                            result = -1;
+                            logger.error(e.getMessage(), e);
+							result = -1;
                         }
                     }
                 } else {
@@ -183,11 +187,12 @@ public class RebalancePushImpl extends RebalanceImpl {
                 if (lastOffset >= 0) {
                     result = lastOffset;
                 } else if (-1 == lastOffset) {
-                    if (mq.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    if (StringUtils.startsWith(mq.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         try {
                             result = this.mQClientFactory.getMQAdminImpl().maxOffset(mq);
                         } catch (MQClientException e) {
-                            result = -1;
+                            logger.error(e.getMessage(), e);
+							result = -1;
                         }
                     } else {
                         try {
@@ -195,7 +200,8 @@ public class RebalancePushImpl extends RebalanceImpl {
                                 UtilAll.YYYYMMDDHHMMSS).getTime();
                             result = this.mQClientFactory.getMQAdminImpl().searchOffset(mq, timestamp);
                         } catch (MQClientException e) {
-                            result = -1;
+                            logger.error(e.getMessage(), e);
+							result = -1;
                         }
                     }
                 } else {

@@ -35,7 +35,7 @@ public class KVConfigManager {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final HashMap<String/* Namespace */, HashMap<String/* Key */, String/* Value */>> configTable =
-        new HashMap<String, HashMap<String, String>>();
+        new HashMap<>();
 
     public KVConfigManager(NamesrvController namesrvController) {
         this.namesrvController = namesrvController;
@@ -48,14 +48,15 @@ public class KVConfigManager {
         } catch (IOException e) {
             log.warn("Load KV config table exception", e);
         }
-        if (content != null) {
-            KVConfigSerializeWrapper kvConfigSerializeWrapper =
-                KVConfigSerializeWrapper.fromJson(content, KVConfigSerializeWrapper.class);
-            if (null != kvConfigSerializeWrapper) {
-                this.configTable.putAll(kvConfigSerializeWrapper.getConfigTable());
-                log.info("load KV config table OK");
-            }
-        }
+        if (content == null) {
+			return;
+		}
+		KVConfigSerializeWrapper kvConfigSerializeWrapper =
+		    KVConfigSerializeWrapper.fromJson(content, KVConfigSerializeWrapper.class);
+		if (null != kvConfigSerializeWrapper) {
+		    this.configTable.putAll(kvConfigSerializeWrapper.getConfigTable());
+		    log.info("load KV config table OK");
+		}
     }
 
     public void putKVConfig(final String namespace, final String key, final String value) {
@@ -64,7 +65,7 @@ public class KVConfigManager {
             try {
                 HashMap<String, String> kvTable = this.configTable.get(namespace);
                 if (null == kvTable) {
-                    kvTable = new HashMap<String, String>();
+                    kvTable = new HashMap<>();
                     this.configTable.put(namespace, kvTable);
                     log.info("putKVConfig create new Namespace {}", namespace);
                 }

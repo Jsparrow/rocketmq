@@ -138,12 +138,8 @@ public class UtilAllTest {
 
         @Override
         public String toString() {
-            return "DemoConfig{" +
-                "demoWidth=" + demoWidth +
-                ", demoLength=" + demoLength +
-                ", demoOK=" + demoOK +
-                ", demoName='" + demoName + '\'' +
-                '}';
+            return new StringBuilder().append("DemoConfig{").append("demoWidth=").append(demoWidth).append(", demoLength=").append(demoLength).append(", demoOK=")
+					.append(demoOK).append(", demoName='").append(demoName).append('\'').append('}').toString();
         }
     }
 }

@@ -28,11 +28,15 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class AllocateMachineRoomNearByTest {
 
-    private static final String CID_PREFIX = "CID-";
+    private static final Logger logger = LoggerFactory.getLogger(AllocateMachineRoomNearByTest.class);
+
+	private static final String CID_PREFIX = "CID-";
 
     private final String topic = "topic_test";
     private final AllocateMachineRoomNearby.MachineRoomResolver machineRoomResolver =  new AllocateMachineRoomNearby.MachineRoomResolver() {
@@ -101,7 +105,8 @@ public class AllocateMachineRoomNearByTest {
 
     public void testWhenIDCSizeEquals(int IDCSize, int queueSize, int consumerSize, boolean print) {
         if (print) {
-            System.out.println("Test : IDCSize = "+ IDCSize +"queueSize = " + queueSize +" consumerSize = " + consumerSize);
+            logger.info(new StringBuilder().append("Test : IDCSize = ").append(IDCSize).append("queueSize = ").append(queueSize).append(" consumerSize = ").append(consumerSize)
+					.toString());
         }
         List<String> cidAll = prepareConsumer(IDCSize, consumerSize);
         List<MessageQueue> mqAll = prepareMQ(IDCSize, queueSize);
@@ -109,7 +114,7 @@ public class AllocateMachineRoomNearByTest {
         for (String currentID : cidAll) {
             List<MessageQueue> res = allocateMessageQueueStrategy.allocate("Test-C-G",currentID,mqAll,cidAll);
             if (print) {
-                System.out.println("cid: "+currentID+"--> res :" +res);
+                logger.info(new StringBuilder().append("cid: ").append(currentID).append("--> res :").append(res).toString());
             }
             for (MessageQueue mq : res) {
                 Assert.assertTrue(machineRoomResolver.brokerDeployIn(mq).equals(machineRoomResolver.consumerDeployIn(currentID)));
@@ -119,13 +124,14 @@ public class AllocateMachineRoomNearByTest {
         Assert.assertTrue(hasAllocateAllQ(cidAll,mqAll,resAll));
 
         if (print) {
-            System.out.println("-------------------------------------------------------------------");
+            logger.info("-------------------------------------------------------------------");
         }
     }
 
     public void testWhenConsumerIDCIsMore(int brokerIDCSize, int consumerMore, int queueSize, int consumerSize, boolean print) {
         if (print) {
-            System.out.println("Test : IDCSize = "+ brokerIDCSize +" queueSize = " + queueSize +" consumerSize = " + consumerSize);
+            logger.info(new StringBuilder().append("Test : IDCSize = ").append(brokerIDCSize).append(" queueSize = ").append(queueSize).append(" consumerSize = ").append(consumerSize)
+					.toString());
         }
         Set<String> brokerIDCWithConsumer = new TreeSet<String>();
         List<String> cidAll = prepareConsumer(brokerIDCSize +consumerMore, consumerSize);
@@ -138,7 +144,7 @@ public class AllocateMachineRoomNearByTest {
         for (String currentID : cidAll) {
             List<MessageQueue> res = allocateMessageQueueStrategy.allocate("Test-C-G",currentID,mqAll,cidAll);
             if (print) {
-                System.out.println("cid: "+currentID+"--> res :" +res);
+                logger.info(new StringBuilder().append("cid: ").append(currentID).append("--> res :").append(res).toString());
             }
             for (MessageQueue mq : res) {
                 if (brokerIDCWithConsumer.contains(machineRoomResolver.brokerDeployIn(mq))) {//healthy idc, so only consumer in this idc should be allocated
@@ -150,13 +156,14 @@ public class AllocateMachineRoomNearByTest {
 
         Assert.assertTrue(hasAllocateAllQ(cidAll,mqAll,resAll));
         if (print) {
-            System.out.println("-------------------------------------------------------------------");
+            logger.info("-------------------------------------------------------------------");
         }
     }
 
     public void testWhenConsumerIDCIsLess(int brokerIDCSize, int consumerIDCLess, int queueSize, int consumerSize, boolean print) {
         if (print) {
-            System.out.println("Test : IDCSize = "+ brokerIDCSize +" queueSize = " + queueSize +" consumerSize = " + consumerSize);
+            logger.info(new StringBuilder().append("Test : IDCSize = ").append(brokerIDCSize).append(" queueSize = ").append(queueSize).append(" consumerSize = ").append(consumerSize)
+					.toString());
         }
         Set<String> healthyIDC = new TreeSet<String>();
         List<String> cidAll = prepareConsumer(brokerIDCSize - consumerIDCLess, consumerSize);
@@ -171,7 +178,7 @@ public class AllocateMachineRoomNearByTest {
             String currentIDC = machineRoomResolver.consumerDeployIn(currentID);
             List<MessageQueue> res = allocateMessageQueueStrategy.allocate("Test-C-G",currentID,mqAll,cidAll);
             if (print) {
-                System.out.println("cid: "+currentID+"--> res :" +res);
+                logger.info(new StringBuilder().append("cid: ").append(currentID).append("--> res :").append(res).toString());
             }
             if ( !idc2Res.containsKey(currentIDC)) {
                 idc2Res.put(currentIDC, new ArrayList<MessageQueue>());
@@ -188,7 +195,7 @@ public class AllocateMachineRoomNearByTest {
 
         Assert.assertTrue(hasAllocateAllQ(cidAll,mqAll,resAll));
         if (print) {
-            System.out.println("-------------------------------------------------------------------");
+            logger.info("-------------------------------------------------------------------");
         }
     }
 
@@ -204,7 +211,7 @@ public class AllocateMachineRoomNearByTest {
     private List<String> createConsumerIdList(String machineRoom, int size) {
         List<String> consumerIdList = new ArrayList<String>(size);
         for (int i = 0; i < size; i++) {
-            consumerIdList.add(machineRoom +"-"+CID_PREFIX + String.valueOf(i));
+            consumerIdList.add(new StringBuilder().append(machineRoom).append("-").append(CID_PREFIX).append(String.valueOf(i)).toString());
         }
         return consumerIdList;
     }

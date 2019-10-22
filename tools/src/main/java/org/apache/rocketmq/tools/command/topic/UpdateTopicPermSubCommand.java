@@ -30,10 +30,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class UpdateTopicPermSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(UpdateTopicPermSubCommand.class);
+
+	@Override
     public String commandName() {
         return "updateTopicPerm";
     }
@@ -73,7 +78,7 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             defaultMQAdminExt.start();
             TopicConfig topicConfig = new TopicConfig();
 
-            String topic = commandLine.getOptionValue('t').trim();
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
             TopicRouteData topicRouteData = defaultMQAdminExt.examineTopicRouteInfo(topic);
             assert topicRouteData != null;
             List<QueueData> queueDatas = topicRouteData.getQueueDatas();
@@ -87,26 +92,26 @@ public class UpdateTopicPermSubCommand implements SubCommand {
             topicConfig.setTopicSysFlag(queueData.getTopicSynFlag());
 
             //new perm
-            int perm = Integer.parseInt(commandLine.getOptionValue('p').trim());
+            int perm = Integer.parseInt(StringUtils.trim(commandLine.getOptionValue('p')));
             int oldPerm = topicConfig.getPerm();
             if (perm == oldPerm) {
-                System.out.printf("new perm equals to the old one!%n");
+                logger.info("new perm equals to the old one!%n");
                 return;
             }
             topicConfig.setPerm(perm);
             if (commandLine.hasOption('b')) {
-                String addr = commandLine.getOptionValue('b').trim();
+                String addr = StringUtils.trim(commandLine.getOptionValue('b'));
                 defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                System.out.printf("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
-                System.out.printf("%s%n", topicConfig);
+                logger.info("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
+                logger.info("%s%n", topicConfig);
                 return;
             } else if (commandLine.hasOption('c')) {
-                String clusterName = commandLine.getOptionValue('c').trim();
+                String clusterName = StringUtils.trim(commandLine.getOptionValue('c'));
                 Set<String> masterSet =
                     CommandUtil.fetchMasterAddrByClusterName(defaultMQAdminExt, clusterName);
                 for (String addr : masterSet) {
                     defaultMQAdminExt.createAndUpdateTopicConfig(addr, topicConfig);
-                    System.out.printf("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
+                    logger.info("update topic perm from %s to %s in %s success.%n", oldPerm, perm, addr);
                 }
                 return;
             }

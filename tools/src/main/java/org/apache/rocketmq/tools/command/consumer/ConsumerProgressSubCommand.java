@@ -44,9 +44,13 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConsumerProgressSubCommand implements SubCommand {
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerProgressSubCommand.class);
+	private final InternalLogger log = ClientLogger.getLog();
 
     @Override
     public String commandName() {
@@ -80,11 +84,10 @@ public class ConsumerProgressSubCommand implements SubCommand {
                 String clientId = connection.getClientId();
                 ConsumerRunningInfo consumerRunningInfo = defaultMQAdminExt.getConsumerRunningInfo(groupName, clientId,
                     false);
-                for (MessageQueue messageQueue : consumerRunningInfo.getMqTable().keySet()) {
-                    results.put(messageQueue, clientId.split("@")[0]);
-                }
+                consumerRunningInfo.getMqTable().keySet().forEach(messageQueue -> results.put(messageQueue, clientId.split("@")[0]));
             }
         } catch (Exception ignore) {
+			logger.error(ignore.getMessage(), ignore);
         }
         return results;
     }
@@ -98,12 +101,12 @@ public class ConsumerProgressSubCommand implements SubCommand {
             defaultMQAdminExt.start();
 
             boolean showClientIP = commandLine.hasOption('s')
-                && "true".equalsIgnoreCase(commandLine.getOptionValue('s'));
+                && StringUtils.equalsIgnoreCase("true", commandLine.getOptionValue('s'));
 
             if (commandLine.hasOption('g')) {
-                String consumerGroup = commandLine.getOptionValue('g').trim();
+                String consumerGroup = StringUtils.trim(commandLine.getOptionValue('g'));
                 ConsumeStats consumeStats = defaultMQAdminExt.examineConsumeStats(consumerGroup);
-                List<MessageQueue> mqList = new LinkedList<MessageQueue>();
+                List<MessageQueue> mqList = new LinkedList<>();
                 mqList.addAll(consumeStats.getOffsetTable().keySet());
                 Collections.sort(mqList);
 
@@ -112,15 +115,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                     messageQueueAllocationResult = getMessageQueueAllocationResult(defaultMQAdminExt, consumerGroup);
                 }
 
-                System.out.printf("%-32s  %-32s  %-4s  %-20s  %-20s  %-20s %-20s  %s%n",
-                    "#Topic",
-                    "#Broker Name",
-                    "#QID",
-                    "#Broker Offset",
-                    "#Consumer Offset",
-                    "#Client IP",
-                    "#Diff",
-                    "#LastTime");
+                logger.info("%-32s  %-32s  %-4s  %-20s  %-20s  %-20s %-20s  %s%n", "#Topic", "#Broker Name", "#QID", "#Broker Offset", "#Consumer Offset", "#Client IP", "#Diff", "#LastTime");
 
                 long diffTotal = 0L;
                 for (MessageQueue mq : mqList) {
@@ -135,6 +130,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                             lastTime = UtilAll.formatDate(new Date(offsetWrapper.getLastTimestamp()), UtilAll.YYYY_MM_DD_HH_MM_SS);
                         }
                     } catch (Exception e) {
+						logger.error(e.getMessage(), e);
                     }
 
                     String clientIP = null;
@@ -142,35 +138,20 @@ public class ConsumerProgressSubCommand implements SubCommand {
                         clientIP = messageQueueAllocationResult.get(mq);
                     }
 
-                    System.out.printf("%-32s  %-32s  %-4d  %-20d  %-20d  %-20s %-20d  %s%n",
-                        UtilAll.frontStringAtLeast(mq.getTopic(), 32),
-                        UtilAll.frontStringAtLeast(mq.getBrokerName(), 32),
-                        mq.getQueueId(),
-                        offsetWrapper.getBrokerOffset(),
-                        offsetWrapper.getConsumerOffset(),
-                        null != clientIP ? clientIP : "N/A",
-                        diff,
-                        lastTime
+                    logger.info("%-32s  %-32s  %-4d  %-20d  %-20d  %-20s %-20d  %s%n", UtilAll.frontStringAtLeast(mq.getTopic(), 32), UtilAll.frontStringAtLeast(mq.getBrokerName(), 32), mq.getQueueId(), offsetWrapper.getBrokerOffset(), offsetWrapper.getConsumerOffset(), null != clientIP ? clientIP : "N/A", diff, lastTime
                     );
                 }
 
-                System.out.printf("%n");
-                System.out.printf("Consume TPS: %.2f%n", consumeStats.getConsumeTps());
-                System.out.printf("Diff Total: %d%n", diffTotal);
+                logger.info("%n");
+                logger.info("Consume TPS: %.2f%n", consumeStats.getConsumeTps());
+                logger.info("Diff Total: %d%n", diffTotal);
             } else {
-                System.out.printf("%-32s  %-6s  %-24s %-5s  %-14s  %-7s  %s%n",
-                    "#Group",
-                    "#Count",
-                    "#Version",
-                    "#Type",
-                    "#Model",
-                    "#TPS",
-                    "#Diff Total"
+                logger.info("%-32s  %-6s  %-24s %-5s  %-14s  %-7s  %s%n", "#Group", "#Count", "#Version", "#Type", "#Model", "#TPS", "#Diff Total"
                 );
                 TopicList topicList = defaultMQAdminExt.fetchAllTopicList();
                 for (String topic : topicList.getTopicList()) {
-                    if (topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                        String consumerGroup = topic.substring(MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
+                    if (StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                        String consumerGroup = StringUtils.substring(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX.length());
                         try {
                             ConsumeStats consumeStats = null;
                             try {
@@ -201,14 +182,7 @@ public class ConsumerProgressSubCommand implements SubCommand {
                                 groupConsumeInfo.setVersion(cc.computeMinVersion());
                             }
 
-                            System.out.printf("%-32s  %-6d  %-24s %-5s  %-14s  %-7d  %d%n",
-                                UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 32),
-                                groupConsumeInfo.getCount(),
-                                groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE",
-                                groupConsumeInfo.consumeTypeDesc(),
-                                groupConsumeInfo.messageModelDesc(),
-                                groupConsumeInfo.getConsumeTps(),
-                                groupConsumeInfo.getDiffTotal()
+                            logger.info("%-32s  %-6d  %-24s %-5s  %-14s  %-7d  %d%n", UtilAll.frontStringAtLeast(groupConsumeInfo.getGroup(), 32), groupConsumeInfo.getCount(), groupConsumeInfo.getCount() > 0 ? groupConsumeInfo.versionDesc() : "OFFLINE", groupConsumeInfo.consumeTypeDesc(), groupConsumeInfo.messageModelDesc(), groupConsumeInfo.getConsumeTps(), groupConsumeInfo.getDiffTotal()
                             );
                         } catch (Exception e) {
                             log.warn("examineConsumeStats or examineConsumerConnectionInfo exception, " + consumerGroup, e);

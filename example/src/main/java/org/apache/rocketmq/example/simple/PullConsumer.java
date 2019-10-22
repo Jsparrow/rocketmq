@@ -23,9 +23,12 @@ import org.apache.rocketmq.client.consumer.DefaultMQPullConsumer;
 import org.apache.rocketmq.client.consumer.PullResult;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PullConsumer {
-    private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<MessageQueue, Long>();
+    private static final Logger logger = LoggerFactory.getLogger(PullConsumer.class);
+	private static final Map<MessageQueue, Long> OFFSE_TABLE = new HashMap<>();
 
     public static void main(String[] args) throws MQClientException {
         DefaultMQPullConsumer consumer = new DefaultMQPullConsumer("please_rename_unique_group_name_5");
@@ -34,13 +37,13 @@ public class PullConsumer {
 
         Set<MessageQueue> mqs = consumer.fetchSubscribeMessageQueues("broker-a");
         for (MessageQueue mq : mqs) {
-            System.out.printf("Consume from the queue: %s%n", mq);
+            logger.info("Consume from the queue: %s%n", mq);
             SINGLE_MQ:
             while (true) {
                 try {
                     PullResult pullResult =
                         consumer.pullBlockIfNotFound(mq, null, getMessageQueueOffset(mq), 32);
-                    System.out.printf("%s%n", pullResult);
+                    logger.info("%s%n", pullResult);
                     putMessageQueueOffset(mq, pullResult.getNextBeginOffset());
                     switch (pullResult.getPullStatus()) {
                         case FOUND:
@@ -55,7 +58,7 @@ public class PullConsumer {
                             break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.error(e.getMessage(), e);
                 }
             }
         }
@@ -65,8 +68,9 @@ public class PullConsumer {
 
     private static long getMessageQueueOffset(MessageQueue mq) {
         Long offset = OFFSE_TABLE.get(mq);
-        if (offset != null)
-            return offset;
+        if (offset != null) {
+			return offset;
+		}
 
         return 0;
     }

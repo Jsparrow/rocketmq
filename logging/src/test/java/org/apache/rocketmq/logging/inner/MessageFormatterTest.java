@@ -21,10 +21,14 @@ package org.apache.rocketmq.logging.inner;
 import org.apache.rocketmq.logging.InnerLoggerFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageFormatterTest {
 
-    @Test
+    private static final Logger logger = LoggerFactory.getLogger(MessageFormatterTest.class);
+
+	@Test
     public void formatTest(){
         InnerLoggerFactory.FormattingTuple logging = InnerLoggerFactory.MessageFormatter.format("this is {},and {}", "logging", 6546);
         String message = logging.getMessage();
@@ -33,7 +37,7 @@ public class MessageFormatterTest {
         InnerLoggerFactory.FormattingTuple format = InnerLoggerFactory.MessageFormatter.format("cause exception {}", 143545, new RuntimeException());
         String message1 = format.getMessage();
         Throwable throwable = format.getThrowable();
-        System.out.println(message1);
+        logger.info(message1);
         Assert.assertTrue(throwable != null);
     }
 

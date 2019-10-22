@@ -253,7 +253,7 @@ public class RemotingCommand {
                             String value = this.extFields.get(fieldName);
                             if (null == value) {
                                 if (!isFieldNullable(field)) {
-                                    throw new RemotingCommandException("the custom field <" + fieldName + "> is null");
+                                    throw new RemotingCommandException(new StringBuilder().append("the custom field <").append(fieldName).append("> is null").toString());
                                 }
                                 continue;
                             }
@@ -273,7 +273,7 @@ public class RemotingCommand {
                             } else if (type.equals(DOUBLE_CANONICAL_NAME_1) || type.equals(DOUBLE_CANONICAL_NAME_2)) {
                                 valueParsed = Double.parseDouble(value);
                             } else {
-                                throw new RemotingCommandException("the custom field <" + fieldName + "> type is not supported");
+                                throw new RemotingCommandException(new StringBuilder().append("the custom field <").append(fieldName).append("> type is not supported").toString());
                             }
 
                             field.set(objectHeader, valueParsed);
@@ -369,31 +369,31 @@ public class RemotingCommand {
     }
 
     public void makeCustomHeaderToNet() {
-        if (this.customHeader != null) {
-            Field[] fields = getClazzFields(customHeader.getClass());
-            if (null == this.extFields) {
-                this.extFields = new HashMap<String, String>();
-            }
+        if (this.customHeader == null) {
+			return;
+		}
+		Field[] fields = getClazzFields(customHeader.getClass());
+		if (null == this.extFields) {
+		    this.extFields = new HashMap<String, String>();
+		}
+		for (Field field : fields) {
+		    if (!Modifier.isStatic(field.getModifiers())) {
+		        String name = field.getName();
+		        if (!name.startsWith("this")) {
+		            Object value = null;
+		            try {
+		                field.setAccessible(true);
+		                value = field.get(this.customHeader);
+		            } catch (Exception e) {
+		                log.error("Failed to access field [{}]", name, e);
+		            }
 
-            for (Field field : fields) {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    String name = field.getName();
-                    if (!name.startsWith("this")) {
-                        Object value = null;
-                        try {
-                            field.setAccessible(true);
-                            value = field.get(this.customHeader);
-                        } catch (Exception e) {
-                            log.error("Failed to access field [{}]", name, e);
-                        }
-
-                        if (value != null) {
-                            this.extFields.put(name, value.toString());
-                        }
-                    }
-                }
-            }
-        }
+		            if (value != null) {
+		                this.extFields.put(name, value.toString());
+		            }
+		        }
+		    }
+		}
     }
 
     public ByteBuffer encodeHeader() {
@@ -528,9 +528,9 @@ public class RemotingCommand {
 
     @Override
     public String toString() {
-        return "RemotingCommand [code=" + code + ", language=" + language + ", version=" + version + ", opaque=" + opaque + ", flag(B)="
-            + Integer.toBinaryString(flag) + ", remark=" + remark + ", extFields=" + extFields + ", serializeTypeCurrentRPC="
-            + serializeTypeCurrentRPC + "]";
+        return new StringBuilder().append("RemotingCommand [code=").append(code).append(", language=").append(language).append(", version=").append(version).append(", opaque=")
+				.append(opaque).append(", flag(B)=").append(Integer.toBinaryString(flag)).append(", remark=").append(remark).append(", extFields=").append(extFields)
+				.append(", serializeTypeCurrentRPC=").append(serializeTypeCurrentRPC).append("]").toString();
     }
 
     public SerializeType getSerializeTypeCurrentRPC() {

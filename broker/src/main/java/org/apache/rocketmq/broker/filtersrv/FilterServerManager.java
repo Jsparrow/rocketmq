@@ -40,7 +40,7 @@ public class FilterServerManager {
     public static final long FILTER_SERVER_MAX_IDLE_TIME_MILLS = 30000;
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final ConcurrentMap<Channel, FilterServerInfo> filterServerTable =
-        new ConcurrentHashMap<Channel, FilterServerInfo>(16);
+        new ConcurrentHashMap<>(16);
     private final BrokerController brokerController;
 
     private ScheduledExecutorService scheduledExecutorService = Executors
@@ -52,16 +52,13 @@ public class FilterServerManager {
 
     public void start() {
 
-        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    FilterServerManager.this.createFilterServer();
-                } catch (Exception e) {
-                    log.error("", e);
-                }
-            }
-        }, 1000 * 5, 1000 * 30, TimeUnit.MILLISECONDS);
+        this.scheduledExecutorService.scheduleAtFixedRate(() -> {
+		    try {
+		        FilterServerManager.this.createFilterServer();
+		    } catch (Exception e) {
+		        log.error("", e);
+		    }
+		}, 1000 * 5, 1000 * 30, TimeUnit.MILLISECONDS);
     }
 
     public void createFilterServer() {

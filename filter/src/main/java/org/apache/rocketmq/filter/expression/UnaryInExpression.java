@@ -24,7 +24,7 @@ import java.util.Collection;
 /**
  * In expression.
  */
-abstract public class UnaryInExpression extends UnaryExpression implements BooleanExpression {
+public abstract class UnaryInExpression extends UnaryExpression implements BooleanExpression {
 
     private boolean not;
 
@@ -38,7 +38,8 @@ abstract public class UnaryInExpression extends UnaryExpression implements Boole
 
     }
 
-    public boolean matches(EvaluationContext context) throws Exception {
+    @Override
+	public boolean matches(EvaluationContext context) throws Exception {
         Object object = evaluate(context);
         return object != null && object == Boolean.TRUE;
     }

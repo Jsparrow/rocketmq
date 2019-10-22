@@ -52,38 +52,21 @@ public class IntegrationTestBase {
 
     private static final AtomicInteger port = new AtomicInteger(40000);
 
-    public static synchronized int nextPort() {
-        return port.addAndGet(random.nextInt(10) + 10);
-    }
-    protected static Random random = new Random();
+	protected static Random random = new Random();
 
-    static {
+	static {
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 try {
-                    for (BrokerController brokerController : BROKER_CONTROLLERS) {
-                        if (brokerController != null) {
-                            brokerController.shutdown();
-                        }
-                    }
+                    BROKER_CONTROLLERS.stream().filter(brokerController -> brokerController != null).forEach(BrokerController::shutdown);
 
                     // should destroy message store, otherwise could not delete the temp files.
-                    for (BrokerController brokerController : BROKER_CONTROLLERS) {
-                        if (brokerController != null) {
-                            brokerController.getMessageStore().destroy();
-                        }
-                    }
+					BROKER_CONTROLLERS.stream().filter(brokerController -> brokerController != null).forEach(brokerController -> brokerController.getMessageStore().destroy());
 
-                    for (NamesrvController namesrvController : NAMESRV_CONTROLLERS) {
-                        if (namesrvController != null) {
-                            namesrvController.shutdown();
-                        }
-                    }
-                    for (File file : TMPE_FILES) {
-                        UtilAll.deleteFile(file);
-                    }
+                    NAMESRV_CONTROLLERS.stream().filter(namesrvController -> namesrvController != null).forEach(NamesrvController::shutdown);
+                    TMPE_FILES.forEach(UtilAll::deleteFile);
                 } catch (Exception e) {
                     logger.error("Shutdown error", e);
                 }
@@ -92,8 +75,12 @@ public class IntegrationTestBase {
 
     }
 
-    public static String createBaseDir() {
-        String baseDir = System.getProperty("user.home") + SEP + "unitteststore-" + UUID.randomUUID();
+	public static synchronized int nextPort() {
+        return port.addAndGet(random.nextInt(10) + 10);
+    }
+
+	public static String createBaseDir() {
+        String baseDir = new StringBuilder().append(System.getProperty("user.home")).append(SEP).append("unitteststore-").append(UUID.randomUUID()).toString();
         final File file = new File(baseDir);
         if (file.exists()) {
             logger.info(String.format("[%s] has already existed, please back up and remove it for integration tests", baseDir));
@@ -103,12 +90,12 @@ public class IntegrationTestBase {
         return baseDir;
     }
 
-    public static NamesrvController createAndStartNamesrv() {
+	public static NamesrvController createAndStartNamesrv() {
         String baseDir = createBaseDir();
         NamesrvConfig namesrvConfig = new NamesrvConfig();
         NettyServerConfig nameServerNettyServerConfig = new NettyServerConfig();
-        namesrvConfig.setKvConfigPath(baseDir + SEP + "namesrv" + SEP + "kvConfig.json");
-        namesrvConfig.setConfigStorePath(baseDir + SEP + "namesrv" + SEP + "namesrv.properties");
+        namesrvConfig.setKvConfigPath(new StringBuilder().append(baseDir).append(SEP).append("namesrv").append(SEP).append("kvConfig.json").toString());
+        namesrvConfig.setConfigStorePath(new StringBuilder().append(baseDir).append(SEP).append("namesrv").append(SEP).append("namesrv.properties").toString());
 
         nameServerNettyServerConfig.setListenPort(nextPort());
         NamesrvController namesrvController = new NamesrvController(namesrvConfig, nameServerNettyServerConfig);
@@ -125,7 +112,7 @@ public class IntegrationTestBase {
 
     }
 
-    public static BrokerController createAndStartBroker(String nsAddr) {
+	public static BrokerController createAndStartBroker(String nsAddr) {
         String baseDir = createBaseDir();
         BrokerConfig brokerConfig = new BrokerConfig();
         MessageStoreConfig storeConfig = new MessageStoreConfig();
@@ -134,7 +121,7 @@ public class IntegrationTestBase {
         brokerConfig.setNamesrvAddr(nsAddr);
         brokerConfig.setEnablePropertyFilter(true);
         storeConfig.setStorePathRootDir(baseDir);
-        storeConfig.setStorePathCommitLog(baseDir + SEP + "commitlog");
+        storeConfig.setStorePathCommitLog(new StringBuilder().append(baseDir).append(SEP).append("commitlog").toString());
         storeConfig.setMappedFileSizeCommitLog(COMMIT_LOG_SIZE);
         storeConfig.setMaxIndexNum(INDEX_NUM);
         storeConfig.setMaxHashSlotNum(INDEX_NUM * 4);
@@ -142,7 +129,7 @@ public class IntegrationTestBase {
 
     }
 
-    public static BrokerController createAndStartBroker(MessageStoreConfig storeConfig, BrokerConfig brokerConfig) {
+	public static BrokerController createAndStartBroker(MessageStoreConfig storeConfig, BrokerConfig brokerConfig) {
         NettyServerConfig nettyServerConfig = new NettyServerConfig();
         NettyClientConfig nettyClientConfig = new NettyClientConfig();
         nettyServerConfig.setListenPort(nextPort());
@@ -160,7 +147,7 @@ public class IntegrationTestBase {
         return brokerController;
     }
 
-    public static boolean initTopic(String topic, String nsAddr, String clusterName, int queueNumbers) {
+	public static boolean initTopic(String topic, String nsAddr, String clusterName, int queueNumbers) {
         long startTime = System.currentTimeMillis();
         boolean createResult;
 
@@ -181,11 +168,11 @@ public class IntegrationTestBase {
         return createResult;
     }
 
-    public static boolean initTopic(String topic, String nsAddr, String clusterName) {
+	public static boolean initTopic(String topic, String nsAddr, String clusterName) {
         return initTopic(topic, nsAddr, clusterName, 8);
     }
 
-    public static void deleteFile(File file) {
+	public static void deleteFile(File file) {
         if (!file.exists()) {
             return;
         }

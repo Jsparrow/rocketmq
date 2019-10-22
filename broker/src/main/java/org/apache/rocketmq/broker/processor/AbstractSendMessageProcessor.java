@@ -52,11 +52,16 @@ import org.apache.rocketmq.remoting.exception.RemotingCommandException;
 import org.apache.rocketmq.remoting.netty.NettyRequestProcessor;
 import org.apache.rocketmq.remoting.protocol.RemotingCommand;
 import org.apache.rocketmq.store.MessageExtBrokerInner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class AbstractSendMessageProcessor implements NettyRequestProcessor {
-    protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSendMessageProcessor.class);
 
-    protected final static int DLQ_NUMS_PER_GROUP = 1;
+	protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
+
+    protected static final int DLQ_NUMS_PER_GROUP = 1;
     protected final BrokerController brokerController;
     protected final Random random = new Random(System.currentTimeMillis());
     protected final SocketAddress storeHost;
@@ -152,14 +157,14 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
             response.setCode(ResponseCode.MESSAGE_ILLEGAL);
             return response;
         }
-        if (request.getBody().length > DBMsgConstants.MAX_BODY_SIZE) {
-            log.warn(" topic {}  msg body size {}  from {}", requestHeader.getTopic(),
-                request.getBody().length, ChannelUtil.getRemoteIp(ctx.channel()));
-            response.setRemark("msg body must be less 64KB");
-            response.setCode(ResponseCode.MESSAGE_ILLEGAL);
-            return response;
-        }
-        return response;
+        if (request.getBody().length <= DBMsgConstants.MAX_BODY_SIZE) {
+			return response;
+		}
+		log.warn(" topic {}  msg body size {}  from {}", requestHeader.getTopic(),
+		    request.getBody().length, ChannelUtil.getRemoteIp(ctx.channel()));
+		response.setRemark("msg body must be less 64KB");
+		response.setCode(ResponseCode.MESSAGE_ILLEGAL);
+		return response;
     }
 
     protected RemotingCommand msgCheck(final ChannelHandlerContext ctx,
@@ -167,12 +172,11 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         if (!PermName.isWriteable(this.brokerController.getBrokerConfig().getBrokerPermission())
             && this.brokerController.getTopicConfigManager().isOrderTopic(requestHeader.getTopic())) {
             response.setCode(ResponseCode.NO_PERMISSION);
-            response.setRemark("the broker[" + this.brokerController.getBrokerConfig().getBrokerIP1()
-                + "] sending message is forbidden");
+            response.setRemark(new StringBuilder().append("the broker[").append(this.brokerController.getBrokerConfig().getBrokerIP1()).append("] sending message is forbidden").toString());
             return response;
         }
         if (!this.brokerController.getTopicConfigManager().isTopicCanSendMessage(requestHeader.getTopic())) {
-            String errorMsg = "the topic[" + requestHeader.getTopic() + "] is conflict with system reserved words.";
+            String errorMsg = new StringBuilder().append("the topic[").append(requestHeader.getTopic()).append("] is conflict with system reserved words.").toString();
             log.warn(errorMsg);
             response.setCode(ResponseCode.SYSTEM_ERROR);
             response.setRemark(errorMsg);
@@ -184,7 +188,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
         if (null == topicConfig) {
             int topicSysFlag = 0;
             if (requestHeader.isUnitMode()) {
-                if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                if (StringUtils.startsWith(requestHeader.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                     topicSysFlag = TopicSysFlag.buildSysFlag(false, true);
                 } else {
                     topicSysFlag = TopicSysFlag.buildSysFlag(true, false);
@@ -198,38 +202,34 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                 RemotingHelper.parseChannelRemoteAddr(ctx.channel()),
                 requestHeader.getDefaultTopicQueueNums(), topicSysFlag);
 
-            if (null == topicConfig) {
-                if (requestHeader.getTopic().startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                    topicConfig =
-                        this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
-                            requestHeader.getTopic(), 1, PermName.PERM_WRITE | PermName.PERM_READ,
-                            topicSysFlag);
-                }
-            }
+            boolean condition = null == topicConfig && StringUtils.startsWith(requestHeader.getTopic(), MixAll.RETRY_GROUP_TOPIC_PREFIX);
+			if (condition) {
+			    topicConfig =
+			        this.brokerController.getTopicConfigManager().createTopicInSendMessageBackMethod(
+			            requestHeader.getTopic(), 1, PermName.PERM_WRITE | PermName.PERM_READ,
+			            topicSysFlag);
+			}
 
             if (null == topicConfig) {
                 response.setCode(ResponseCode.TOPIC_NOT_EXIST);
-                response.setRemark("topic[" + requestHeader.getTopic() + "] not exist, apply first please!"
-                    + FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL));
+                response.setRemark(new StringBuilder().append("topic[").append(requestHeader.getTopic()).append("] not exist, apply first please!").append(FAQUrl.suggestTodo(FAQUrl.APPLY_TOPIC_URL)).toString());
                 return response;
             }
         }
 
         int queueIdInt = requestHeader.getQueueId();
         int idValid = Math.max(topicConfig.getWriteQueueNums(), topicConfig.getReadQueueNums());
-        if (queueIdInt >= idValid) {
-            String errorInfo = String.format("request queueId[%d] is illegal, %s Producer: %s",
-                queueIdInt,
-                topicConfig.toString(),
-                RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
-
-            log.warn(errorInfo);
-            response.setCode(ResponseCode.SYSTEM_ERROR);
-            response.setRemark(errorInfo);
-
-            return response;
-        }
-        return response;
+        if (queueIdInt < idValid) {
+			return response;
+		}
+		String errorInfo = String.format("request queueId[%d] is illegal, %s Producer: %s",
+		    queueIdInt,
+		    topicConfig.toString(),
+		    RemotingHelper.parseChannelRemoteAddr(ctx.channel()));
+		log.warn(errorInfo);
+		response.setCode(ResponseCode.SYSTEM_ERROR);
+		response.setRemark(errorInfo);
+		return response;
     }
 
     public void registerSendMessageHook(List<SendMessageHook> sendMessageHookList) {
@@ -273,6 +273,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                         requestHeader.setProperties(context.getMsgProps());
                     }
                 } catch (Throwable e) {
+					logger.error(e.getMessage(), e);
                     // Ignore
                 }
             }
@@ -306,7 +307,7 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
 
     public void executeSendMessageHookAfter(final RemotingCommand response, final SendMessageContext context) {
         if (hasSendMessageHook()) {
-            for (SendMessageHook hook : this.sendMessageHookList) {
+            this.sendMessageHookList.forEach(hook -> {
                 try {
                     if (response != null) {
                         final SendMessageResponseHeader responseHeader =
@@ -319,9 +320,10 @@ public abstract class AbstractSendMessageProcessor implements NettyRequestProces
                     }
                     hook.sendMessageAfter(context);
                 } catch (Throwable e) {
+					logger.error(e.getMessage(), e);
                     // Ignore
                 }
-            }
+            });
         }
     }
 

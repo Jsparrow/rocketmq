@@ -24,10 +24,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class WipeWritePermSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(WipeWritePermSubCommand.class);
+
+	@Override
     public String commandName() {
         return "wipeWritePerm";
     }
@@ -53,24 +58,19 @@ public class WipeWritePermSubCommand implements SubCommand {
 
         try {
             defaultMQAdminExt.start();
-            String brokerName = commandLine.getOptionValue('b').trim();
+            String brokerName = StringUtils.trim(commandLine.getOptionValue('b'));
             List<String> namesrvList = defaultMQAdminExt.getNameServerAddressList();
             if (namesrvList != null) {
                 for (String namesrvAddr : namesrvList) {
                     try {
                         int wipeTopicCount = defaultMQAdminExt.wipeWritePermOfBroker(namesrvAddr, brokerName);
-                        System.out.printf("wipe write perm of broker[%s] in name server[%s] OK, %d%n",
-                            brokerName,
-                            namesrvAddr,
-                            wipeTopicCount
+                        logger.info("wipe write perm of broker[%s] in name server[%s] OK, %d%n", brokerName, namesrvAddr, wipeTopicCount
                         );
                     } catch (Exception e) {
-                        System.out.printf("wipe write perm of broker[%s] in name server[%s] Failed%n",
-                            brokerName,
-                            namesrvAddr
+                        logger.info("wipe write perm of broker[%s] in name server[%s] Failed%n", brokerName, namesrvAddr
                         );
 
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }

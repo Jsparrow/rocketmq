@@ -40,7 +40,7 @@ public class RMQAsyncSendProducer extends AbstractMQProducer {
     private String nsAddr = null;
     private DefaultMQProducer producer = null;
     private SendCallback sendCallback = null;
-    private List<SendResult> successSendResult = Collections.synchronizedList(new ArrayList<SendResult>());
+    private List<SendResult> successSendResult = Collections.synchronizedList(new ArrayList<>());
     private AtomicInteger exceptionMsgCount = new AtomicInteger(0);
     private int msgSize = 0;
 

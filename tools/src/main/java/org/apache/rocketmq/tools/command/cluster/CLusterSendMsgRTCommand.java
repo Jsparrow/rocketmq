@@ -35,10 +35,15 @@ import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class CLusterSendMsgRTCommand implements SubCommand {
 
-    public static void main(String args[]) {
+    private static final Logger logger = LoggerFactory.getLogger(CLusterSendMsgRTCommand.class);
+
+	public static void main(String args[]) {
     }
 
     @Override
@@ -98,34 +103,25 @@ public class CLusterSendMsgRTCommand implements SubCommand {
 
             Set<String> clusterNames = null;
 
-            long amount = !commandLine.hasOption('a') ? 50 : Long.parseLong(commandLine
-                .getOptionValue('a').trim());
+            long amount = !commandLine.hasOption('a') ? 50 : Long.parseLong(StringUtils.trim(commandLine.getOptionValue('a')));
 
-            long size = !commandLine.hasOption('s') ? 128 : Long.parseLong(commandLine
-                .getOptionValue('s').trim());
+            long size = !commandLine.hasOption('s') ? 128 : Long.parseLong(StringUtils.trim(commandLine.getOptionValue('s')));
 
-            long interval = !commandLine.hasOption('i') ? 10 : Long.parseLong(commandLine
-                .getOptionValue('i').trim());
+            long interval = !commandLine.hasOption('i') ? 10 : Long.parseLong(StringUtils.trim(commandLine.getOptionValue('i')));
 
-            boolean printAsTlog = commandLine.hasOption('p') && Boolean.parseBoolean(commandLine.getOptionValue('p').trim());
+            boolean printAsTlog = commandLine.hasOption('p') && Boolean.parseBoolean(StringUtils.trim(commandLine.getOptionValue('p')));
 
-            String machineRoom = !commandLine.hasOption('m') ? "noname" : commandLine
-                .getOptionValue('m').trim();
+            String machineRoom = !commandLine.hasOption('m') ? "noname" : StringUtils.trim(commandLine.getOptionValue('m'));
 
             if (commandLine.hasOption('c')) {
-                clusterNames = new TreeSet<String>();
-                clusterNames.add(commandLine.getOptionValue('c').trim());
+                clusterNames = new TreeSet<>();
+                clusterNames.add(StringUtils.trim(commandLine.getOptionValue('c')));
             } else {
                 clusterNames = clusterAddr.keySet();
             }
 
             if (!printAsTlog) {
-                System.out.printf("%-24s  %-24s  %-4s  %-8s  %-8s%n",
-                    "#Cluster Name",
-                    "#Broker Name",
-                    "#RT",
-                    "#successCount",
-                    "#failCount"
+                logger.info("%-24s  %-24s  %-4s  %-8s  %-8s%n", "#Cluster Name", "#Broker Name", "#RT", "#successCount", "#failCount"
                 );
             }
 
@@ -133,7 +129,7 @@ public class CLusterSendMsgRTCommand implements SubCommand {
                 for (String clusterName : clusterNames) {
                     Set<String> brokerNames = clusterAddr.get(clusterName);
                     if (brokerNames == null) {
-                        System.out.printf("cluster [%s] not exist", clusterName);
+                        logger.info("cluster [%s] not exist", clusterName);
                         break;
                     }
 
@@ -152,7 +148,8 @@ public class CLusterSendMsgRTCommand implements SubCommand {
                                 successCount++;
                                 end = System.currentTimeMillis();
                             } catch (Exception e) {
-                                failCount++;
+                                logger.error(e.getMessage(), e);
+								failCount++;
                                 end = System.currentTimeMillis();
                             }
 
@@ -163,17 +160,11 @@ public class CLusterSendMsgRTCommand implements SubCommand {
 
                         double rt = (double) elapsed / (amount - 1);
                         if (!printAsTlog) {
-                            System.out.printf("%-24s  %-24s  %-8s  %-16s  %-16s%n",
-                                clusterName,
-                                brokerName,
-                                String.format("%.2f", rt),
-                                successCount,
-                                failCount
+                            logger.info("%-24s  %-24s  %-8s  %-16s  %-16s%n", clusterName, brokerName, String.format("%.2f", rt), successCount, failCount
                             );
                         } else {
-                            System.out.printf("%s", String.format("%s|%s|%s|%s|%s%n", getCurTime(),
-                                machineRoom, clusterName, brokerName,
-                                new BigDecimal(rt).setScale(0, BigDecimal.ROUND_HALF_UP)));
+                            logger.info("%s", String.format("%s|%s|%s|%s|%s%n", getCurTime(), machineRoom, clusterName, brokerName,
+									new BigDecimal(rt).setScale(0, BigDecimal.ROUND_HALF_UP)));
                         }
 
                     }

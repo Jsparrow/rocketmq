@@ -40,6 +40,8 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.logging.InternalLogger;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is the entry point for applications intending to send messages.
@@ -60,7 +62,9 @@ import org.apache.rocketmq.remoting.exception.RemotingException;
  */
 public class DefaultMQProducer extends ClientConfig implements MQProducer {
 
-    private final InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(DefaultMQProducer.class);
+
+	private final InternalLogger log = ClientLogger.getLog();
 
     /**
      * Wrapping internal implementations for virtually all methods presented in this class.
@@ -177,7 +181,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
                 this.defaultMQProducerImpl.registerSendMessageHook(
                     new SendMessageTraceHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                logger.error(e.getMessage(), e);
+				log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
             }
         }
     }
@@ -262,7 +267,8 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
                 this.getDefaultMQProducerImpl().registerSendMessageHook(
                     new SendMessageTraceHookImpl(traceDispatcher));
             } catch (Throwable e) {
-                log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
+                logger.error(e.getMessage(), e);
+				log.error("system mqtrace hook init failed ,maybe can't send msg trace data");
             }
         }
     }
@@ -778,6 +784,7 @@ public class DefaultMQProducer extends ClientConfig implements MQProducer {
             MessageId oldMsgId = MessageDecoder.decodeMessageId(msgId);
             return this.viewMessage(msgId);
         } catch (Exception e) {
+			logger.error(e.getMessage(), e);
         }
         return this.defaultMQProducerImpl.queryMessageByUniqKey(withNamespace(topic), msgId);
     }

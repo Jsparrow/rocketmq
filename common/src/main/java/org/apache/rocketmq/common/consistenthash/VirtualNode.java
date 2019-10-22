@@ -27,7 +27,7 @@ public class VirtualNode<T extends Node> implements Node {
 
     @Override
     public String getKey() {
-        return physicalNode.getKey() + "-" + replicaIndex;
+        return new StringBuilder().append(physicalNode.getKey()).append("-").append(replicaIndex).toString();
     }
 
     public boolean isVirtualNodeOf(T pNode) {

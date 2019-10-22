@@ -49,11 +49,10 @@ public class ResponseFuture {
     }
 
     public void executeInvokeCallback() {
-        if (invokeCallback != null) {
-            if (this.executeCallbackOnlyOnce.compareAndSet(false, true)) {
-                invokeCallback.operationComplete(this);
-            }
-        }
+        boolean condition = invokeCallback != null && this.executeCallbackOnlyOnce.compareAndSet(false, true);
+		if (condition) {
+		    invokeCallback.operationComplete(this);
+		}
     }
 
     public void release() {
@@ -123,14 +122,8 @@ public class ResponseFuture {
 
     @Override
     public String toString() {
-        return "ResponseFuture [responseCommand=" + responseCommand
-            + ", sendRequestOK=" + sendRequestOK
-            + ", cause=" + cause
-            + ", opaque=" + opaque
-            + ", processChannel=" + processChannel
-            + ", timeoutMillis=" + timeoutMillis
-            + ", invokeCallback=" + invokeCallback
-            + ", beginTimestamp=" + beginTimestamp
-            + ", countDownLatch=" + countDownLatch + "]";
+        return new StringBuilder().append("ResponseFuture [responseCommand=").append(responseCommand).append(", sendRequestOK=").append(sendRequestOK).append(", cause=").append(cause).append(", opaque=")
+				.append(opaque).append(", processChannel=").append(processChannel).append(", timeoutMillis=").append(timeoutMillis).append(", invokeCallback=").append(invokeCallback)
+				.append(", beginTimestamp=").append(beginTimestamp).append(", countDownLatch=").append(countDownLatch).append("]").toString();
     }
 }

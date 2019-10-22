@@ -39,6 +39,7 @@ import org.apache.rocketmq.common.protocol.body.UnlockBatchRequestBody;
 import org.apache.rocketmq.common.protocol.heartbeat.ConsumeType;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.common.protocol.heartbeat.SubscriptionData;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Base class for rebalance algorithm
@@ -66,22 +67,22 @@ public abstract class RebalanceImpl {
 
     public void unlock(final MessageQueue mq, final boolean oneway) {
         FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(mq.getBrokerName(), MixAll.MASTER_ID, true);
-        if (findBrokerResult != null) {
-            UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
-            requestBody.setConsumerGroup(this.consumerGroup);
-            requestBody.setClientId(this.mQClientFactory.getClientId());
-            requestBody.getMqSet().add(mq);
-
-            try {
-                this.mQClientFactory.getMQClientAPIImpl().unlockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000, oneway);
-                log.warn("unlock messageQueue. group:{}, clientId:{}, mq:{}",
-                    this.consumerGroup,
-                    this.mQClientFactory.getClientId(),
-                    mq);
-            } catch (Exception e) {
-                log.error("unlockBatchMQ exception, " + mq, e);
-            }
-        }
+        if (findBrokerResult == null) {
+			return;
+		}
+		UnlockBatchRequestBody requestBody = new UnlockBatchRequestBody();
+		requestBody.setConsumerGroup(this.consumerGroup);
+		requestBody.setClientId(this.mQClientFactory.getClientId());
+		requestBody.getMqSet().add(mq);
+		try {
+		    this.mQClientFactory.getMQClientAPIImpl().unlockBatchMQ(findBrokerResult.getBrokerAddr(), requestBody, 1000, oneway);
+		    log.warn("unlock messageQueue. group:{}, clientId:{}, mq:{}",
+		        this.consumerGroup,
+		        this.mQClientFactory.getClientId(),
+		        mq);
+		} catch (Exception e) {
+		    log.error("unlockBatchMQ exception, " + mq, e);
+		}
     }
 
     public void unlockAll(final boolean oneway) {
@@ -91,8 +92,9 @@ public abstract class RebalanceImpl {
             final String brokerName = entry.getKey();
             final Set<MessageQueue> mqs = entry.getValue();
 
-            if (mqs.isEmpty())
-                continue;
+            if (mqs.isEmpty()) {
+				continue;
+			}
 
             FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
             if (findBrokerResult != null) {
@@ -175,8 +177,9 @@ public abstract class RebalanceImpl {
             final String brokerName = entry.getKey();
             final Set<MessageQueue> mqs = entry.getValue();
 
-            if (mqs.isEmpty())
-                continue;
+            if (mqs.isEmpty()) {
+				continue;
+			}
 
             FindBrokerResult findBrokerResult = this.mQClientFactory.findBrokerAddressInSubscribe(brokerName, MixAll.MASTER_ID, true);
             if (findBrokerResult != null) {
@@ -224,7 +227,7 @@ public abstract class RebalanceImpl {
                 try {
                     this.rebalanceByTopic(topic, isOrder);
                 } catch (Throwable e) {
-                    if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
+                    if (!StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
                         log.warn("rebalanceByTopic Exception", e);
                     }
                 }
@@ -260,11 +263,10 @@ public abstract class RebalanceImpl {
             case CLUSTERING: {
                 Set<MessageQueue> mqSet = this.topicSubscribeInfoTable.get(topic);
                 List<String> cidAll = this.mQClientFactory.findConsumerIdList(topic, consumerGroup);
-                if (null == mqSet) {
-                    if (!topic.startsWith(MixAll.RETRY_GROUP_TOPIC_PREFIX)) {
-                        log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
-                    }
-                }
+                boolean condition = null == mqSet && !StringUtils.startsWith(topic, MixAll.RETRY_GROUP_TOPIC_PREFIX);
+				if (condition) {
+				    log.warn("doRebalance, {}, but the topic[{}] not exist.", consumerGroup, topic);
+				}
 
                 if (null == cidAll) {
                     log.warn("doRebalance, {} {}, get consumer id list failed", consumerGroup, topic);
@@ -417,12 +419,13 @@ public abstract class RebalanceImpl {
 
     public void removeProcessQueue(final MessageQueue mq) {
         ProcessQueue prev = this.processQueueTable.remove(mq);
-        if (prev != null) {
-            boolean droped = prev.isDropped();
-            prev.setDropped(true);
-            this.removeUnnecessaryMessageQueue(mq, prev);
-            log.info("Fix Offset, {}, remove unnecessary mq, {} Droped: {}", consumerGroup, mq, droped);
-        }
+        if (prev == null) {
+			return;
+		}
+		boolean droped = prev.isDropped();
+		prev.setDropped(true);
+		this.removeUnnecessaryMessageQueue(mq, prev);
+		log.info("Fix Offset, {}, remove unnecessary mq, {} Droped: {}", consumerGroup, mq, droped);
     }
 
     public ConcurrentMap<MessageQueue, ProcessQueue> getProcessQueueTable() {

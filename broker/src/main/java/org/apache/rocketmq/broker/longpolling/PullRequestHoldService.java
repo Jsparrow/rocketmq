@@ -35,7 +35,7 @@ public class PullRequestHoldService extends ServiceThread {
     private final BrokerController brokerController;
     private final SystemClock systemClock = new SystemClock();
     private ConcurrentMap<String/* topic@queueId */, ManyPullRequest> pullRequestTable =
-        new ConcurrentHashMap<String, ManyPullRequest>(1024);
+        new ConcurrentHashMap<>(1024);
 
     public PullRequestHoldService(final BrokerController brokerController) {
         this.brokerController = brokerController;
@@ -117,53 +117,54 @@ public class PullRequestHoldService extends ServiceThread {
         long msgStoreTime, byte[] filterBitMap, Map<String, String> properties) {
         String key = this.buildKey(topic, queueId);
         ManyPullRequest mpr = this.pullRequestTable.get(key);
-        if (mpr != null) {
-            List<PullRequest> requestList = mpr.cloneListAndClear();
-            if (requestList != null) {
-                List<PullRequest> replayList = new ArrayList<PullRequest>();
+        if (mpr == null) {
+			return;
+		}
+		List<PullRequest> requestList = mpr.cloneListAndClear();
+		if (requestList != null) {
+		    List<PullRequest> replayList = new ArrayList<>();
 
-                for (PullRequest request : requestList) {
-                    long newestOffset = maxOffset;
-                    if (newestOffset <= request.getPullFromThisOffset()) {
-                        newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
-                    }
+		    for (PullRequest request : requestList) {
+		        long newestOffset = maxOffset;
+		        if (newestOffset <= request.getPullFromThisOffset()) {
+		            newestOffset = this.brokerController.getMessageStore().getMaxOffsetInQueue(topic, queueId);
+		        }
 
-                    if (newestOffset > request.getPullFromThisOffset()) {
-                        boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
-                            new ConsumeQueueExt.CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
-                        // match by bit map, need eval again when properties is not null.
-                        if (match && properties != null) {
-                            match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
-                        }
+		        if (newestOffset > request.getPullFromThisOffset()) {
+		            boolean match = request.getMessageFilter().isMatchedByConsumeQueue(tagsCode,
+		                new ConsumeQueueExt.CqExtUnit(tagsCode, msgStoreTime, filterBitMap));
+		            // match by bit map, need eval again when properties is not null.
+		            if (match && properties != null) {
+		                match = request.getMessageFilter().isMatchedByCommitLog(null, properties);
+		            }
 
-                        if (match) {
-                            try {
-                                this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
-                                    request.getRequestCommand());
-                            } catch (Throwable e) {
-                                log.error("execute request when wakeup failed.", e);
-                            }
-                            continue;
-                        }
-                    }
+		            if (match) {
+		                try {
+		                    this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+		                        request.getRequestCommand());
+		                } catch (Throwable e) {
+		                    log.error("execute request when wakeup failed.", e);
+		                }
+		                continue;
+		            }
+		        }
 
-                    if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
-                        try {
-                            this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
-                                request.getRequestCommand());
-                        } catch (Throwable e) {
-                            log.error("execute request when wakeup failed.", e);
-                        }
-                        continue;
-                    }
+		        if (System.currentTimeMillis() >= (request.getSuspendTimestamp() + request.getTimeoutMillis())) {
+		            try {
+		                this.brokerController.getPullMessageProcessor().executeRequestWhenWakeup(request.getClientChannel(),
+		                    request.getRequestCommand());
+		            } catch (Throwable e) {
+		                log.error("execute request when wakeup failed.", e);
+		            }
+		            continue;
+		        }
 
-                    replayList.add(request);
-                }
+		        replayList.add(request);
+		    }
 
-                if (!replayList.isEmpty()) {
-                    mpr.addPullRequest(replayList);
-                }
-            }
-        }
+		    if (!replayList.isEmpty()) {
+		        mpr.addPullRequest(replayList);
+		    }
+		}
     }
 }

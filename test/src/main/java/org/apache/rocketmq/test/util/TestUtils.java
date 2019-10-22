@@ -18,13 +18,17 @@
 package org.apache.rocketmq.test.util;
 
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUtils {
-    public static void waitForMoment(long time) {
+    private static final Logger logger = LoggerFactory.getLogger(TestUtils.class);
+
+	public static void waitForMoment(long time) {
         try {
             Thread.sleep(time);
         } catch (InterruptedException var3) {
-            var3.printStackTrace();
+            logger.error(var3.getMessage(), var3);
         }
 
     }
@@ -33,7 +37,7 @@ public class TestUtils {
         try {
             TimeUnit.SECONDS.sleep(time);
         } catch (InterruptedException var3) {
-            var3.printStackTrace();
+            logger.error(var3.getMessage(), var3);
         }
 
     }
@@ -42,7 +46,7 @@ public class TestUtils {
         try {
             TimeUnit.MINUTES.sleep(time);
         } catch (InterruptedException var3) {
-            var3.printStackTrace();
+            logger.error(var3.getMessage(), var3);
         }
 
     }

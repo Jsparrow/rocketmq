@@ -31,13 +31,13 @@ import java.io.PrintStream;
 
 public class InnerLoggerFactoryTest extends BasicLoggerTest {
 
-    private ByteArrayOutputStream byteArrayOutputStream;
-
     public static final String LOGGER = "ConsoleLogger";
 
-    private PrintStream out;
+	private ByteArrayOutputStream byteArrayOutputStream;
 
-    @Before
+	private PrintStream out;
+
+	@Before
     public void initLogger() {
         out = System.out;
         byteArrayOutputStream = new ByteArrayOutputStream();
@@ -53,12 +53,12 @@ public class InnerLoggerFactoryTest extends BasicLoggerTest {
         consoleLogger.setLevel(Level.INFO);
     }
 
-    @After
+	@After
     public void fixConsole() {
         System.setOut(out);
     }
 
-    @Test
+	@Test
     public void testInnerLoggerFactory() {
         InternalLoggerFactory.setCurrentLoggerType(InternalLoggerFactory.LOGGER_INNER);
 

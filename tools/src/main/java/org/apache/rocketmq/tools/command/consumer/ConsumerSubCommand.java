@@ -32,10 +32,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.MQAdminStartup;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class ConsumerSubCommand implements SubCommand {
 
-    public static void main(String[] args) {
+    private static final Logger logger = LoggerFactory.getLogger(ConsumerSubCommand.class);
+
+	public static void main(String[] args) {
         System.setProperty(MixAll.NAMESRV_ADDR_PROPERTY, "127.0.0.1:9876");
         MQAdminStartup.main(new String[] {new ConsumerSubCommand().commandName(), "-g", "benchmark_consumer"});
     }
@@ -71,7 +76,7 @@ public class ConsumerSubCommand implements SubCommand {
 
         try {
             defaultMQAdminExt.start();
-            String group = commandLine.getOptionValue('g').trim();
+            String group = StringUtils.trim(commandLine.getOptionValue('g'));
             ConsumerConnection cc = defaultMQAdminExt.examineConsumerConnectionInfo(group);
             boolean jstack = commandLine.hasOption('s');
 
@@ -80,23 +85,19 @@ public class ConsumerSubCommand implements SubCommand {
                 int i = 1;
                 long now = System.currentTimeMillis();
                 final TreeMap<String/* clientId */, ConsumerRunningInfo> criTable =
-                    new TreeMap<String, ConsumerRunningInfo>();
+                    new TreeMap<>();
                 for (Connection conn : cc.getConnectionSet()) {
                     try {
                         ConsumerRunningInfo consumerRunningInfo =
                             defaultMQAdminExt.getConsumerRunningInfo(group, conn.getClientId(), jstack);
                         if (consumerRunningInfo != null) {
                             criTable.put(conn.getClientId(), consumerRunningInfo);
-                            String filePath = now + "/" + conn.getClientId();
+                            String filePath = new StringBuilder().append(now).append("/").append(conn.getClientId()).toString();
                             MixAll.string2FileNotSafe(consumerRunningInfo.formatString(), filePath);
-                            System.out.printf("%03d  %-40s %-20s %s%n",
-                                i++,
-                                conn.getClientId(),
-                                MQVersion.getVersionDesc(conn.getVersion()),
-                                filePath);
+                            logger.info("%03d  %-40s %-20s %s%n", i++, conn.getClientId(), MQVersion.getVersionDesc(conn.getVersion()), filePath);
                         }
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
 
@@ -105,8 +106,8 @@ public class ConsumerSubCommand implements SubCommand {
                     boolean rebalanceOK = subSame && ConsumerRunningInfo.analyzeRebalance(criTable);
 
                     if (subSame) {
-                        System.out.printf("%n%nSame subscription in the same group of consumer");
-                        System.out.printf("%n%nRebalance %s%n", rebalanceOK ? "OK" : "Failed");
+                        logger.info("%n%nSame subscription in the same group of consumer");
+                        logger.info("%n%nRebalance %s%n", rebalanceOK ? "OK" : "Failed");
 
                         Iterator<Entry<String, ConsumerRunningInfo>> it = criTable.entrySet().iterator();
                         while (it.hasNext()) {
@@ -114,19 +115,19 @@ public class ConsumerSubCommand implements SubCommand {
                             String result =
                                 ConsumerRunningInfo.analyzeProcessQueue(next.getKey(), next.getValue());
                             if (result.length() > 0) {
-                                System.out.printf("%s", result);
+                                logger.info("%s", result);
                             }
                         }
                     } else {
-                        System.out.printf("%n%nWARN: Different subscription in the same group of consumer!!!");
+                        logger.info("%n%nWARN: Different subscription in the same group of consumer!!!");
                     }
                 }
             } else {
-                String clientId = commandLine.getOptionValue('i').trim();
+                String clientId = StringUtils.trim(commandLine.getOptionValue('i'));
                 ConsumerRunningInfo consumerRunningInfo =
                     defaultMQAdminExt.getConsumerRunningInfo(group, clientId, jstack);
                 if (consumerRunningInfo != null) {
-                    System.out.printf("%s", consumerRunningInfo.formatString());
+                    logger.info("%s", consumerRunningInfo.formatString());
                 }
             }
         } catch (Exception e) {

@@ -26,6 +26,7 @@ import org.apache.rocketmq.client.trace.TraceContext;
 import org.apache.rocketmq.client.trace.TraceDispatcher;
 import org.apache.rocketmq.client.trace.TraceType;
 import org.apache.rocketmq.common.protocol.NamespaceUtil;
+import org.apache.commons.lang3.StringUtils;
 
 public class SendMessageTraceHookImpl implements SendMessageHook {
 
@@ -43,7 +44,7 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
     @Override
     public void sendMessageBefore(SendMessageContext context) {
         //if it is message trace data,then it doesn't recorded
-        if (context == null || context.getMessage().getTopic().startsWith(((AsyncTraceDispatcher) localDispatcher).getTraceTopicName())) {
+        if (context == null || StringUtils.startsWith(context.getMessage().getTopic(), ((AsyncTraceDispatcher) localDispatcher).getTraceTopicName())) {
             return;
         }
         //build the context content of TuxeTraceContext
@@ -66,7 +67,7 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
     @Override
     public void sendMessageAfter(SendMessageContext context) {
         //if it is message trace data,then it doesn't recorded
-        if (context == null || context.getMessage().getTopic().startsWith(((AsyncTraceDispatcher) localDispatcher).getTraceTopicName())
+        if (context == null || StringUtils.startsWith(context.getMessage().getTopic(), ((AsyncTraceDispatcher) localDispatcher).getTraceTopicName())
             || context.getMqTraceContext() == null) {
             return;
         }
@@ -84,7 +85,7 @@ public class SendMessageTraceHookImpl implements SendMessageHook {
         TraceBean traceBean = tuxeContext.getTraceBeans().get(0);
         int costTime = (int) ((System.currentTimeMillis() - tuxeContext.getTimeStamp()) / tuxeContext.getTraceBeans().size());
         tuxeContext.setCostTime(costTime);
-        if (context.getSendResult().getSendStatus().equals(SendStatus.SEND_OK)) {
+        if (context.getSendResult().getSendStatus() == SendStatus.SEND_OK) {
             tuxeContext.setSuccess(true);
         } else {
             tuxeContext.setSuccess(false);

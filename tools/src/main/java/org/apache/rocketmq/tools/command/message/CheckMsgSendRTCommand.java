@@ -28,9 +28,13 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.RPCHook;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class CheckMsgSendRTCommand implements SubCommand {
-    private static String brokerName = "";
+    private static final Logger logger = LoggerFactory.getLogger(CheckMsgSendRTCommand.class);
+	private static String brokerName = "";
     private static int queueId = 0;
 
     @Override
@@ -70,36 +74,28 @@ public class CheckMsgSendRTCommand implements SubCommand {
             long end = 0;
             long timeElapsed = 0;
             boolean sendSuccess = false;
-            String topic = commandLine.getOptionValue('t').trim();
-            long amount = !commandLine.hasOption('a') ? 100 : Long.parseLong(commandLine
-                .getOptionValue('a').trim());
-            long msgSize = !commandLine.hasOption('s') ? 128 : Long.parseLong(commandLine
-                .getOptionValue('s').trim());
+            String topic = StringUtils.trim(commandLine.getOptionValue('t'));
+            long amount = !commandLine.hasOption('a') ? 100 : Long.parseLong(StringUtils.trim(commandLine.getOptionValue('a')));
+            long msgSize = !commandLine.hasOption('s') ? 128 : Long.parseLong(StringUtils.trim(commandLine.getOptionValue('s')));
             Message msg = new Message(topic, getStringBySize(msgSize).getBytes(MixAll.DEFAULT_CHARSET));
 
-            System.out.printf("%-32s  %-4s  %-20s    %s%n",
-                "#Broker Name",
-                "#QID",
-                "#Send Result",
-                "#RT"
+            logger.info("%-32s  %-4s  %-20s    %s%n", "#Broker Name", "#QID", "#Send Result", "#RT"
             );
             for (int i = 0; i < amount; i++) {
                 start = System.currentTimeMillis();
                 try {
-                    producer.send(msg, new MessageQueueSelector() {
-                        @Override
-                        public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
-                            int queueIndex = (Integer) arg % mqs.size();
-                            MessageQueue queue = mqs.get(queueIndex);
-                            brokerName = queue.getBrokerName();
-                            queueId = queue.getQueueId();
-                            return queue;
-                        }
-                    }, i);
+                    producer.send(msg, (List<MessageQueue> mqs, Message msg1, Object arg) -> {
+					    int queueIndex = (Integer) arg % mqs.size();
+					    MessageQueue queue = mqs.get(queueIndex);
+					    brokerName = queue.getBrokerName();
+					    queueId = queue.getQueueId();
+					    return queue;
+					}, i);
                     sendSuccess = true;
                     end = System.currentTimeMillis();
                 } catch (Exception e) {
-                    sendSuccess = false;
+                    logger.error(e.getMessage(), e);
+					sendSuccess = false;
                     end = System.currentTimeMillis();
                 }
 
@@ -107,16 +103,12 @@ public class CheckMsgSendRTCommand implements SubCommand {
                     timeElapsed += end - start;
                 }
 
-                System.out.printf("%-32s  %-4s  %-20s    %s%n",
-                    brokerName,
-                    queueId,
-                    sendSuccess,
-                    end - start
+                logger.info("%-32s  %-4s  %-20s    %s%n", brokerName, queueId, sendSuccess, end - start
                 );
             }
 
             double rt = (double) timeElapsed / (amount - 1);
-            System.out.printf("Avg RT: %s%n", String.format("%.2f", rt));
+            logger.info("Avg RT: %s%n", String.format("%.2f", rt));
         } catch (Exception e) {
             throw new SubCommandException(this.getClass().getSimpleName() + " command failed", e);
         } finally {

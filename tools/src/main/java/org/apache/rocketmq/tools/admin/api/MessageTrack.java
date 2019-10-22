@@ -48,7 +48,7 @@ public class MessageTrack {
 
     @Override
     public String toString() {
-        return "MessageTrack [consumerGroup=" + consumerGroup + ", trackType=" + trackType
-            + ", exceptionDesc=" + exceptionDesc + "]";
+        return new StringBuilder().append("MessageTrack [consumerGroup=").append(consumerGroup).append(", trackType=").append(trackType).append(", exceptionDesc=").append(exceptionDesc).append("]")
+				.toString();
     }
 }

@@ -35,12 +35,15 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.header.QueryConsumerOffsetRequestHeader;
 import org.apache.rocketmq.common.protocol.header.UpdateConsumerOffsetRequestHeader;
 import org.apache.rocketmq.remoting.exception.RemotingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Remote storage implementation
  */
 public class RemoteBrokerOffsetStore implements OffsetStore {
-    private final static InternalLogger log = ClientLogger.getLog();
+    private static final Logger logger = LoggerFactory.getLogger(RemoteBrokerOffsetStore.class);
+	private static final InternalLogger log = ClientLogger.getLog();
     private final MQClientInstance mQClientFactory;
     private final String groupName;
     private ConcurrentMap<MessageQueue, AtomicLong> offsetTable =
@@ -57,20 +60,20 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     @Override
     public void updateOffset(MessageQueue mq, long offset, boolean increaseOnly) {
-        if (mq != null) {
-            AtomicLong offsetOld = this.offsetTable.get(mq);
-            if (null == offsetOld) {
-                offsetOld = this.offsetTable.putIfAbsent(mq, new AtomicLong(offset));
-            }
-
-            if (null != offsetOld) {
-                if (increaseOnly) {
-                    MixAll.compareAndIncreaseOnly(offsetOld, offset);
-                } else {
-                    offsetOld.set(offset);
-                }
-            }
-        }
+        if (mq == null) {
+			return;
+		}
+		AtomicLong offsetOld = this.offsetTable.get(mq);
+		if (null == offsetOld) {
+		    offsetOld = this.offsetTable.putIfAbsent(mq, new AtomicLong(offset));
+		}
+		if (null != offsetOld) {
+		    if (increaseOnly) {
+		        MixAll.compareAndIncreaseOnly(offsetOld, offset);
+		    } else {
+		        offsetOld.set(offset);
+		    }
+		}
     }
 
     @Override
@@ -95,7 +98,8 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                     }
                     // No offset in broker
                     catch (MQBrokerException e) {
-                        return -1;
+                        logger.error(e.getMessage(), e);
+						return -1;
                     }
                     //Other exceptions
                     catch (Exception e) {
@@ -113,8 +117,9 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
 
     @Override
     public void persistAll(Set<MessageQueue> mqs) {
-        if (null == mqs || mqs.isEmpty())
-            return;
+        if (null == mqs || mqs.isEmpty()) {
+			return;
+		}
 
         final HashSet<MessageQueue> unusedMQ = new HashSet<MessageQueue>();
         if (!mqs.isEmpty()) {
@@ -165,12 +170,14 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
         }
     }
 
-    public void removeOffset(MessageQueue mq) {
-        if (mq != null) {
-            this.offsetTable.remove(mq);
-            log.info("remove unnecessary messageQueue offset. group={}, mq={}, offsetTableSize={}", this.groupName, mq,
-                offsetTable.size());
-        }
+    @Override
+	public void removeOffset(MessageQueue mq) {
+        if (mq == null) {
+			return;
+		}
+		this.offsetTable.remove(mq);
+		log.info("remove unnecessary messageQueue offset. group={}, mq={}, offsetTableSize={}", this.groupName, mq,
+		    offsetTable.size());
     }
 
     @Override
@@ -224,7 +231,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
                     findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
             }
         } else {
-            throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+            throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
         }
     }
 
@@ -246,7 +253,7 @@ public class RemoteBrokerOffsetStore implements OffsetStore {
             return this.mQClientFactory.getMQClientAPIImpl().queryConsumerOffset(
                 findBrokerResult.getBrokerAddr(), requestHeader, 1000 * 5);
         } else {
-            throw new MQClientException("The broker[" + mq.getBrokerName() + "] not exist", null);
+            throw new MQClientException(new StringBuilder().append("The broker[").append(mq.getBrokerName()).append("] not exist").toString(), null);
         }
     }
 }

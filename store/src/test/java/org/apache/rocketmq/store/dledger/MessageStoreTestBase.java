@@ -48,7 +48,7 @@ public class MessageStoreTestBase extends StoreTestBase {
         storeConfig.setMaxHashSlotNum(100);
         storeConfig.setMaxIndexNum(100 * 10);
         storeConfig.setStorePathRootDir(base);
-        storeConfig.setStorePathCommitLog(base + File.separator + "commitlog");
+        storeConfig.setStorePathCommitLog(new StringBuilder().append(base).append(File.separator).append("commitlog").toString());
         storeConfig.setFlushDiskType(FlushDiskType.ASYNC_FLUSH);
 
         storeConfig.setEnableDLegerCommitLog(true);
@@ -103,7 +103,7 @@ public class MessageStoreTestBase extends StoreTestBase {
         storeConfig.setMaxHashSlotNum(100);
         storeConfig.setMaxIndexNum(100 * 10);
         storeConfig.setStorePathRootDir(base);
-        storeConfig.setStorePathCommitLog(base + File.separator + "commitlog");
+        storeConfig.setStorePathCommitLog(new StringBuilder().append(base).append(File.separator).append("commitlog").toString());
         storeConfig.setFlushDiskType(FlushDiskType.ASYNC_FLUSH);
         DefaultMessageStore defaultMessageStore = new DefaultMessageStore(storeConfig,  new BrokerStatsManager("CommitlogTest"), (topic, queueId, logicOffset, tagsCode, msgStoreTime, filterBitMap, properties) -> {
 

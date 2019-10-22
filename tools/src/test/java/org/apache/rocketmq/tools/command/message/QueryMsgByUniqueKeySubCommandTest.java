@@ -54,10 +54,14 @@ import java.util.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class QueryMsgByUniqueKeySubCommandTest {
 
-    private static QueryMsgByUniqueKeySubCommand cmd = new QueryMsgByUniqueKeySubCommand();
+    private static final Logger logger = LoggerFactory.getLogger(QueryMsgByUniqueKeySubCommandTest.class);
+
+	private static QueryMsgByUniqueKeySubCommand cmd = new QueryMsgByUniqueKeySubCommand();
 
     private static DefaultMQAdminExt defaultMQAdminExt;
     private static DefaultMQAdminExtImpl defaultMQAdminExtImpl;
@@ -115,9 +119,9 @@ public class QueryMsgByUniqueKeySubCommandTest {
         when(mQAdminImpl.queryMessageByUniqKey(anyString(), anyString())).thenReturn(retMsgExt);
 
         TopicRouteData topicRouteData = new TopicRouteData();
-        List<BrokerData> brokerDataList = new ArrayList<BrokerData>();
+        List<BrokerData> brokerDataList = new ArrayList<>();
         BrokerData brokerData = new BrokerData();
-        HashMap<Long, String> brokerAddrs = new HashMap<Long, String>();
+        HashMap<Long, String> brokerAddrs = new HashMap<>();
         brokerAddrs.put(MixAll.MASTER_ID, "127.0.0.1:9876");
         brokerData.setBrokerAddrs(brokerAddrs);
         brokerDataList.add(brokerData);
@@ -125,7 +129,7 @@ public class QueryMsgByUniqueKeySubCommandTest {
         when(mQClientAPIImpl.getTopicRouteInfoFromNameServer(anyString(), anyLong())).thenReturn(topicRouteData);
 
         GroupList groupList = new GroupList();
-        HashSet<String> groupSets = new HashSet<String>();
+        HashSet<String> groupSets = new HashSet<>();
         groupSets.add("testGroup");
         groupList.setGroupList(groupSets);
         when(mQClientAPIImpl.queryTopicConsumeByWho(anyString(), anyString(), anyLong())).thenReturn(groupList);
@@ -133,7 +137,7 @@ public class QueryMsgByUniqueKeySubCommandTest {
 
         ConsumeStats consumeStats = new ConsumeStats();
         consumeStats.setConsumeTps(100*10000);
-        HashMap<MessageQueue, OffsetWrapper> offsetTable = new HashMap<MessageQueue, OffsetWrapper>();
+        HashMap<MessageQueue, OffsetWrapper> offsetTable = new HashMap<>();
         MessageQueue messageQueue = new MessageQueue();
         messageQueue.setBrokerName("messageQueue BrokerName testing");
         messageQueue.setTopic("messageQueue topic");
@@ -147,11 +151,11 @@ public class QueryMsgByUniqueKeySubCommandTest {
         when(mQClientAPIImpl.getConsumeStats(anyString(), anyString(), (String)isNull(), anyLong())).thenReturn(consumeStats);
 
         ClusterInfo clusterInfo = new ClusterInfo();
-        HashMap<String, BrokerData> brokerAddrTable = new HashMap<String, BrokerData>();
+        HashMap<String, BrokerData> brokerAddrTable = new HashMap<>();
         brokerAddrTable.put("key", brokerData);
         clusterInfo.setBrokerAddrTable(brokerAddrTable);
-        HashMap<String, Set<String>> clusterAddrTable = new HashMap<String, Set<String>>();
-        Set<String> addrSet = new HashSet<String>();
+        HashMap<String, Set<String>> clusterAddrTable = new HashMap<>();
+        Set<String> addrSet = new HashSet<>();
         addrSet.add("127.0.0.1:9876");
         clusterAddrTable.put("key", addrSet);
         clusterInfo.setClusterAddrTable(clusterAddrTable);
@@ -221,8 +225,8 @@ public class QueryMsgByUniqueKeySubCommandTest {
         cmd.execute(commandLine, options, null);
 
         System.out.println();
-        System.out.println("commandName=" + cmd.commandName());
-        System.out.println("commandDesc=" + cmd.commandDesc());
+        logger.info("commandName=" + cmd.commandName());
+        logger.info("commandDesc=" + cmd.commandDesc());
 
     }
 

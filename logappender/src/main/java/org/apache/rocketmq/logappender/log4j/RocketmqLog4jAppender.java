@@ -59,7 +59,8 @@ public class RocketmqLog4jAppender extends AppenderSkeleton {
     public RocketmqLog4jAppender() {
     }
 
-    public void activateOptions() {
+    @Override
+	public void activateOptions() {
         LogLog.debug("Getting initial context.");
         if (!checkEntryConditions()) {
             return;
@@ -67,14 +68,16 @@ public class RocketmqLog4jAppender extends AppenderSkeleton {
         try {
             producer = ProducerInstance.getProducerInstance().getInstance(nameServerAddress, producerGroup);
         } catch (Exception e) {
-            LogLog.error("activateOptions nameserver:" + nameServerAddress + " group:" + producerGroup + " " + e.getMessage());
+            LogLog.error(new StringBuilder().append("activateOptions nameserver:").append(nameServerAddress).append(" group:").append(producerGroup).append(" ").append(e.getMessage())
+					.toString());
         }
     }
 
     /**
      * Info,error,warn,callback method implementation
      */
-    public void append(LoggingEvent event) {
+    @Override
+	public void append(LoggingEvent event) {
         if (null == producer) {
             return;
         }
@@ -90,7 +93,7 @@ public class RocketmqLog4jAppender extends AppenderSkeleton {
             producer.sendOneway(msg);
         } catch (Exception e) {
             String msg = new String(data);
-            errorHandler.error("Could not send message in RocketmqLog4jAppender [" + name + "].Message is :" + msg, e,
+            errorHandler.error(new StringBuilder().append("Could not send message in RocketmqLog4jAppender [").append(name).append("].Message is :").append(msg).toString(), e,
                 ErrorCode.GENERIC_FAILURE);
         }
     }
@@ -105,7 +108,7 @@ public class RocketmqLog4jAppender extends AppenderSkeleton {
         }
 
         if (fail != null) {
-            errorHandler.error(fail + " for RocketmqLog4jAppender named [" + name + "].");
+            errorHandler.error(new StringBuilder().append(fail).append(" for RocketmqLog4jAppender named [").append(name).append("].").toString());
             return false;
         } else {
             return true;
@@ -115,25 +118,29 @@ public class RocketmqLog4jAppender extends AppenderSkeleton {
     /**
      * When system exit,this method will be called to close resources
      */
-    public synchronized void close() {
+    @Override
+	public synchronized void close() {
         // The synchronized modifier avoids concurrent append and close operations
 
-        if (this.closed)
-            return;
+        if (this.closed) {
+			return;
+		}
 
-        LogLog.debug("Closing RocketmqLog4jAppender [" + name + "].");
+        LogLog.debug(new StringBuilder().append("Closing RocketmqLog4jAppender [").append(name).append("].").toString());
         this.closed = true;
 
         try {
             ProducerInstance.getProducerInstance().removeAndClose(this.nameServerAddress, this.producerGroup);
         } catch (Exception e) {
-            LogLog.error("Closing RocketmqLog4jAppender [" + name + "] nameServerAddress:" + nameServerAddress + " group:" + producerGroup + " " + e.getMessage());
+            LogLog.error(new StringBuilder().append("Closing RocketmqLog4jAppender [").append(name).append("] nameServerAddress:").append(nameServerAddress).append(" group:").append(producerGroup)
+					.append(" ").append(e.getMessage()).toString());
         }
         // Help garbage collection
         producer = null;
     }
 
-    public boolean requiresLayout() {
+    @Override
+	public boolean requiresLayout() {
         return true;
     }
 

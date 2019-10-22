@@ -42,13 +42,15 @@ import static org.junit.Assert.assertTrue;
 
 public class BatchPutMessageTest {
 
-    private MessageStore messageStore;
-
     public static final char NAME_VALUE_SEPARATOR = 1;
-    public static final char PROPERTY_SEPARATOR = 2;
-    public final static Charset CHARSET_UTF8 = Charset.forName("UTF-8");
 
-    @Before
+	public static final char PROPERTY_SEPARATOR = 2;
+
+	public static final Charset CHARSET_UTF8 = Charset.forName("UTF-8");
+
+	private MessageStore messageStore;
+
+	@Before
     public void init() throws Exception {
         messageStore = buildMessageStore();
         boolean load = messageStore.load();
@@ -56,15 +58,15 @@ public class BatchPutMessageTest {
         messageStore.start();
     }
 
-    @After
+	@After
     public void destory() {
         messageStore.shutdown();
         messageStore.destroy();
 
-        UtilAll.deleteFile(new File(System.getProperty("user.home") + File.separator + "putmessagesteststore"));
+        UtilAll.deleteFile(new File(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("putmessagesteststore").toString()));
     }
 
-    private MessageStore buildMessageStore() throws Exception {
+	private MessageStore buildMessageStore() throws Exception {
         MessageStoreConfig messageStoreConfig = new MessageStoreConfig();
         messageStoreConfig.setMappedFileSizeCommitLog(1024 * 8);
         messageStoreConfig.setMappedFileSizeConsumeQueue(1024 * 4);
@@ -72,12 +74,13 @@ public class BatchPutMessageTest {
         messageStoreConfig.setMaxIndexNum(100 * 10);
         messageStoreConfig.setFlushDiskType(FlushDiskType.SYNC_FLUSH);
         messageStoreConfig.setFlushIntervalConsumeQueue(1);
-        messageStoreConfig.setStorePathRootDir(System.getProperty("user.home") + File.separator + "putmessagesteststore");
-        messageStoreConfig.setStorePathCommitLog(System.getProperty("user.home") + File.separator + "putmessagesteststore" + File.separator + "commitlog");
+        messageStoreConfig.setStorePathRootDir(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("putmessagesteststore").toString());
+        messageStoreConfig.setStorePathCommitLog(new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("putmessagesteststore").append(File.separator).append("commitlog")
+				.toString());
         return new DefaultMessageStore(messageStoreConfig, new BrokerStatsManager("simpleTest"), new MyMessageArrivingListener(), new BrokerConfig());
     }
 
-    @Test
+	@Test
     public void testPutMessages() throws Exception {
         List<Message> messages = new ArrayList<>();
         String topic = "batch-write-topic";
@@ -125,7 +128,7 @@ public class BatchPutMessageTest {
 
     }
 
-    private int calMsgLength(int bodyLength, int topicLength, int propertiesLength) {
+	private int calMsgLength(int bodyLength, int topicLength, int propertiesLength) {
         final int msgLen = 4 //TOTALSIZE
                 + 4 //MAGICCODE
                 + 4 //BODYCRC
@@ -147,10 +150,10 @@ public class BatchPutMessageTest {
         return msgLen;
     }
 
-    public String messageProperties2String(Map<String, String> properties) {
+	public String messageProperties2String(Map<String, String> properties) {
         StringBuilder sb = new StringBuilder();
         if (properties != null) {
-            for (final Map.Entry<String, String> entry : properties.entrySet()) {
+            properties.entrySet().forEach((final Map.Entry<String, String> entry) -> {
                 final String name = entry.getKey();
                 final String value = entry.getValue();
 
@@ -158,12 +161,12 @@ public class BatchPutMessageTest {
                 sb.append(NAME_VALUE_SEPARATOR);
                 sb.append(value);
                 sb.append(PROPERTY_SEPARATOR);
-            }
+            });
         }
         return sb.toString();
     }
 
-    private class MyMessageArrivingListener implements MessageArrivingListener {
+	private class MyMessageArrivingListener implements MessageArrivingListener {
         @Override
         public void arriving(String topic, int queueId, long logicOffset, long tagsCode, long msgStoreTime,
                              byte[] filterBitMap, Map<String, String> properties) {

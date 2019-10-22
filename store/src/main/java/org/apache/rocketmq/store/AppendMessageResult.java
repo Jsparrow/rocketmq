@@ -121,15 +121,8 @@ public class AppendMessageResult {
 
     @Override
     public String toString() {
-        return "AppendMessageResult{" +
-            "status=" + status +
-            ", wroteOffset=" + wroteOffset +
-            ", wroteBytes=" + wroteBytes +
-            ", msgId='" + msgId + '\'' +
-            ", storeTimestamp=" + storeTimestamp +
-            ", logicsOffset=" + logicsOffset +
-            ", pagecacheRT=" + pagecacheRT +
-            ", msgNum=" + msgNum +
-            '}';
+        return new StringBuilder().append("AppendMessageResult{").append("status=").append(status).append(", wroteOffset=").append(wroteOffset).append(", wroteBytes=").append(wroteBytes)
+				.append(", msgId='").append(msgId).append('\'').append(", storeTimestamp=").append(storeTimestamp).append(", logicsOffset=").append(logicsOffset).append(", pagecacheRT=")
+				.append(pagecacheRT).append(", msgNum=").append(msgNum).append('}').toString();
     }
 }

@@ -29,6 +29,6 @@ public class RemotingTimeoutException extends RemotingException {
     }
 
     public RemotingTimeoutException(String addr, long timeoutMillis, Throwable cause) {
-        super("wait response on the channel <" + addr + "> timeout, " + timeoutMillis + "(ms)", cause);
+        super(new StringBuilder().append("wait response on the channel <").append(addr).append("> timeout, ").append(timeoutMillis).append("(ms)").toString(), cause);
     }
 }

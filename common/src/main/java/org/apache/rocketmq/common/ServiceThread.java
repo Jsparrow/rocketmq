@@ -63,7 +63,7 @@ public abstract class ServiceThread implements Runnable {
             return;
         }
         this.stopped = true;
-        log.info("shutdown thread " + this.getServiceName() + " interrupt " + interrupt);
+        log.info(new StringBuilder().append("shutdown thread ").append(this.getServiceName()).append(" interrupt ").append(interrupt).toString());
 
         if (hasNotified.compareAndSet(false, true)) {
             waitPoint.countDown(); // notify
@@ -79,8 +79,8 @@ public abstract class ServiceThread implements Runnable {
                 this.thread.join(this.getJointime());
             }
             long elapsedTime = System.currentTimeMillis() - beginTime;
-            log.info("join thread " + this.getServiceName() + " elapsed time(ms) " + elapsedTime + " "
-                + this.getJointime());
+            log.info(new StringBuilder().append("join thread ").append(this.getServiceName()).append(" elapsed time(ms) ").append(elapsedTime).append(" ").append(this.getJointime())
+					.toString());
         } catch (InterruptedException e) {
             log.error("Interrupted", e);
         }
@@ -101,7 +101,7 @@ public abstract class ServiceThread implements Runnable {
             return;
         }
         this.stopped = true;
-        log.info("stop thread " + this.getServiceName() + " interrupt " + interrupt);
+        log.info(new StringBuilder().append("stop thread ").append(this.getServiceName()).append(" interrupt ").append(interrupt).toString());
 
         if (hasNotified.compareAndSet(false, true)) {
             waitPoint.countDown(); // notify

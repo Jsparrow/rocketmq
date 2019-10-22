@@ -36,24 +36,23 @@ public class MQAsyncProducer {
         this.msgNum = msgNum;
         this.intervalMills = intervalMills;
 
-        sendT = new Thread(new Runnable() {
-            public void run() {
-                for (int i = 0; i < msgNum; i++) {
-                    if (!bPause.get()) {
-                        producer.send();
-                        TestUtil.waitForMonment(intervalMills);
-                    } else {
-                        while (true) {
-                            if (bPause.get()) {
-                                TestUtil.waitForMonment(10);
-                            } else
-                                break;
-                        }
-                    }
+        sendT = new Thread(() -> {
+		    for (int i = 0; i < msgNum; i++) {
+		        if (!bPause.get()) {
+		            producer.send();
+		            TestUtil.waitForMonment(intervalMills);
+		        } else {
+		            while (true) {
+		                if (bPause.get()) {
+		                    TestUtil.waitForMonment(10);
+		                } else {
+							break;
+						}
+		            }
+		        }
 
-                }
-            }
-        });
+		    }
+		});
 
     }
 

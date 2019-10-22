@@ -73,34 +73,42 @@ public class QueueData implements Comparable<QueueData> {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
+        if (this == obj) {
+			return true;
+		}
+        if (obj == null) {
+			return false;
+		}
+        if (getClass() != obj.getClass()) {
+			return false;
+		}
         QueueData other = (QueueData) obj;
         if (brokerName == null) {
-            if (other.brokerName != null)
-                return false;
-        } else if (!brokerName.equals(other.brokerName))
-            return false;
-        if (perm != other.perm)
-            return false;
-        if (readQueueNums != other.readQueueNums)
-            return false;
-        if (writeQueueNums != other.writeQueueNums)
-            return false;
-        if (topicSynFlag != other.topicSynFlag)
-            return false;
+            if (other.brokerName != null) {
+				return false;
+			}
+        } else if (!brokerName.equals(other.brokerName)) {
+			return false;
+		}
+        if (perm != other.perm) {
+			return false;
+		}
+        if (readQueueNums != other.readQueueNums) {
+			return false;
+		}
+        if (writeQueueNums != other.writeQueueNums) {
+			return false;
+		}
+        if (topicSynFlag != other.topicSynFlag) {
+			return false;
+		}
         return true;
     }
 
     @Override
     public String toString() {
-        return "QueueData [brokerName=" + brokerName + ", readQueueNums=" + readQueueNums
-            + ", writeQueueNums=" + writeQueueNums + ", perm=" + perm + ", topicSynFlag=" + topicSynFlag
-            + "]";
+        return new StringBuilder().append("QueueData [brokerName=").append(brokerName).append(", readQueueNums=").append(readQueueNums).append(", writeQueueNums=").append(writeQueueNums).append(", perm=")
+				.append(perm).append(", topicSynFlag=").append(topicSynFlag).append("]").toString();
     }
 
     @Override

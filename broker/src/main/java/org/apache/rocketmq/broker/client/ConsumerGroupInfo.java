@@ -36,9 +36,9 @@ public class ConsumerGroupInfo {
     private static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.BROKER_LOGGER_NAME);
     private final String groupName;
     private final ConcurrentMap<String/* Topic */, SubscriptionData> subscriptionTable =
-        new ConcurrentHashMap<String, SubscriptionData>();
+        new ConcurrentHashMap<>();
     private final ConcurrentMap<Channel, ClientChannelInfo> channelInfoTable =
-        new ConcurrentHashMap<Channel, ClientChannelInfo>(16);
+        new ConcurrentHashMap<>(16);
     private volatile ConsumeType consumeType;
     private volatile MessageModel messageModel;
     private volatile ConsumeFromWhere consumeFromWhere;
@@ -103,14 +103,13 @@ public class ConsumerGroupInfo {
 
     public boolean doChannelCloseEvent(final String remoteAddr, final Channel channel) {
         final ClientChannelInfo info = this.channelInfoTable.remove(channel);
-        if (info != null) {
-            log.warn(
-                "NETTY EVENT: remove not active channel[{}] from ConsumerGroupInfo groupChannelTable, consumer group: {}",
-                info.toString(), groupName);
-            return true;
-        }
-
-        return false;
+        if (info == null) {
+			return false;
+		}
+		log.warn(
+		    "NETTY EVENT: remove not active channel[{}] from ConsumerGroupInfo groupChannelTable, consumer group: {}",
+		    info.toString(), groupName);
+		return true;
     }
 
     public boolean updateChannel(final ClientChannelInfo infoNew, ConsumeType consumeType,
@@ -177,13 +176,7 @@ public class ConsumerGroupInfo {
             Entry<String, SubscriptionData> next = it.next();
             String oldTopic = next.getKey();
 
-            boolean exist = false;
-            for (SubscriptionData sub : subList) {
-                if (sub.getTopic().equals(oldTopic)) {
-                    exist = true;
-                    break;
-                }
-            }
+            boolean exist = subList.stream().anyMatch(sub -> sub.getTopic().equals(oldTopic));
 
             if (!exist) {
                 log.warn("subscription changed, group: {} remove topic {} {}",

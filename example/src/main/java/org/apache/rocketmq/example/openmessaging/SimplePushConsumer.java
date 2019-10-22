@@ -22,9 +22,13 @@ import io.openmessaging.OMS;
 import io.openmessaging.OMSBuiltinKeys;
 import io.openmessaging.consumer.MessageListener;
 import io.openmessaging.consumer.PushConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimplePushConsumer {
-    public static void main(String[] args) {
+    private static final Logger logger = LoggerFactory.getLogger(SimplePushConsumer.class);
+
+	public static void main(String[] args) {
         final MessagingAccessPoint messagingAccessPoint = OMS
             .getMessagingAccessPoint("oms:rocketmq://localhost:9876/default:default");
 
@@ -32,25 +36,19 @@ public class SimplePushConsumer {
             createPushConsumer(OMS.newKeyValue().put(OMSBuiltinKeys.CONSUMER_ID, "OMS_CONSUMER"));
 
         messagingAccessPoint.startup();
-        System.out.printf("MessagingAccessPoint startup OK%n");
+        logger.info("MessagingAccessPoint startup OK%n");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                consumer.shutdown();
-                messagingAccessPoint.shutdown();
-            }
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+		    consumer.shutdown();
+		    messagingAccessPoint.shutdown();
+		}));
 
-        consumer.attachQueue("OMS_HELLO_TOPIC", new MessageListener() {
-            @Override
-            public void onReceived(Message message, Context context) {
-                System.out.printf("Received one message: %s%n", message.sysHeaders().getString(Message.BuiltinKeys.MESSAGE_ID));
-                context.ack();
-            }
-        });
+        consumer.attachQueue("OMS_HELLO_TOPIC", (Message message, Context context) -> {
+		    logger.info("Received one message: %s%n", message.sysHeaders().getString(Message.BuiltinKeys.MESSAGE_ID));
+		    context.ack();
+		});
 
         consumer.startup();
-        System.out.printf("Consumer startup OK%n");
+        logger.info("Consumer startup OK%n");
     }
 }

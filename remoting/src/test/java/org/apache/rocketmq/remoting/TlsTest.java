@@ -302,7 +302,7 @@ public class TlsTest {
 
     private static String getCertsPath(String fileName) {
         File resourcesDirectory = new File("src/test/resources/certs");
-        return resourcesDirectory.getAbsolutePath() + "/" + fileName;
+        return new StringBuilder().append(resourcesDirectory.getAbsolutePath()).append("/").append(fileName).toString();
     }
 
     private static RemotingCommand createRequest() {

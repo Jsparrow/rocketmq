@@ -33,10 +33,15 @@ import org.apache.rocketmq.tools.admin.DefaultMQAdminExt;
 import org.apache.rocketmq.tools.command.CommandUtil;
 import org.apache.rocketmq.tools.command.SubCommand;
 import org.apache.rocketmq.tools.command.SubCommandException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class BrokerStatusSubCommand implements SubCommand {
 
-    @Override
+    private static final Logger logger = LoggerFactory.getLogger(BrokerStatusSubCommand.class);
+
+	@Override
     public String commandName() {
         return "brokerStatus";
     }
@@ -68,8 +73,8 @@ public class BrokerStatusSubCommand implements SubCommand {
         try {
             defaultMQAdminExt.start();
 
-            String brokerAddr = commandLine.hasOption('b') ? commandLine.getOptionValue('b').trim() : null;
-            String clusterName = commandLine.hasOption('c') ? commandLine.getOptionValue('c').trim() : null;
+            String brokerAddr = commandLine.hasOption('b') ? StringUtils.trim(commandLine.getOptionValue('b')) : null;
+            String clusterName = commandLine.hasOption('c') ? StringUtils.trim(commandLine.getOptionValue('c')) : null;
             if (brokerAddr != null) {
                 printBrokerRuntimeStats(defaultMQAdminExt, brokerAddr, false);
             } else if (clusterName != null) {
@@ -79,7 +84,7 @@ public class BrokerStatusSubCommand implements SubCommand {
                     try {
                         printBrokerRuntimeStats(defaultMQAdminExt, ba, true);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        logger.error(e.getMessage(), e);
                     }
                 }
             }
@@ -95,16 +100,16 @@ public class BrokerStatusSubCommand implements SubCommand {
         final boolean printBroker) throws InterruptedException, MQBrokerException, RemotingTimeoutException, RemotingSendRequestException, RemotingConnectException {
         KVTable kvTable = defaultMQAdminExt.fetchBrokerRuntimeStats(brokerAddr);
 
-        TreeMap<String, String> tmp = new TreeMap<String, String>();
+        TreeMap<String, String> tmp = new TreeMap<>();
         tmp.putAll(kvTable.getTable());
 
         Iterator<Entry<String, String>> it = tmp.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, String> next = it.next();
             if (printBroker) {
-                System.out.printf("%-24s %-32s: %s%n", brokerAddr, next.getKey(), next.getValue());
+                logger.info("%-24s %-32s: %s%n", brokerAddr, next.getKey(), next.getValue());
             } else {
-                System.out.printf("%-32s: %s%n", next.getKey(), next.getValue());
+                logger.info("%-32s: %s%n", next.getKey(), next.getValue());
             }
         }
     }

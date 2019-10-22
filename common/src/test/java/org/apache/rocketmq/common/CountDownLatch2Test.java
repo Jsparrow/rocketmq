@@ -60,7 +60,7 @@ public class CountDownLatch2Test {
         int count = 10;
         CountDownLatch2 latch = new CountDownLatch2(count);
         assertEquals("Expected equal", count, latch.getCount());
-        assertThat("Expected contain", latch.toString(), containsString("[Count = " + count + "]"));
+        assertThat("Expected contain", latch.toString(), containsString(new StringBuilder().append("[Count = ").append(count).append("]").toString()));
     }
 
     /**

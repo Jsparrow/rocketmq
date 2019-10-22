@@ -40,6 +40,7 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.remoting.protocol.LanguageCode;
+import org.apache.commons.lang3.StringUtils;
 
 public class PushConsumerImpl implements PushConsumer {
     private final DefaultMQPushConsumer rocketmqPushConsumer;
@@ -53,16 +54,16 @@ public class PushConsumerImpl implements PushConsumer {
         this.properties = properties;
         this.clientConfig = BeanUtils.populate(properties, ClientConfig.class);
 
-        if ("true".equalsIgnoreCase(System.getenv("OMS_RMQ_DIRECT_NAME_SRV"))) {
+        if (StringUtils.equalsIgnoreCase("true", System.getenv("OMS_RMQ_DIRECT_NAME_SRV"))) {
             String accessPoints = clientConfig.getAccessPoints();
-            if (accessPoints == null || accessPoints.isEmpty()) {
+            if (accessPoints == null || StringUtils.isEmpty(accessPoints)) {
                 throw new OMSRuntimeException("-1", "OMS AccessPoints is null or empty.");
             }
             this.rocketmqPushConsumer.setNamesrvAddr(accessPoints.replace(',', ';'));
         }
 
         String consumerGroup = clientConfig.getConsumerId();
-        if (null == consumerGroup || consumerGroup.isEmpty()) {
+        if (null == consumerGroup || StringUtils.isEmpty(consumerGroup)) {
             throw new OMSRuntimeException("-1", "Consumer Group is necessary for RocketMQ, please set it.");
         }
         this.rocketmqPushConsumer.setConsumerGroup(consumerGroup);

@@ -31,17 +31,16 @@ public class AclSigner {
     private static final int CAL_SIGNATURE_FAILED = 10015;
     private static final String CAL_SIGNATURE_FAILED_MSG = "[%s:signature-failed] unable to calculate a request signature. error=%s";
 
-    public static String calSignature(String data, String key) throws AclException {
+    public static String calSignature(String data, String key) {
         return calSignature(data, key, DEFAULT_ALGORITHM, DEFAULT_CHARSET);
     }
 
     public static String calSignature(String data, String key, SigningAlgorithm algorithm,
-        Charset charset) throws AclException {
+        Charset charset) {
         return signAndBase64Encode(data, key, algorithm, charset);
     }
 
-    private static String signAndBase64Encode(String data, String key, SigningAlgorithm algorithm, Charset charset)
-        throws AclException {
+    private static String signAndBase64Encode(String data, String key, SigningAlgorithm algorithm, Charset charset) {
         try {
             byte[] signature = sign(data.getBytes(charset), key.getBytes(charset), algorithm);
             return new String(Base64.encodeBase64(signature), DEFAULT_CHARSET);
@@ -52,7 +51,7 @@ public class AclSigner {
         }
     }
 
-    private static byte[] sign(byte[] data, byte[] key, SigningAlgorithm algorithm) throws AclException {
+    private static byte[] sign(byte[] data, byte[] key, SigningAlgorithm algorithm) {
         try {
             Mac mac = Mac.getInstance(algorithm.toString());
             mac.init(new SecretKeySpec(key, algorithm.toString()));
@@ -64,17 +63,16 @@ public class AclSigner {
         }
     }
 
-    public static String calSignature(byte[] data, String key) throws AclException {
+    public static String calSignature(byte[] data, String key) {
         return calSignature(data, key, DEFAULT_ALGORITHM, DEFAULT_CHARSET);
     }
 
     public static String calSignature(byte[] data, String key, SigningAlgorithm algorithm,
-        Charset charset) throws AclException {
+        Charset charset) {
         return signAndBase64Encode(data, key, algorithm, charset);
     }
 
-    private static String signAndBase64Encode(byte[] data, String key, SigningAlgorithm algorithm, Charset charset)
-        throws AclException {
+    private static String signAndBase64Encode(byte[] data, String key, SigningAlgorithm algorithm, Charset charset) {
         try {
             byte[] signature = sign(data, key.getBytes(charset), algorithm);
             return new String(Base64.encodeBase64(signature), DEFAULT_CHARSET);

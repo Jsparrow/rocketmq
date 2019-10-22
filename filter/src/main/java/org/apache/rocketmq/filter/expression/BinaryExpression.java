@@ -43,21 +43,25 @@ public abstract class BinaryExpression implements Expression {
     /**
      * @see Object#toString()
      */
-    public String toString() {
-        return "(" + left.toString() + " " + getExpressionSymbol() + " " + right.toString() + ")";
+    @Override
+	public String toString() {
+        return new StringBuilder().append("(").append(left.toString()).append(" ").append(getExpressionSymbol()).append(" ").append(right.toString())
+				.append(")").toString();
     }
 
     /**
      * @see Object#hashCode()
      */
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         return toString().hashCode();
     }
 
     /**
      * @see Object#equals(Object)
      */
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;

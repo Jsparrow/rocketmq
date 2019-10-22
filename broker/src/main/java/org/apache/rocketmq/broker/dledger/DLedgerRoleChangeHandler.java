@@ -47,50 +47,48 @@ public class DLedgerRoleChangeHandler implements DLedgerLeaderElector.RoleChange
     }
 
     @Override public void handle(long term, MemberState.Role role) {
-        Runnable runnable = new Runnable() {
-            @Override public void run() {
-                long start = System.currentTimeMillis();
-                try {
-                    boolean succ = true;
-                    log.info("Begin handling broker role change term={} role={} currStoreRole={}", term, role, messageStore.getMessageStoreConfig().getBrokerRole());
-                    switch (role) {
-                        case CANDIDATE:
-                            if (messageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
-                                brokerController.changeToSlave(dLedgerCommitLog.getId());
-                            }
-                            break;
-                        case FOLLOWER:
-                            brokerController.changeToSlave(dLedgerCommitLog.getId());
-                            break;
-                        case LEADER:
-                            while (true) {
-                                if (!dLegerServer.getMemberState().isLeader()) {
-                                    succ = false;
-                                    break;
-                                }
-                                if (dLegerServer.getdLedgerStore().getLedgerEndIndex() == -1) {
-                                    break;
-                                }
-                                if (dLegerServer.getdLedgerStore().getLedgerEndIndex() == dLegerServer.getdLedgerStore().getCommittedIndex()
-                                    && messageStore.dispatchBehindBytes() == 0) {
-                                    break;
-                                }
-                                Thread.sleep(100);
-                            }
-                            if (succ) {
-                                messageStore.recoverTopicQueueTable();
-                                brokerController.changeToMaster(BrokerRole.SYNC_MASTER);
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                    log.info("Finish handling broker role change succ={} term={} role={} currStoreRole={} cost={}", succ, term, role, messageStore.getMessageStoreConfig().getBrokerRole(), DLedgerUtils.elapsed(start));
-                } catch (Throwable t) {
-                    log.info("[MONITOR]Failed handling broker role change term={} role={} currStoreRole={} cost={}", term, role, messageStore.getMessageStoreConfig().getBrokerRole(), DLedgerUtils.elapsed(start), t);
-                }
-            }
-        };
+        Runnable runnable = () -> {
+		    long start = System.currentTimeMillis();
+		    try {
+		        boolean succ = true;
+		        log.info("Begin handling broker role change term={} role={} currStoreRole={}", term, role, messageStore.getMessageStoreConfig().getBrokerRole());
+		        switch (role) {
+		            case CANDIDATE:
+		                if (messageStore.getMessageStoreConfig().getBrokerRole() != BrokerRole.SLAVE) {
+		                    brokerController.changeToSlave(dLedgerCommitLog.getId());
+		                }
+		                break;
+		            case FOLLOWER:
+		                brokerController.changeToSlave(dLedgerCommitLog.getId());
+		                break;
+		            case LEADER:
+		                while (true) {
+		                    if (!dLegerServer.getMemberState().isLeader()) {
+		                        succ = false;
+		                        break;
+		                    }
+		                    if (dLegerServer.getdLedgerStore().getLedgerEndIndex() == -1) {
+		                        break;
+		                    }
+		                    if (dLegerServer.getdLedgerStore().getLedgerEndIndex() == dLegerServer.getdLedgerStore().getCommittedIndex()
+		                        && messageStore.dispatchBehindBytes() == 0) {
+		                        break;
+		                    }
+		                    Thread.sleep(100);
+		                }
+		                if (succ) {
+		                    messageStore.recoverTopicQueueTable();
+		                    brokerController.changeToMaster(BrokerRole.SYNC_MASTER);
+		                }
+		                break;
+		            default:
+		                break;
+		        }
+		        log.info("Finish handling broker role change succ={} term={} role={} currStoreRole={} cost={}", succ, term, role, messageStore.getMessageStoreConfig().getBrokerRole(), DLedgerUtils.elapsed(start));
+		    } catch (Throwable t) {
+		        log.info("[MONITOR]Failed handling broker role change term={} role={} currStoreRole={} cost={}", term, role, messageStore.getMessageStoreConfig().getBrokerRole(), DLedgerUtils.elapsed(start), t);
+		    }
+		};
         executorService.submit(runnable);
     }
 

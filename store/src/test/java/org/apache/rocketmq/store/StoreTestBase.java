@@ -30,37 +30,36 @@ import org.junit.After;
 
 public class StoreTestBase {
 
-    private int QUEUE_TOTAL = 100;
-    private AtomicInteger QueueId = new AtomicInteger(0);
-    private SocketAddress BornHost = new InetSocketAddress("127.0.0.1", 8123);
-    private SocketAddress StoreHost = BornHost;
-    private byte[] MessageBody = new byte[1024];
-
-    protected Set<String> baseDirs = new HashSet<>();
-
     private static AtomicInteger port = new AtomicInteger(30000);
+	private int queueTotal = 100;
+	private AtomicInteger queueId = new AtomicInteger(0);
+	private SocketAddress bornHost = new InetSocketAddress("127.0.0.1", 8123);
+	private SocketAddress storeHost = bornHost;
+	private byte[] messageBody = new byte[1024];
+	protected Set<String> baseDirs = new HashSet<>();
 
-    public static synchronized int nextPort() {
+	public static synchronized int nextPort() {
         return port.addAndGet(5);
     }
 
-    protected MessageExtBrokerInner buildMessage() {
+	protected MessageExtBrokerInner buildMessage() {
         MessageExtBrokerInner msg = new MessageExtBrokerInner();
         msg.setTopic("StoreTest");
         msg.setTags("TAG1");
         msg.setKeys("Hello");
-        msg.setBody(MessageBody);
+        msg.setBody(messageBody);
         msg.setKeys(String.valueOf(System.currentTimeMillis()));
-        msg.setQueueId(Math.abs(QueueId.getAndIncrement()) % QUEUE_TOTAL);
+        msg.setQueueId(Math.abs(queueId.getAndIncrement()) % queueTotal);
         msg.setSysFlag(0);
         msg.setBornTimestamp(System.currentTimeMillis());
-        msg.setStoreHost(StoreHost);
-        msg.setBornHost(BornHost);
+        msg.setStoreHost(storeHost);
+        msg.setBornHost(bornHost);
         return msg;
     }
 
-    public static String createBaseDir() {
-        String baseDir = System.getProperty("user.home") + File.separator + "unitteststore" + File.separator + UUID.randomUUID();
+	public static String createBaseDir() {
+        String baseDir = new StringBuilder().append(System.getProperty("user.home")).append(File.separator).append("unitteststore").append(File.separator)
+				.append(UUID.randomUUID()).toString();
         final File file = new File(baseDir);
         if (file.exists()) {
             System.exit(1);
@@ -68,26 +67,23 @@ public class StoreTestBase {
         return baseDir;
     }
 
-    public static boolean makeSureFileExists(String fileName) throws Exception {
+	public static boolean makeSureFileExists(String fileName) throws Exception {
         File file = new File(fileName);
         MappedFile.ensureDirOK(file.getParent());
         return file.createNewFile();
     }
 
-
-    public static void deleteFile(String fileName) {
+	public static void deleteFile(String fileName) {
         deleteFile(new File(fileName));
     }
 
-    public static void deleteFile(File file) {
+	public static void deleteFile(File file) {
         UtilAll.deleteFile(file);
     }
 
-    @After
+	@After
     public void clear() {
-        for (String baseDir : baseDirs) {
-            deleteFile(baseDir);
-        }
+        baseDirs.forEach(StoreTestBase::deleteFile);
     }
 
 }

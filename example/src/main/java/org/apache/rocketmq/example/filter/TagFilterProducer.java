@@ -20,10 +20,14 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TagFilterProducer {
 
-    public static void main(String[] args) throws Exception {
+    private static final Logger logger = LoggerFactory.getLogger(TagFilterProducer.class);
+
+	public static void main(String[] args) throws Exception {
 
         DefaultMQProducer producer = new DefaultMQProducer("please_rename_unique_group_name");
         producer.start();
@@ -36,7 +40,7 @@ public class TagFilterProducer {
                 "Hello world".getBytes(RemotingHelper.DEFAULT_CHARSET));
 
             SendResult sendResult = producer.send(msg);
-            System.out.printf("%s%n", sendResult);
+            logger.info("%s%n", sendResult);
         }
 
         producer.shutdown();

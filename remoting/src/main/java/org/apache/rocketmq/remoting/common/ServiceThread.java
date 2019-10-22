@@ -47,7 +47,7 @@ public abstract class ServiceThread implements Runnable {
 
     public void shutdown(final boolean interrupt) {
         this.stopped = true;
-        log.info("shutdown thread " + this.getServiceName() + " interrupt " + interrupt);
+        log.info(new StringBuilder().append("shutdown thread ").append(this.getServiceName()).append(" interrupt ").append(interrupt).toString());
         synchronized (this) {
             if (!this.hasNotified) {
                 this.hasNotified = true;
@@ -63,8 +63,8 @@ public abstract class ServiceThread implements Runnable {
             long beginTime = System.currentTimeMillis();
             this.thread.join(this.getJointime());
             long elapsedTime = System.currentTimeMillis() - beginTime;
-            log.info("join thread " + this.getServiceName() + " elapsed time(ms) " + elapsedTime + " "
-                + this.getJointime());
+            log.info(new StringBuilder().append("join thread ").append(this.getServiceName()).append(" elapsed time(ms) ").append(elapsedTime).append(" ").append(this.getJointime())
+					.toString());
         } catch (InterruptedException e) {
             log.error("Interrupted", e);
         }

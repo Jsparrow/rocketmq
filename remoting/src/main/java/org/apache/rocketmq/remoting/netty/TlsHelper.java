@@ -61,21 +61,9 @@ import static org.apache.rocketmq.remoting.netty.TlsSystemConfig.tlsTestModeEnab
 
 public class TlsHelper {
 
-    public interface DecryptionStrategy {
-        /**
-         * Decrypt the target encrpted private key file.
-         *
-         * @param privateKeyEncryptPath A pathname string
-         * @param forClient tells whether it's a client-side key file
-         * @return An input stream for a decrypted key file
-         * @throws IOException if an I/O error has occurred
-         */
-        InputStream decryptPrivateKey(String privateKeyEncryptPath, boolean forClient) throws IOException;
-    }
-
     private static final InternalLogger LOGGER = InternalLoggerFactory.getLogger(RemotingHelper.ROCKETMQ_REMOTING);
 
-    private static DecryptionStrategy decryptionStrategy = new DecryptionStrategy() {
+	private static DecryptionStrategy decryptionStrategy = new DecryptionStrategy() {
         @Override
         public InputStream decryptPrivateKey(final String privateKeyEncryptPath,
             final boolean forClient) throws IOException {
@@ -84,11 +72,11 @@ public class TlsHelper {
     };
 
 
-    public static void registerDecryptionStrategy(final DecryptionStrategy decryptionStrategy) {
+	public static void registerDecryptionStrategy(final DecryptionStrategy decryptionStrategy) {
         TlsHelper.decryptionStrategy = decryptionStrategy;
     }
 
-    public static SslContext buildSslContext(boolean forClient) throws IOException, CertificateException {
+	public static SslContext buildSslContext(boolean forClient) throws IOException, CertificateException {
         File configFile = new File(TlsSystemConfig.tlsConfigFile);
         extractTlsConfigFromFile(configFile);
         logTheFinalUsedTlsConfig();
@@ -157,7 +145,7 @@ public class TlsHelper {
         }
     }
 
-    private static void extractTlsConfigFromFile(final File configFile) {
+	private static void extractTlsConfigFromFile(final File configFile) {
         if (!(configFile.exists() && configFile.isFile() && configFile.canRead())) {
             LOGGER.info("Tls config file doesn't exist, skip it");
             return;
@@ -194,7 +182,7 @@ public class TlsHelper {
         tlsClientTrustCertPath = properties.getProperty(TLS_CLIENT_TRUSTCERTPATH, tlsClientTrustCertPath);
     }
 
-    private static void logTheFinalUsedTlsConfig() {
+	private static void logTheFinalUsedTlsConfig() {
         LOGGER.info("Log the final used tls related configuration");
         LOGGER.info("{} = {}", TLS_TEST_MODE_ENABLE, tlsTestModeEnable);
         LOGGER.info("{} = {}", TLS_SERVER_NEED_CLIENT_AUTH, tlsServerNeedClientAuth);
@@ -211,7 +199,7 @@ public class TlsHelper {
         LOGGER.info("{} = {}", TLS_CLIENT_TRUSTCERTPATH, tlsClientTrustCertPath);
     }
 
-    private static ClientAuth parseClientAuthMode(String authMode) {
+	private static ClientAuth parseClientAuthMode(String authMode) {
         if (null == authMode || authMode.trim().isEmpty()) {
             return ClientAuth.NONE;
         }
@@ -225,10 +213,22 @@ public class TlsHelper {
         return ClientAuth.NONE;
     }
 
-    /**
+	/**
      * Determine if a string is {@code null} or {@link String#isEmpty()} returns {@code true}.
      */
     private static boolean isNullOrEmpty(String s) {
         return s == null || s.isEmpty();
+    }
+
+	public interface DecryptionStrategy {
+        /**
+         * Decrypt the target encrpted private key file.
+         *
+         * @param privateKeyEncryptPath A pathname string
+         * @param forClient tells whether it's a client-side key file
+         * @return An input stream for a decrypted key file
+         * @throws IOException if an I/O error has occurred
+         */
+        InputStream decryptPrivateKey(String privateKeyEncryptPath, boolean forClient) throws IOException;
     }
 }

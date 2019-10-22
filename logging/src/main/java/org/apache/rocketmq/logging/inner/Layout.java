@@ -34,6 +34,6 @@ public abstract class Layout {
     }
 
 
-    abstract public boolean ignoresThrowable();
+    public abstract boolean ignoresThrowable();
 
 }

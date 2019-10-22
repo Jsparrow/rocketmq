@@ -27,13 +27,10 @@ public class WaitNotifyObjectTest {
     public void removeFromWaitingThreadTable() throws Exception {
         final WaitNotifyObject waitNotifyObject = new WaitNotifyObject();
         for (int i = 0; i < 5; i++) {
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    waitNotifyObject.allWaitForRunning(100);
-                    waitNotifyObject.removeFromWaitingThreadTable();
-                }
-            });
+            Thread t = new Thread(() -> {
+			    waitNotifyObject.allWaitForRunning(100);
+			    waitNotifyObject.removeFromWaitingThreadTable();
+			});
             t.start();
             t.join();
         }
